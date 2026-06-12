@@ -1,0 +1,1338 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LED Pixelmapper — Video Screen Grid Tool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Rajdhani:wght@500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07090e;
+      --bg-2: #090c14;
+      --surface: #0e121f;
+      --surface-2: #161c2d;
+      --surface-3: #1b2236;
+      --ink: #f0f4f8;
+      --muted: #8092a7;
+      --muted-2: #5b6b82;
+      --line: #1c2538;
+      --line-strong: #2b3952;
+      --cyan: #00d8ff;
+      --cyan-dark: #0096b2;
+      --lime: #78ff5f;
+      --amber: #ff9f1c;
+      --magenta: #ff4d8d;
+      --violet: #8b7bff;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 16px 36px rgba(0, 0, 0, 0.55), 0 0 25px rgba(0, 216, 255, 0.04);
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(1100px 520px at 78% -8%, rgba(0, 216, 255, 0.10), transparent 60%),
+        radial-gradient(900px 520px at 10% 108%, rgba(120, 255, 95, 0.07), transparent 60%),
+        var(--bg);
+      color: var(--ink);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 6px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--cyan-dark); }
+
+    button, input, select, textarea { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    h1, h2, h3, p { margin: 0; }
+
+    /* ---------- Topbar ---------- */
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px clamp(14px, 2.4vw, 28px);
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(14,18,31,0.9), rgba(9,12,20,0.7));
+      backdrop-filter: blur(10px);
+      z-index: 50;
+    }
+    .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .brand-mark {
+      width: 40px; height: 40px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: repeat(4, 1fr);
+      gap: 2px;
+      padding: 4px;
+      border-radius: 10px;
+      background: radial-gradient(circle at 30% 20%, rgba(0,216,255,0.25), transparent 70%), var(--surface-2);
+      border: 1px solid var(--line-strong);
+      flex: 0 0 auto;
+    }
+    .brand-mark span {
+      border-radius: 2px;
+      background: var(--line-strong);
+      animation: pulseCell 3.2s ease-in-out infinite;
+    }
+    .brand-mark span:nth-child(3n) { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+    .brand-mark span:nth-child(4n) { background: var(--lime); box-shadow: 0 0 6px var(--lime); }
+    .brand-mark span:nth-child(odd) { animation-delay: 0.4s; }
+    .brand-mark span:nth-child(5n) { animation-delay: 0.9s; }
+    @keyframes pulseCell { 0%,100%{opacity:.35} 50%{opacity:1} }
+    .brand h1 { font-size: 16px; font-weight: 800; letter-spacing: 0.3px; white-space: nowrap; }
+    .brand .sub { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .brand .tag { color: var(--cyan); font-weight: 700; }
+
+    .top-spacer { flex: 1 1 auto; }
+    .top-actions { display: flex; gap: 8px; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; }
+
+    .button {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line-strong);
+      background: linear-gradient(180deg, var(--surface-2), var(--surface));
+      color: var(--ink);
+      font-size: 13px; font-weight: 600;
+      transition: border-color .15s, box-shadow .15s, transform .05s, background .15s;
+      white-space: nowrap;
+    }
+    .button:hover { border-color: var(--cyan-dark); box-shadow: 0 0 0 1px rgba(0,216,255,0.15), 0 6px 16px rgba(0,0,0,.4); }
+    .button:active { transform: translateY(1px); }
+    .button.primary {
+      border-color: transparent;
+      background: linear-gradient(180deg, #14e0ff, var(--cyan-dark));
+      color: #04141a; font-weight: 800;
+      box-shadow: 0 6px 18px rgba(0,216,255,0.25);
+    }
+    .button.primary:hover { box-shadow: 0 6px 24px rgba(0,216,255,0.45); }
+    .button.lime { border-color: transparent; background: linear-gradient(180deg, #95ff7e, #3fbf2c); color: #06210a; font-weight: 800; }
+    .button.ghost { background: transparent; }
+    .button .ic { width: 16px; height: 16px; flex: 0 0 auto; }
+
+    /* ---------- App layout ---------- */
+    .app {
+      flex: 1 1 auto;
+      display: grid;
+      grid-template-columns: 320px 1fr 250px;
+      min-height: 0;
+    }
+    .panel {
+      border-right: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(14,18,31,0.55), rgba(9,12,20,0.35));
+      overflow-y: auto;
+      padding: 14px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .panel.right { border-right: none; border-left: 1px solid var(--line); }
+
+    .group { border: 1px solid var(--line); border-radius: var(--radius); background: rgba(14,18,31,0.6); overflow: hidden; }
+    .group > summary {
+      list-style: none; cursor: pointer; user-select: none;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 13px;
+      font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--ink);
+      background: linear-gradient(180deg, rgba(27,34,54,0.7), rgba(22,28,45,0.4));
+      border-bottom: 1px solid transparent;
+    }
+    .group[open] > summary { border-bottom-color: var(--line); }
+    .group > summary::-webkit-details-marker { display: none; }
+    .group > summary .chev { color: var(--cyan); transition: transform .2s; font-weight: 700; }
+    .group[open] > summary .chev { transform: rotate(45deg); }
+    .group .body { padding: 13px; display: flex; flex-direction: column; gap: 11px; }
+
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+    .field.full { grid-column: 1 / -1; }
+    .field label, .field .lab { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: 0.02em; }
+    .field input[type="number"], .field input[type="text"], .field select {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line-strong);
+      background: var(--bg-2);
+      color: var(--ink);
+      font-size: 13px;
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .field input:focus, .field select:focus { border-color: var(--cyan-dark); box-shadow: 0 0 0 1px rgba(0,216,255,0.18); }
+    .field input[type="color"] { width: 100%; height: 36px; padding: 3px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); background: var(--bg-2); }
+    .field input[type="range"] { width: 100%; accent-color: var(--cyan); }
+    .range-row { display: flex; align-items: center; gap: 8px; }
+    .range-row output { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--cyan); min-width: 46px; text-align: right; }
+
+    .seg { display: grid; grid-auto-flow: column; gap: 4px; padding: 3px; border-radius: var(--radius-sm); background: var(--bg-2); border: 1px solid var(--line-strong); }
+    .seg button {
+      padding: 7px 6px; border: 0; border-radius: 6px; background: transparent; color: var(--muted);
+      font-size: 12px; font-weight: 700; transition: background .15s, color .15s;
+    }
+    .seg button.active { background: linear-gradient(180deg, var(--surface-3), var(--surface-2)); color: var(--cyan); box-shadow: inset 0 0 0 1px var(--line-strong); }
+
+    .toggle { display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--ink); cursor: pointer; }
+    .toggle input { appearance: none; width: 36px; height: 20px; border-radius: 20px; background: var(--surface-3); position: relative; transition: background .2s; flex: 0 0 auto; cursor: pointer; border: 1px solid var(--line-strong); }
+    .toggle input::after { content:""; position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background: var(--muted); transition: transform .2s, background .2s; }
+    .toggle input:checked { background: linear-gradient(90deg, var(--cyan-dark), var(--cyan)); border-color: transparent; }
+    .toggle input:checked::after { transform: translateX(16px); background: #04141a; }
+
+    .dropzone {
+      border: 1.5px dashed var(--line-strong);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12.5px;
+      transition: border-color .15s, background .15s, color .15s;
+      cursor: pointer;
+    }
+    .dropzone:hover, .dropzone.drag { border-color: var(--cyan); background: rgba(0,216,255,0.06); color: var(--ink); }
+    .dropzone strong { color: var(--cyan); }
+    .media-name { font-size: 11.5px; color: var(--lime); font-family: 'Share Tech Mono', monospace; word-break: break-all; }
+
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-row .button { flex: 1 1 auto; justify-content: center; }
+
+    /* ---------- Stage ---------- */
+    .stage { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+    .stage-bar {
+      display: flex; align-items: center; gap: 12px;
+      padding: 9px 16px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(9,12,20,0.5);
+      font-size: 12px;
+      flex: 0 0 auto;
+    }
+    .stage-bar .title { font-weight: 800; }
+    .stage-bar .sub { color: var(--muted); font-family: 'Share Tech Mono', monospace; }
+    .stage-bar .spacer { flex: 1 1 auto; }
+    .pill { padding: 3px 11px; border-radius: 999px; font-size: 11px; font-weight: 700; border: 1px solid var(--line-strong); color: var(--muted); }
+    .pill.live { color: var(--lime); border-color: rgba(120,255,95,0.4); }
+    .pill.live::before { content:"●"; margin-right: 6px; color: var(--lime); animation: blink 1.4s infinite; }
+    @keyframes blink { 50% { opacity: .3; } }
+
+    .canvas-wrap {
+      position: relative; flex: 1 1 auto; min-height: 0;
+      overflow: hidden;
+      background:
+        linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px) 0 0 / 26px 26px,
+        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px) 0 0 / 26px 26px,
+        radial-gradient(circle at 50% 42%, rgba(0,216,255,0.05), transparent 60%),
+        var(--bg);
+      cursor: grab;
+    }
+    .canvas-wrap:active { cursor: grabbing; }
+    #stageCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+    .stage-controls {
+      position: absolute; right: 14px; top: 14px;
+      display: flex; flex-direction: column; gap: 6px; z-index: 6;
+    }
+    .zoom-btn {
+      width: 34px; height: 34px; border-radius: 9px;
+      border: 1px solid var(--line-strong);
+      background: rgba(14,18,31,0.82);
+      color: var(--ink); font-size: 15px; font-weight: 700;
+      display: grid; place-items: center;
+      backdrop-filter: blur(6px);
+      transition: border-color .15s, color .15s;
+    }
+    .zoom-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+
+    .hint-pill {
+      position: absolute; left: 50%; bottom: 64px; transform: translateX(-50%);
+      z-index: 5; pointer-events: none;
+      font-size: 11.5px; letter-spacing: .03em; color: var(--muted);
+      background: rgba(9,12,20,0.72); border: 1px solid var(--line); border-radius: 999px;
+      padding: 5px 13px; backdrop-filter: blur(6px); transition: opacity .3s;
+    }
+    .canvas-wrap:hover .hint-pill { opacity: 0; }
+
+    /* ---------- Transport ---------- */
+    .transport {
+      flex: 0 0 auto;
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 16px;
+      border-top: 1px solid var(--line);
+      background: rgba(9,12,20,0.6);
+    }
+    .transport.disabled { opacity: 0.4; pointer-events: none; }
+    .tp-btn {
+      width: 38px; height: 38px; border-radius: 10px;
+      border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--ink);
+      display: grid; place-items: center;
+    }
+    .tp-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+    .tp-btn.play { background: linear-gradient(180deg, #14e0ff, var(--cyan-dark)); color: #04141a; border-color: transparent; }
+    .timeline { flex: 1 1 auto; display: flex; align-items: center; gap: 10px; }
+    .timeline input[type="range"] { flex: 1 1 auto; accent-color: var(--cyan); }
+    .tc { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--cyan); min-width: 96px; }
+    .tc .sep { color: var(--muted-2); }
+
+    /* ---------- Right stats ---------- */
+    .stat { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: rgba(14,18,31,0.5); }
+    .stat .k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+    .stat .v { font-size: 17px; font-weight: 800; font-family: 'Rajdhani', sans-serif; color: var(--ink); }
+    .stat .v small { font-size: 11px; color: var(--muted); font-weight: 600; }
+    .stat.hot .v { color: var(--cyan); }
+    .stat.warn .v { color: var(--amber); }
+    .panel.right h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-top: 4px; }
+
+    /* ---------- Toast ---------- */
+    #toast {
+      position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(20px);
+      background: rgba(14,18,31,0.96); border: 1px solid var(--cyan-dark);
+      color: var(--ink); padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 18px rgba(0,216,255,0.2);
+      opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; z-index: 3000;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 1080px) {
+      .app { grid-template-columns: 290px 1fr; }
+      .panel.right { display: none; }
+    }
+    @media (max-width: 760px) {
+      body { overflow: auto; }
+      .app { display: flex; flex-direction: column; }
+      .panel { max-height: 320px; border-right: none; border-bottom: 1px solid var(--line); }
+      .stage { min-height: 70vh; }
+    }
+
+    /* ============================================================
+       NEON GLASS COMMAND MENU (right-click the stage)
+       Electric-pop glass border — layered conic gradients, noise
+       mask, blend modes. Hues tuned to the app's cyan->lime palette.
+       ============================================================ */
+    #pmMenu {
+      --hue1: 190; --hue2: 110;
+      --nm-border: 1px;
+      --nm-border-color: hsl(var(--hue2), 12%, 20%);
+      --nm-radius: 22px;
+      --nm-ease: cubic-bezier(0.5, 1, 0.89, 1);
+      visibility: hidden; opacity: 0; pointer-events: none;
+      transition-property: visibility, opacity, filter, transform;
+      transition-duration: 0s, 0.22s, 0.22s, 0.22s;
+      transition-delay: 0.45s, 0s, 0s, 0s;
+      transition-timing-function: var(--nm-ease);
+      filter: blur(4px); transform: scale(0.97);
+      font-family: 'Inter', sans-serif; color: #8ea0b6;
+      position: fixed; top: 120px; left: 24px; z-index: 4000;
+      min-width: 256px;
+      border-radius: var(--nm-radius);
+      border: var(--nm-border) solid var(--nm-border-color);
+      padding: 0.85em;
+      background:
+        linear-gradient(235deg, hsl(var(--hue1) 60% 11% / 0.85), hsl(var(--hue1) 50% 10% / 0) 33%),
+        linear-gradient(45deg, hsl(var(--hue2) 60% 11% / 0.85), hsl(var(--hue2) 50% 10% / 0) 33%),
+        linear-gradient(hsl(220deg 28% 5% / 0.78));
+      -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+      box-shadow: hsl(var(--hue2) 50% 2%) 0 12px 18px -8px, hsl(var(--hue1) 50% 4%) 0 22px 40px -14px, inset 0 1px 0 hsl(var(--hue1) 60% 60% / 0.04);
+    }
+    #pmMenu:not(.open) .nm-shine, #pmMenu:not(.open) .nm-glow { opacity: 0; pointer-events: none; animation: nmGlowOff 0.25s var(--nm-ease) both; }
+    #pmMenu.open { visibility: visible; opacity: 1; pointer-events: auto; transition-delay: 0s; filter: blur(0); transform: scale(1); }
+    #pmMenu.open .nm-shine, #pmMenu.open .nm-glow { animation: nmGlow 1s var(--nm-ease) both; }
+    #pmMenu.open .nm-shine { animation-delay: 0s; animation-duration: 2s; }
+    #pmMenu.open .nm-glow { animation-delay: .2s; }
+    #pmMenu.open .nm-glow-bright { animation-delay: .1s; animation-duration: 1.5s; }
+    #pmMenu.open .nm-shine-bottom { animation-delay: .1s; animation-duration: 1.8s; }
+    #pmMenu.open .nm-glow-bottom { animation-delay: .3s; }
+    #pmMenu.open .nm-glow-bright.nm-glow-bottom { animation-delay: .3s; animation-duration: 1.1s; }
+    #pmMenu .nm-shine, #pmMenu .nm-glow { --hue: var(--hue1); }
+    #pmMenu .nm-shine-bottom, #pmMenu .nm-glow-bottom { --hue: var(--hue2); --conic: 135deg; }
+    #pmMenu .nm-shine, #pmMenu .nm-shine::before, #pmMenu .nm-shine::after {
+      pointer-events: none; border-radius: 0; border-top-right-radius: inherit; border-bottom-left-radius: inherit;
+      border: 1px solid transparent; width: 75%; height: auto; min-height: 0; aspect-ratio: 1; display: block;
+      position: absolute; right: calc(var(--nm-border) * -1); top: calc(var(--nm-border) * -1); left: auto; z-index: 1; --start: 12%;
+      background: conic-gradient(from var(--conic, -45deg) at center in oklch, transparent var(--start,0%), hsl(var(--hue), var(--sat,80%), var(--lit,60%)), transparent var(--end,50%)) border-box;
+      -webkit-mask: linear-gradient(transparent), linear-gradient(black); mask: linear-gradient(transparent), linear-gradient(black);
+      -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-clip: padding-box, border-box; mask-clip: padding-box, border-box;
+      -webkit-mask-composite: source-out; mask-composite: subtract;
+    }
+    #pmMenu .nm-shine::before, #pmMenu .nm-shine::after { content: ""; width: auto; inset: -2px; -webkit-mask: none; mask: none; }
+    #pmMenu .nm-shine::after { z-index: 2; --start: 17%; --end: 33%; background: conic-gradient(from var(--conic, -45deg) at center in oklch, transparent var(--start,0%), hsl(var(--hue), var(--sat,80%), var(--lit,85%)), transparent var(--end,50%)); }
+    #pmMenu .nm-shine-bottom { top: auto; bottom: calc(var(--nm-border) * -1); left: calc(var(--nm-border) * -1); right: auto; }
+    #pmMenu .nm-glow {
+      pointer-events: none; border-top-right-radius: calc(var(--nm-radius)*2.5); border-bottom-left-radius: calc(var(--nm-radius)*2.5);
+      border: calc(var(--nm-radius)*1.25) solid transparent; inset: calc(var(--nm-radius)*-2);
+      width: 75%; height: auto; min-height: 0; aspect-ratio: 1; display: block; position: absolute; left: auto; bottom: auto;
+      -webkit-mask: url('https://assets.codepen.io/13471/noise-base.png'); mask: url('https://assets.codepen.io/13471/noise-base.png');
+      mask-mode: luminance; -webkit-mask-size: 29%; mask-size: 29%;
+      opacity: 1; filter: blur(12px) saturate(1.25) brightness(0.5); mix-blend-mode: plus-lighter; z-index: 3;
+    }
+    #pmMenu .nm-glow.nm-glow-bottom { inset: calc(var(--nm-radius)*-2); top: auto; right: auto; }
+    #pmMenu .nm-glow::before, #pmMenu .nm-glow::after {
+      content: ""; position: absolute; inset: 0; border: inherit; border-radius: inherit;
+      background: conic-gradient(from var(--conic, -45deg) at center in oklch, transparent var(--start,0%), hsl(var(--hue), var(--sat,95%), var(--lit,60%)), transparent var(--end,50%)) border-box;
+      -webkit-mask: linear-gradient(transparent), linear-gradient(black); mask: linear-gradient(transparent), linear-gradient(black);
+      -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-clip: padding-box, border-box; mask-clip: padding-box, border-box;
+      -webkit-mask-composite: source-out; mask-composite: subtract; filter: saturate(2) brightness(1);
+    }
+    #pmMenu .nm-glow::after { --lit: 70%; --sat: 100%; --start: 15%; --end: 35%; border-width: calc(var(--nm-radius)*1.75); border-radius: calc(var(--nm-radius)*2.75); inset: calc(var(--nm-radius)*-0.25); z-index: 4; opacity: .75; }
+    #pmMenu .nm-glow-bright { --lit: 80%; --sat: 100%; --start: 13%; --end: 37%; border-width: 5px; border-radius: calc(var(--nm-radius)+2px); inset: -7px; left: auto; filter: blur(2px) brightness(0.66); }
+    #pmMenu .nm-glow-bright::after { content: none; }
+    #pmMenu .nm-glow-bright.nm-glow-bottom { inset: -7px; right: auto; top: auto; }
+    #pmMenu .nm-inner { display: flex; flex-direction: column; gap: .5em; font-size: .875rem; position: relative; z-index: 5; }
+    #pmMenu .nm-section { display: flex; flex-direction: column; gap: .5em; }
+    #pmMenu hr { width: 100%; height: .5px; background: var(--nm-border-color); border: none; margin: .3em 0 .45em; opacity: .66; }
+    #pmMenu .nm-search { display: grid; grid-template: 1fr/1fr; margin-bottom: .55em; width: 100%; }
+    #pmMenu .nm-search > * { grid-area: 1/1; align-self: center; }
+    #pmMenu .nm-search svg { margin-left: .6em; opacity: .5; height: 18px; width: 18px; pointer-events: none; }
+    #pmMenu .nm-search:has(input:focus) svg { stroke: hsl(var(--hue1) 70% 70% / 1); opacity: .9; }
+    #pmMenu input {
+      color: hsl(0 0 100% / .6); font-family: 'Inter', sans-serif; width: 100%; box-shadow: 0 0 0 1px transparent;
+      border: 1px solid hsl(var(--hue2) 13% 20% / .6);
+      background: linear-gradient(to bottom, hsl(var(--hue1) 20% 20% / .12) 50%, hsl(var(--hue1) 55% 45% / .7) 180%);
+      background-size: 100% 300%; background-position: 0% 0%; background-repeat: no-repeat;
+      border-radius: calc(var(--nm-radius)*0.36); padding: .55em .7em .55em 2.3em; outline: none; transition: all .3s var(--nm-ease);
+    }
+    #pmMenu input:focus { border-color: hsl(var(--hue1) 30% 70% / .55); background-position: 0% 50%; color: hsl(var(--hue1) 25% 85% / 1); }
+    #pmMenu input::placeholder { color: hsl(0 0 100% / .45); }
+    #pmMenu .nm-header { font-size: .68rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; padding: 0 .66em; color: hsl(var(--hue2) 18% 55% / .8); }
+    #pmMenu ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .25em; }
+    #pmMenu li {
+      --item-hue: var(--hue2); position: relative; padding: 0 .66em; height: 34px; display: flex; align-items: center; gap: .6em;
+      cursor: pointer; border-radius: calc(var(--nm-radius)*0.36); border: 1px solid transparent;
+      transition: all .3s ease-in, --item-opacity .3s ease-in;
+      background: linear-gradient(90deg in oklch, hsl(var(--item-hue) 29% 13% / var(--item-opacity)), hsl(var(--item-hue) 30% 15% / var(--item-opacity)) 24% 32%, hsl(var(--item-hue) 5% 7% / 0) 95%) border-box;
+    }
+    #pmMenu li::after {
+      content: ""; position: absolute; inset: 0; border-radius: inherit; border: inherit;
+      background: linear-gradient(90deg in oklch, hsl(var(--item-hue) 15% 16% / var(--item-opacity)), hsl(var(--item-hue) 40% 24% / var(--item-opacity)) 20% 32%, hsl(var(--item-hue) 2% 12% / 0) 95%) border-box;
+      -webkit-mask: linear-gradient(transparent), linear-gradient(to right, black, transparent); mask: linear-gradient(transparent), linear-gradient(to right, black, transparent);
+      -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-clip: padding-box, border-box; mask-clip: padding-box, border-box;
+      -webkit-mask-composite: source-out; mask-composite: subtract;
+    }
+    #pmMenu li:hover, #pmMenu li.selected, #pmMenu li:hover::after, #pmMenu li.selected::after, #pmMenu li:focus, #pmMenu li:focus::after {
+      --item-opacity: .5; transition: all .1s ease-out, --item-opacity .1s ease-out; color: white; outline: none;
+    }
+    #pmMenu li.selected, #pmMenu li.selected::after { animation: nmFlash .75s ease-out 1 forwards; }
+    #pmMenu li svg { fill: none; stroke-width: 1.5; height: 18px; width: 18px; flex: 0 0 auto; opacity: .85; }
+    #pmMenu li .kbd { margin-left: auto; font-family: 'Share Tech Mono', monospace; font-size: 10px; opacity: .5; }
+    #pmMenu li.nm-hidden { display: none; }
+    #pmMenu .nm-section:nth-of-type(1) li { --item-hue: var(--hue1); }
+    #pmMenu .nm-empty { display: none; padding: .5em .7em; font-size: .8rem; color: hsl(var(--hue2) 10% 45%); }
+    #pmMenu.nm-no-results .nm-empty { display: block; }
+    @property --item-opacity { syntax: "<number>"; inherits: false; initial-value: 0; }
+    @keyframes nmGlow { 0%{opacity:0} 3%{opacity:1} 10%{opacity:0} 12%{opacity:.7} 16%{opacity:.3; animation-timing-function: var(--nm-ease)} 100%{opacity:1; animation-timing-function: var(--nm-ease)} }
+    @keyframes nmGlowOff { to { opacity: 0; } }
+    @keyframes nmFlash { 0%{opacity:0;--item-opacity:0} 7%{opacity:.5;--item-opacity:1} 14%{opacity:0;--item-opacity:.5} 21%,100%{opacity:1;--item-opacity:1} }
+  </style>
+</head>
+<body>
+  <!-- ================= TOPBAR ================= -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <div style="min-width:0;">
+        <h1>LED Pixelmapper <span class="tag">// Video Tool</span></h1>
+        <div class="sub">Drop an image or video and map it live across your cabinet wall — routing, labels, pixel-perfect export.</div>
+      </div>
+    </div>
+    <div class="top-spacer"></div>
+    <div class="top-actions">
+      <button class="button" id="loadBtn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 16.5V18a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-1.5M12 3v12m0 0 4-4m-4 4-4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>Load Media</button>
+      <button class="button ghost" id="testBtn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18" stroke-linecap="round"/></svg>Test Pattern</button>
+      <button class="button lime" id="exportFeedBtn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 16.5V18a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-1.5M12 15V3m0 12 4-4m-4 4-4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>Export Feed</button>
+      <button class="button primary" id="exportMapBtn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18" stroke-linecap="round"/></svg>Export Map</button>
+    </div>
+  </header>
+
+  <input type="file" id="fileInput" accept="image/*,video/*" hidden>
+
+  <!-- ================= APP ================= -->
+  <div class="app">
+    <!-- LEFT PANEL -->
+    <aside class="panel left">
+      <details class="group" open>
+        <summary>Wall Setup <span class="chev">+</span></summary>
+        <div class="body">
+          <div class="field full">
+            <label for="preset">Cabinet Preset</label>
+            <select id="preset">
+              <option value="">Custom</option>
+              <option value="500,500,128,128">500mm sq · 128×128 px (P3.9)</option>
+              <option value="500,1000,128,256">500×1000mm · 128×256 px</option>
+              <option value="1000,500,256,128">1000×500mm · 256×128 px</option>
+              <option value="960,960,192,192">960mm sq · 192×192 px (P5)</option>
+              <option value="600,337.5,192,108">600×337.5mm · 192×108 px (16:9)</option>
+              <option value="500,500,160,160">500mm sq · 160×160 px (P3.1)</option>
+            </select>
+          </div>
+          <div class="grid2">
+            <div class="field"><label for="cabW">Cabinet W (mm)</label><input id="cabW" type="number" min="1" step="0.1" value="500"></div>
+            <div class="field"><label for="cabH">Cabinet H (mm)</label><input id="cabH" type="number" min="1" step="0.1" value="500"></div>
+            <div class="field"><label for="pxW">Pixels W</label><input id="pxW" type="number" min="1" step="1" value="128"></div>
+            <div class="field"><label for="pxH">Pixels H</label><input id="pxH" type="number" min="1" step="1" value="128"></div>
+            <div class="field"><label for="cols">Columns</label><input id="cols" type="number" min="1" max="100" step="1" value="8"></div>
+            <div class="field"><label for="rows">Rows</label><input id="rows" type="number" min="1" max="100" step="1" value="4"></div>
+            <div class="field full"><label for="gap">Cabinet Gap (mm)</label><input id="gap" type="number" min="0" step="0.1" value="0"></div>
+          </div>
+        </div>
+      </details>
+
+      <details class="group" open>
+        <summary>Media Source <span class="chev">+</span></summary>
+        <div class="body">
+          <div class="dropzone" id="dropzone">
+            <div>Drop an <strong>image</strong> or <strong>video</strong> here</div>
+            <div style="margin-top:6px;font-size:11px;">or click to browse · jpg · png · mp4 · webm · gif</div>
+          </div>
+          <div class="media-name" id="mediaName">Source: Live Test Pattern</div>
+          <div class="field full">
+            <label for="fit">Fit Mode</label>
+            <select id="fit">
+              <option value="cover">Cover (fill, crop)</option>
+              <option value="contain">Contain (letterbox)</option>
+              <option value="stretch">Stretch (distort)</option>
+              <option value="actual">Actual (1:1 center)</option>
+              <option value="tile">Tile (repeat)</option>
+            </select>
+          </div>
+          <div class="field full">
+            <span class="lab">Rotation</span>
+            <div class="seg" id="rotSeg">
+              <button data-rot="0" class="active">0°</button>
+              <button data-rot="90">90°</button>
+              <button data-rot="180">180°</button>
+              <button data-rot="270">270°</button>
+            </div>
+          </div>
+          <div class="field full"><span class="lab">Zoom <span id="scaleVal" style="color:var(--cyan)">100%</span></span>
+            <div class="range-row"><input id="mScale" type="range" min="10" max="400" value="100"></div>
+          </div>
+          <div class="grid2">
+            <div class="field"><span class="lab">Offset X <span id="ox">0</span></span><input id="mOffX" type="range" min="-100" max="100" value="0"></div>
+            <div class="field"><span class="lab">Offset Y <span id="oy">0</span></span><input id="mOffY" type="range" min="-100" max="100" value="0"></div>
+          </div>
+          <div class="btn-row">
+            <button class="button ghost" id="centerMedia">Center</button>
+            <button class="button ghost" id="resetMedia">Reset Media</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="group" open>
+        <summary>Routing &amp; Labels <span class="chev">+</span></summary>
+        <div class="body">
+          <div class="field full">
+            <label for="route">Routing Pattern</label>
+            <select id="route">
+              <option value="snakeRow">Serpentine Rows</option>
+              <option value="row">Rows</option>
+              <option value="snakeCol">Serpentine Columns</option>
+              <option value="col">Columns</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label for="startCorner">Start Corner</label>
+            <select id="startCorner">
+              <option value="tl">Top Left</option>
+              <option value="tr">Top Right</option>
+              <option value="bl">Bottom Left</option>
+              <option value="br">Bottom Right</option>
+            </select>
+          </div>
+          <div class="field full">
+            <span class="lab">Label Style</span>
+            <div class="seg" id="labelSeg">
+              <button data-label="number" class="active">1,2,3</button>
+              <button data-label="grid">R/C</button>
+              <button data-label="none">None</button>
+            </div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="showGrid" checked> Cabinet Grid</label>
+          <label class="toggle"><input type="checkbox" id="showRoute" checked> Routing Path</label>
+          <label class="toggle"><input type="checkbox" id="showPixelGrid"> Pixel Grid (per-LED)</label>
+          <label class="toggle"><input type="checkbox" id="dim"> Dim Media Under Overlay</label>
+        </div>
+      </details>
+
+      <details class="group">
+        <summary>Appearance <span class="chev">+</span></summary>
+        <div class="body">
+          <div class="grid2">
+            <div class="field"><label for="gridColor">Grid Color</label><input id="gridColor" type="color" value="#00d8ff"></div>
+            <div class="field"><label for="seamColor">Seam / Gap</label><input id="seamColor" type="color" value="#05070b"></div>
+          </div>
+          <div class="field full"><span class="lab">Grid Opacity <span id="gridOpVal">70%</span></span><input id="gridOpacity" type="range" min="0" max="100" value="70"></div>
+          <div class="field full"><span class="lab">Label Size <span id="labelSzVal">100%</span></span><input id="labelSize" type="range" min="40" max="200" value="100"></div>
+        </div>
+      </details>
+    </aside>
+
+    <!-- STAGE -->
+    <main class="stage">
+      <div class="stage-bar">
+        <span class="title" id="stTitle">LED Wall Preview</span>
+        <span class="sub" id="stSub">8 × 4 cabinets · 1024 × 512 px</span>
+        <span class="spacer"></span>
+        <span class="pill" id="srcPill">Test Pattern</span>
+        <span class="pill live" id="livePill">LIVE</span>
+      </div>
+      <div class="canvas-wrap" id="canvasWrap">
+        <canvas id="stageCanvas"></canvas>
+        <div class="stage-controls">
+          <button class="zoom-btn" id="zoomIn" title="Zoom in">+</button>
+          <button class="zoom-btn" id="zoomOut" title="Zoom out">−</button>
+          <button class="zoom-btn" id="zoomFit" title="Fit to screen" style="font-size:11px;">Fit</button>
+          <button class="zoom-btn" id="zoomOne" title="100%" style="font-size:11px;">1:1</button>
+        </div>
+        <div class="hint-pill">Right-click for the command menu · scroll to zoom · drag to pan</div>
+      </div>
+      <div class="transport disabled" id="transport">
+        <button class="tp-btn play" id="playBtn" title="Play / Pause">
+          <svg id="playIc" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <button class="tp-btn" id="loopBtn" title="Loop">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 11V9a4 4 0 0 1 4-4h14M7 22l-4-4 4-4" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 13v2a4 4 0 0 1-4 4H3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="timeline">
+          <input type="range" id="seek" min="0" max="1000" value="0">
+        </div>
+        <div class="tc"><span id="tcCur">00:00.0</span> <span class="sep">/</span> <span id="tcDur">00:00.0</span></div>
+        <div class="field" style="flex:0 0 auto;width:84px;">
+          <select id="speed" style="padding:6px 8px;">
+            <option value="0.25">0.25×</option>
+            <option value="0.5">0.5×</option>
+            <option value="1" selected>1×</option>
+            <option value="1.5">1.5×</option>
+            <option value="2">2×</option>
+          </select>
+        </div>
+        <label class="toggle" style="flex:0 0 auto;"><input type="checkbox" id="muteChk" checked> Mute</label>
+      </div>
+    </main>
+
+    <!-- RIGHT STATS -->
+    <aside class="panel right">
+      <h3>Resolution</h3>
+      <div class="stat hot"><span class="k">Active Pixels</span><span class="v" id="sRes">1024 × 512</span></div>
+      <div class="stat"><span class="k">Total Pixels</span><span class="v" id="sTotal">524,288 <small>px</small></span></div>
+      <div class="stat"><span class="k">Aspect Ratio</span><span class="v" id="sAspect">2.00 : 1</span></div>
+      <h3>Physical</h3>
+      <div class="stat"><span class="k">Wall Size</span><span class="v" id="sPhys">4.00 × 2.00 <small>m</small></span></div>
+      <div class="stat"><span class="k">Pixel Pitch</span><span class="v" id="sPitch">3.91 <small>mm</small></span></div>
+      <div class="stat"><span class="k">Cabinet Count</span><span class="v" id="sCabs">32</span></div>
+      <h3>Signal Estimate</h3>
+      <div class="stat"><span class="k">Data @ 60fps · 24bpp</span><span class="v" id="sData">0.75 <small>Gbps</small></span></div>
+      <div class="stat warn"><span class="k">Gigabit Ports (≈655k/port)</span><span class="v" id="sPorts">1</span></div>
+      <div class="stat"><span class="k">Media Source</span><span class="v" id="sMedia" style="font-size:13px;">Test Pattern</span></div>
+    </aside>
+  </div>
+
+  <!-- ================= NEON GLASS CONTEXT MENU ================= -->
+  <aside id="pmMenu" role="menu" aria-label="Command menu">
+    <span class="nm-shine nm-shine-top"></span>
+    <span class="nm-shine nm-shine-bottom"></span>
+    <span class="nm-glow nm-glow-top"></span>
+    <span class="nm-glow nm-glow-bottom"></span>
+    <span class="nm-glow nm-glow-bright nm-glow-top"></span>
+    <span class="nm-glow nm-glow-bright nm-glow-bottom"></span>
+    <div class="nm-inner">
+      <label class="nm-search">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+        <input id="pmSearch" type="text" placeholder="Type a command or search" autocomplete="off">
+      </label>
+      <div class="nm-section">
+        <div class="nm-header">Playback</div>
+        <ul>
+          <li tabindex="0" data-cmd="play"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg>Play / Pause <span class="kbd">Space</span></li>
+          <li tabindex="0" data-cmd="loop"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.7"><path d="M17 2l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 22l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3" stroke-linecap="round" stroke-linejoin="round"/></svg>Toggle Loop</li>
+        </ul>
+      </div>
+      <hr>
+      <div class="nm-section">
+        <div class="nm-header">Fit</div>
+        <ul>
+          <li tabindex="0" data-cmd="fit:cover"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>Fit: Cover</li>
+          <li tabindex="0" data-cmd="fit:contain"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.7"><rect x="3" y="6" width="18" height="12" rx="2"/></svg>Fit: Contain</li>
+          <li tabindex="0" data-cmd="fit:stretch"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.7"><path d="M3 12h18M3 12l4-4M3 12l4 4M21 12l-4-4M21 12l-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>Fit: Stretch</li>
+        </ul>
+      </div>
+      <hr>
+      <div class="nm-section">
+        <div class="nm-header">Overlay</div>
+        <ul>
+          <li tabindex="0" data-cmd="toggle:showGrid"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.6"><path d="M3 9h18M3 15h18M9 3v18M15 3v18M3 3h18v18H3z" stroke-linejoin="round"/></svg>Toggle Cabinet Grid</li>
+          <li tabindex="0" data-cmd="toggle:showRoute"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.6"><path d="M4 5h10a3 3 0 0 1 0 6H8a3 3 0 0 0 0 6h12" stroke-linecap="round" stroke-linejoin="round"/></svg>Toggle Routing Path</li>
+          <li tabindex="0" data-cmd="toggle:showPixelGrid"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.2"><path d="M3 7h18M3 11h18M3 15h18M3 19h18M7 3v18M11 3v18M15 3v18M19 3v18" /></svg>Toggle Pixel Grid</li>
+          <li tabindex="0" data-cmd="cycleLabel"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.6"><path d="M4 7V5h16v2M9 19h6M12 5v14" stroke-linecap="round" stroke-linejoin="round"/></svg>Cycle Label Style</li>
+        </ul>
+      </div>
+      <hr>
+      <div class="nm-section">
+        <div class="nm-header">View &amp; Export</div>
+        <ul>
+          <li tabindex="0" data-cmd="zoomFit"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.6"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke-linecap="round" stroke-linejoin="round"/></svg>Fit To Screen</li>
+          <li tabindex="0" data-cmd="zoomOne"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.6"><path d="M9 9 4 4M9 4H4v5M15 15l5 5M15 20h5v-5" stroke-linecap="round" stroke-linejoin="round"/></svg>Reset View (1:1)</li>
+          <li tabindex="0" data-cmd="exportFeed"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.6"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke-linecap="round" stroke-linejoin="round"/></svg>Export Feed (1:1)</li>
+          <li tabindex="0" data-cmd="exportMap"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg>Export Map (overlay)</li>
+          <li tabindex="0" data-cmd="fullscreen"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.6"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke-linecap="round" stroke-linejoin="round"/></svg>Fullscreen Stage</li>
+        </ul>
+      </div>
+      <div class="nm-empty">No matching commands</div>
+    </div>
+  </aside>
+
+  <div id="toast"></div>
+
+  <script>
+  (function () {
+    "use strict";
+    const $ = (id) => document.getElementById(id);
+    const STORE = "led-pixelmapper-v1";
+
+    // ---------- State ----------
+    const state = {
+      cabW: 500, cabH: 500, pxW: 128, pxH: 128, cols: 8, rows: 4, gap: 0,
+      fit: "cover", rot: 0, mScale: 100, mOffX: 0, mOffY: 0,
+      route: "snakeRow", startCorner: "tl", label: "number",
+      showGrid: true, showRoute: true, showPixelGrid: false, dim: false,
+      gridColor: "#00d8ff", seamColor: "#05070b", gridOpacity: 70, labelSize: 100
+    };
+
+    // ---------- Canvas + view ----------
+    const canvas = $("stageCanvas");
+    const ctx = canvas.getContext("2d");
+    const wrap = $("canvasWrap");
+    const view = { zoom: 1, panX: 0, panY: 0, fitZoom: 1 };
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    // ---------- Media ----------
+    const media = { type: "pattern", el: null, w: 1920, h: 1080, ready: true, name: "Live Test Pattern" };
+    const mediaCanvas = document.createElement("canvas"); // natural-res current frame
+    const mctx = mediaCanvas.getContext("2d");
+    const feedCanvas = document.createElement("canvas");   // active-pixel wall feed (1:1)
+    const fctx = feedCanvas.getContext("2d");
+
+    // ============================================================
+    //  DERIVED
+    // ============================================================
+    function contentW() { return state.cols * state.pxW; }
+    function contentH() { return state.rows * state.pxH; }
+    function pxPerMm() { return state.pxW / state.cabW; }      // approx, used for gap in px
+    function gapPx() { return state.gap * pxPerMm(); }
+
+    // ============================================================
+    //  TEST PATTERN  (animated so the tool feels live with no file)
+    // ============================================================
+    function drawTestPattern(c, w, h, t) {
+      c.clearRect(0, 0, w, h);
+      const bars = ["#ffffff", "#ffe600", "#00e0ff", "#27e35a", "#ff4dd2", "#ff3b3b", "#3b6bff"];
+      const bw = w / bars.length;
+      for (let i = 0; i < bars.length; i++) { c.fillStyle = bars[i]; c.fillRect(i * bw, 0, bw + 1, h * 0.62); }
+      // moving hue sweep band
+      const grad = c.createLinearGradient(0, 0, w, 0);
+      const hueShift = (t * 40) % 360;
+      for (let s = 0; s <= 6; s++) { grad.addColorStop(s / 6, `hsl(${(hueShift + s * 60) % 360} 90% 55%)`); }
+      c.fillStyle = grad; c.fillRect(0, h * 0.62, w, h * 0.18);
+      // greyscale ramp
+      const g2 = c.createLinearGradient(0, 0, w, 0);
+      g2.addColorStop(0, "#000"); g2.addColorStop(1, "#fff");
+      c.fillStyle = g2; c.fillRect(0, h * 0.80, w, h * 0.20);
+      // center crosshair + moving marker
+      c.strokeStyle = "rgba(255,255,255,0.6)"; c.lineWidth = Math.max(2, w / 600);
+      c.beginPath(); c.moveTo(w / 2, 0); c.lineTo(w / 2, h); c.moveTo(0, h / 2); c.lineTo(w, h / 2); c.stroke();
+      const mx = (Math.sin(t * 1.2) * 0.5 + 0.5) * w;
+      c.fillStyle = "rgba(0,216,255,0.9)"; c.beginPath(); c.arc(mx, h / 2, Math.max(6, w / 120), 0, Math.PI * 2); c.fill();
+      // label + timecode
+      c.fillStyle = "rgba(0,0,0,0.55)"; c.fillRect(w / 2 - w * 0.20, h * 0.30, w * 0.40, h * 0.16);
+      c.fillStyle = "#fff"; c.textAlign = "center"; c.textBaseline = "middle";
+      c.font = `700 ${Math.round(h * 0.07)}px 'Rajdhani', sans-serif`;
+      c.fillText("LED TEST PATTERN", w / 2, h * 0.355);
+      c.font = `${Math.round(h * 0.045)}px 'Share Tech Mono', monospace`;
+      c.fillStyle = "#00e0ff";
+      c.fillText(`${contentW()}×${contentH()} · ${String(Math.floor(t)).padStart(4,"0")}f`, w / 2, h * 0.425);
+    }
+
+    // ============================================================
+    //  MEDIA FRAME -> mediaCanvas (natural res), with rotation
+    // ============================================================
+    let startTime = performance.now();
+    function updateMediaFrame() {
+      let nw = media.w, nh = media.h;
+      if (media.type === "video" && media.el) { nw = media.el.videoWidth || nw; nh = media.el.videoHeight || nh; }
+      if (state.rot === 90 || state.rot === 270) { /* keep natural in mediaCanvas, rotate at map step */ }
+      if (mediaCanvas.width !== nw || mediaCanvas.height !== nh) { mediaCanvas.width = nw; mediaCanvas.height = nh; }
+      media.w = nw; media.h = nh;
+
+      if (media.type === "pattern") {
+        const t = (performance.now() - startTime) / 1000;
+        drawTestPattern(mctx, nw, nh, t);
+      } else if (media.type === "image" && media.el) {
+        mctx.clearRect(0, 0, nw, nh); mctx.drawImage(media.el, 0, 0, nw, nh);
+      } else if (media.type === "video" && media.el && media.el.readyState >= 2) {
+        mctx.clearRect(0, 0, nw, nh); mctx.drawImage(media.el, 0, 0, nw, nh);
+      }
+    }
+
+    // rotated source helper -> returns {canvas/img, w, h}
+    const rotCanvas = document.createElement("canvas");
+    const rctx = rotCanvas.getContext("2d");
+    function getSource() {
+      let src = mediaCanvas, sw = media.w, sh = media.h;
+      if (state.rot === 0) return { src, sw, sh };
+      const swap = state.rot === 90 || state.rot === 270;
+      rotCanvas.width = swap ? sh : sw;
+      rotCanvas.height = swap ? sw : sh;
+      rctx.save();
+      rctx.clearRect(0, 0, rotCanvas.width, rotCanvas.height);
+      rctx.translate(rotCanvas.width / 2, rotCanvas.height / 2);
+      rctx.rotate(state.rot * Math.PI / 180);
+      rctx.drawImage(src, -sw / 2, -sh / 2, sw, sh);
+      rctx.restore();
+      return { src: rotCanvas, sw: rotCanvas.width, sh: rotCanvas.height };
+    }
+
+    // ============================================================
+    //  BUILD FEED  (active pixels, no gaps) -> feedCanvas
+    //  This is the export-1:1 image and the source for screen slices.
+    // ============================================================
+    function buildFeed() {
+      const W = contentW(), H = contentH();
+      if (feedCanvas.width !== W || feedCanvas.height !== H) { feedCanvas.width = W; feedCanvas.height = H; }
+      fctx.clearRect(0, 0, W, H);
+      fctx.fillStyle = "#000"; fctx.fillRect(0, 0, W, H);
+
+      const { src, sw, sh } = getSource();
+      if (!sw || !sh) return;
+
+      const scaleMul = state.mScale / 100;
+      const offX = (state.mOffX / 100) * W;
+      const offY = (state.mOffY / 100) * H;
+
+      if (state.fit === "tile") {
+        const tileScale = scaleMul;
+        const tw = sw * tileScale, th = sh * tileScale;
+        for (let y = offY % th - th; y < H; y += th)
+          for (let x = offX % tw - tw; x < W; x += tw)
+            fctx.drawImage(src, x, y, tw, th);
+        return;
+      }
+
+      let dw, dh;
+      if (state.fit === "cover") { const s = Math.max(W / sw, H / sh) * scaleMul; dw = sw * s; dh = sh * s; }
+      else if (state.fit === "contain") { const s = Math.min(W / sw, H / sh) * scaleMul; dw = sw * s; dh = sh * s; }
+      else if (state.fit === "stretch") { dw = W * scaleMul; dh = H * scaleMul; }
+      else { dw = sw * scaleMul; dh = sh * scaleMul; } // actual
+      const dx = (W - dw) / 2 + offX, dy = (H - dh) / 2 + offY;
+      fctx.drawImage(src, dx, dy, dw, dh);
+    }
+
+    // ============================================================
+    //  LAYOUT  (screen geometry of the gapped wall)
+    // ============================================================
+    function wallScreenSize(scale) {
+      const w = state.cols * state.pxW * scale + (state.cols - 1) * gapPx() * scale;
+      const h = state.rows * state.pxH * scale + (state.rows - 1) * gapPx() * scale;
+      return { w, h };
+    }
+    function computeFitZoom() {
+      const availW = wrap.clientWidth - 80, availH = wrap.clientHeight - 80;
+      const base = wallScreenSize(1);
+      view.fitZoom = Math.min(availW / base.w, availH / base.h);
+      if (!isFinite(view.fitZoom) || view.fitZoom <= 0) view.fitZoom = 0.2;
+    }
+
+    // ============================================================
+    //  RENDER TO SCREEN
+    // ============================================================
+    function resizeCanvas() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = wrap.clientWidth, h = wrap.clientHeight;
+      if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+        canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+      }
+    }
+
+    function render() {
+      resizeCanvas();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const W = wrap.clientWidth, H = wrap.clientHeight;
+      ctx.clearRect(0, 0, W, H);
+
+      const scale = view.fitZoom * view.zoom;
+      const wall = wallScreenSize(scale);
+      const originX = (W - wall.w) / 2 + view.panX;
+      const originY = (H - wall.h) / 2 + view.panY;
+
+      // seam / background behind the wall
+      ctx.fillStyle = state.seamColor;
+      ctx.fillRect(originX - 1, originY - 1, wall.w + 2, wall.h + 2);
+
+      const cellW = state.pxW * scale, cellH = state.pxH * scale;
+      const stepX = cellW + gapPx() * scale, stepY = cellH + gapPx() * scale;
+
+      ctx.imageSmoothingEnabled = scale < 3; // crisp pixels when very zoomed
+      // draw each cabinet's slice of the feed
+      for (let r = 0; r < state.rows; r++) {
+        for (let c = 0; c < state.cols; c++) {
+          const sx = c * state.pxW, sy = r * state.pxH;
+          const dx = originX + c * stepX, dy = originY + r * stepY;
+          ctx.drawImage(feedCanvas, sx, sy, state.pxW, state.pxH, dx, dy, cellW, cellH);
+          if (state.dim && (state.showGrid || state.showRoute)) {
+            ctx.fillStyle = "rgba(5,7,12,0.35)"; ctx.fillRect(dx, dy, cellW, cellH);
+          }
+        }
+      }
+
+      // pixel grid (per LED) — only when readable
+      if (state.showPixelGrid && scale > 1.6) {
+        ctx.strokeStyle = "rgba(255,255,255,0.06)"; ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let r = 0; r < state.rows; r++) for (let c = 0; c < state.cols; c++) {
+          const ox = originX + c * stepX, oy = originY + r * stepY;
+          for (let i = 1; i < state.pxW; i++) { ctx.moveTo(ox + i * scale, oy); ctx.lineTo(ox + i * scale, oy + cellH); }
+          for (let j = 1; j < state.pxH; j++) { ctx.moveTo(ox, oy + j * scale); ctx.lineTo(ox + cellW, oy + j * scale); }
+        }
+        ctx.stroke();
+      }
+
+      drawOverlay(ctx, originX, originY, scale, cellW, cellH, stepX, stepY, false);
+    }
+
+    // routing order -> array of {r,c} in cable order
+    function routeOrder() {
+      const order = [];
+      const { cols, rows, route, startCorner } = state;
+      const flipH = startCorner === "tr" || startCorner === "br";
+      const flipV = startCorner === "bl" || startCorner === "br";
+      const colAt = (c) => flipH ? cols - 1 - c : c;
+      const rowAt = (r) => flipV ? rows - 1 - r : r;
+      if (route === "row" || route === "snakeRow") {
+        for (let r = 0; r < rows; r++) {
+          const rr = rowAt(r);
+          const rev = route === "snakeRow" && (r % 2 === 1);
+          for (let c = 0; c < cols; c++) { const cc = rev ? cols - 1 - c : c; order.push({ r: rr, c: colAt(cc) }); }
+        }
+      } else {
+        for (let c = 0; c < cols; c++) {
+          const cc = colAt(c);
+          const rev = route === "snakeCol" && (c % 2 === 1);
+          for (let r = 0; r < rows; r++) { const rr = rev ? rows - 1 - r : r; order.push({ r: rowAt(rr), c: cc }); }
+        }
+      }
+      return order;
+    }
+
+    function drawOverlay(c, originX, originY, scale, cellW, cellH, stepX, stepY, forExport) {
+      const op = state.gridOpacity / 100;
+      // cabinet grid
+      if (state.showGrid) {
+        c.lineWidth = Math.max(1, scale * 0.9);
+        c.strokeStyle = hexA(state.gridColor, 0.25 + op * 0.55);
+        c.shadowColor = hexA(state.gridColor, op * 0.5); c.shadowBlur = forExport ? 0 : 6;
+        for (let r = 0; r < state.rows; r++) for (let cc = 0; cc < state.cols; cc++) {
+          c.strokeRect(originX + cc * stepX, originY + r * stepY, cellW, cellH);
+        }
+        c.shadowBlur = 0;
+      }
+      // routing path
+      const order = routeOrder();
+      if (state.showRoute) {
+        c.lineWidth = Math.max(1.5, scale * 1.4);
+        c.strokeStyle = hexA("#78ff5f", 0.5 + op * 0.4);
+        c.shadowColor = hexA("#78ff5f", 0.6); c.shadowBlur = forExport ? 0 : 8;
+        c.beginPath();
+        order.forEach((p, i) => {
+          const cx = originX + p.c * stepX + cellW / 2, cy = originY + p.r * stepY + cellH / 2;
+          if (i === 0) c.moveTo(cx, cy); else c.lineTo(cx, cy);
+        });
+        c.stroke();
+        c.shadowBlur = 0;
+        // start node
+        if (order.length) {
+          const s = order[0];
+          c.fillStyle = "#78ff5f";
+          c.beginPath();
+          c.arc(originX + s.c * stepX + cellW / 2, originY + s.r * stepY + cellH / 2, Math.max(3, scale * 2.2), 0, Math.PI * 2);
+          c.fill();
+        }
+      }
+      // labels
+      if (state.label !== "none") {
+        const numByCell = {};
+        order.forEach((p, i) => { numByCell[p.r + "," + p.c] = i + 1; });
+        const fs = Math.max(9, Math.min(cellW, cellH) * 0.16) * (state.labelSize / 100);
+        c.font = `700 ${fs}px 'Rajdhani', sans-serif`;
+        c.textAlign = "center"; c.textBaseline = "middle";
+        for (let r = 0; r < state.rows; r++) for (let cc = 0; cc < state.cols; cc++) {
+          const tx = originX + cc * stepX + cellW / 2, ty = originY + r * stepY + cellH / 2;
+          const text = state.label === "grid" ? `R${r + 1}C${cc + 1}` : String(numByCell[r + "," + cc] || "");
+          const pad = fs * 0.42;
+          const tw = c.measureText(text).width;
+          c.fillStyle = "rgba(5,7,12,0.62)";
+          roundRect(c, tx - tw / 2 - pad, ty - fs * 0.62, tw + pad * 2, fs * 1.24, fs * 0.3);
+          c.fill();
+          c.fillStyle = "#eaf6ff";
+          c.fillText(text, tx, ty);
+        }
+      }
+    }
+
+    function roundRect(c, x, y, w, h, r) {
+      c.beginPath();
+      c.moveTo(x + r, y);
+      c.arcTo(x + w, y, x + w, y + h, r);
+      c.arcTo(x + w, y + h, x, y + h, r);
+      c.arcTo(x, y + h, x, y, r);
+      c.arcTo(x, y, x + w, y, r);
+      c.closePath();
+    }
+    function hexA(hex, a) {
+      const h = hex.replace("#", "");
+      const n = parseInt(h.length === 3 ? h.split("").map(x => x + x).join("") : h, 16);
+      return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+    }
+
+    // ============================================================
+    //  ANIMATION LOOP
+    // ============================================================
+    function tick() {
+      updateMediaFrame();
+      buildFeed();
+      render();
+      if (media.type === "video" && media.el) syncTransport();
+      requestAnimationFrame(tick);
+    }
+
+    // ============================================================
+    //  STATS
+    // ============================================================
+    function updateStats() {
+      const W = contentW(), H = contentH(), total = W * H;
+      $("sRes").textContent = `${W} × ${H}`;
+      $("sTotal").innerHTML = `${total.toLocaleString()} <small>px</small>`;
+      const g = gcd(W, H);
+      $("sAspect").textContent = `${(W / H).toFixed(2)} : 1`;
+      const physW = (state.cols * state.cabW + (state.cols - 1) * state.gap) / 1000;
+      const physH = (state.rows * state.cabH + (state.rows - 1) * state.gap) / 1000;
+      $("sPhys").innerHTML = `${physW.toFixed(2)} × ${physH.toFixed(2)} <small>m</small>`;
+      $("sPitch").innerHTML = `${(state.cabW / state.pxW).toFixed(2)} <small>mm</small>`;
+      $("sCabs").textContent = state.cols * state.rows;
+      const gbps = total * 3 * 8 * 60 / 1e9;
+      $("sData").innerHTML = `${gbps.toFixed(2)} <small>Gbps</small>`;
+      $("sPorts").textContent = Math.max(1, Math.ceil(total / 655360));
+      $("sMedia").textContent = media.type === "pattern" ? "Test Pattern" : media.type === "video" ? "Video" : "Image";
+      $("stSub").textContent = `${state.cols} × ${state.rows} cabinets · ${W} × ${H} px`;
+      $("srcPill").textContent = media.type === "pattern" ? "Test Pattern" : media.type.toUpperCase();
+    }
+    function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+
+    // ============================================================
+    //  MEDIA LOADING
+    // ============================================================
+    function loadFile(file) {
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      if (file.type.startsWith("video")) {
+        const v = document.createElement("video");
+        v.src = url; v.loop = loopOn; v.muted = $("muteChk").checked; v.playsInline = true; v.crossOrigin = "anonymous";
+        v.addEventListener("loadedmetadata", () => {
+          media.type = "video"; media.el = v; media.w = v.videoWidth; media.h = v.videoHeight; media.ready = true;
+          media.name = file.name;
+          $("transport").classList.remove("disabled");
+          $("seek").max = 1000;
+          $("tcDur").textContent = fmtTime(v.duration);
+          setPlay(true);
+          afterMediaChange(file.name);
+        });
+      } else if (file.type.startsWith("image")) {
+        const img = new Image();
+        img.onload = () => {
+          media.type = "image"; media.el = img; media.w = img.naturalWidth; media.h = img.naturalHeight; media.ready = true;
+          media.name = file.name;
+          $("transport").classList.add("disabled");
+          setPlay(false);
+          afterMediaChange(file.name);
+        };
+        img.src = url;
+      } else { toast("Unsupported file type"); }
+    }
+    function afterMediaChange(name) {
+      $("mediaName").textContent = "Source: " + name;
+      updateStats();
+      toast("Loaded " + name);
+    }
+    function useTestPattern() {
+      if (media.el && media.type === "video") { media.el.pause(); }
+      media.type = "pattern"; media.el = null; media.w = 1920; media.h = 1080; media.name = "Live Test Pattern";
+      startTime = performance.now();
+      $("transport").classList.add("disabled");
+      $("mediaName").textContent = "Source: Live Test Pattern";
+      updateStats();
+    }
+
+    // ============================================================
+    //  TRANSPORT (video)
+    // ============================================================
+    let loopOn = true; let seeking = false;
+    function setPlay(play) {
+      const ic = $("playIc");
+      if (media.type !== "video" || !media.el) { ic.innerHTML = '<path d="M8 5v14l11-7z"/>'; return; }
+      if (play) { media.el.play().catch(()=>{}); ic.innerHTML = '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>'; }
+      else { media.el.pause(); ic.innerHTML = '<path d="M8 5v14l11-7z"/>'; }
+    }
+    function togglePlay() {
+      if (media.type !== "video" || !media.el) return;
+      if (media.el.paused) setPlay(true); else setPlay(false);
+    }
+    function syncTransport() {
+      const v = media.el; if (!v || !v.duration) return;
+      if (!seeking) $("seek").value = (v.currentTime / v.duration) * 1000;
+      $("tcCur").textContent = fmtTime(v.currentTime);
+    }
+    function fmtTime(s) {
+      if (!isFinite(s)) return "00:00.0";
+      const m = Math.floor(s / 60), sec = (s % 60);
+      return `${String(m).padStart(2, "0")}:${sec.toFixed(1).padStart(4, "0")}`;
+    }
+
+    // ============================================================
+    //  EXPORT
+    // ============================================================
+    function exportFeed() {
+      buildFeed();
+      const url = feedCanvas.toDataURL("image/png");
+      download(url, `feed_${contentW()}x${contentH()}.png`);
+      toast(`Exported feed ${contentW()}×${contentH()}`);
+    }
+    function exportMap() {
+      // render the gapped wall + overlay at native pixel scale (scale = 1px LED -> 1px image, capped)
+      const target = 2400; // max long edge for the map image
+      const base = wallScreenSize(1);
+      let s = Math.min(3, target / Math.max(base.w, base.h));
+      s = Math.max(0.5, s);
+      const w = Math.ceil(base.w * s), h = Math.ceil(base.h * s);
+      const ec = document.createElement("canvas"); ec.width = w; ec.height = h;
+      const e = ec.getContext("2d");
+      e.fillStyle = state.seamColor; e.fillRect(0, 0, w, h);
+      const cellW = state.pxW * s, cellH = state.pxH * s;
+      const stepX = cellW + gapPx() * s, stepY = cellH + gapPx() * s;
+      buildFeed();
+      e.imageSmoothingEnabled = s < 3;
+      for (let r = 0; r < state.rows; r++) for (let cc = 0; cc < state.cols; cc++) {
+        e.drawImage(feedCanvas, cc * state.pxW, r * state.pxH, state.pxW, state.pxH, cc * stepX, r * stepY, cellW, cellH);
+        if (state.dim && (state.showGrid || state.showRoute)) { e.fillStyle = "rgba(5,7,12,0.35)"; e.fillRect(cc * stepX, r * stepY, cellW, cellH); }
+      }
+      drawOverlay(e, 0, 0, s, cellW, cellH, stepX, stepY, true);
+      download(ec.toDataURL("image/png"), `ledmap_${state.cols}x${state.rows}.png`);
+      toast("Exported wall map");
+    }
+    function download(url, name) {
+      const a = document.createElement("a"); a.href = url; a.download = name; a.click();
+    }
+
+    // ============================================================
+    //  TOAST
+    // ============================================================
+    let toastTimer;
+    function toast(msg) {
+      const t = $("toast"); t.textContent = msg; t.classList.add("show");
+      clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 2000);
+    }
+
+    // ============================================================
+    //  PERSISTENCE
+    // ============================================================
+    function save() { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {} }
+    function load() {
+      try { const s = JSON.parse(localStorage.getItem(STORE) || "null"); if (s) Object.assign(state, s); } catch (e) {}
+    }
+
+    // ============================================================
+    //  BIND CONTROLS
+    // ============================================================
+    function num(id) { return parseFloat($(id).value) || 0; }
+    function syncInputsFromState() {
+      $("cabW").value = state.cabW; $("cabH").value = state.cabH;
+      $("pxW").value = state.pxW; $("pxH").value = state.pxH;
+      $("cols").value = state.cols; $("rows").value = state.rows; $("gap").value = state.gap;
+      $("fit").value = state.fit; $("route").value = state.route; $("startCorner").value = state.startCorner;
+      $("mScale").value = state.mScale; $("mOffX").value = state.mOffX; $("mOffY").value = state.mOffY;
+      $("showGrid").checked = state.showGrid; $("showRoute").checked = state.showRoute;
+      $("showPixelGrid").checked = state.showPixelGrid; $("dim").checked = state.dim;
+      $("gridColor").value = state.gridColor; $("seamColor").value = state.seamColor;
+      $("gridOpacity").value = state.gridOpacity; $("labelSize").value = state.labelSize;
+      $("scaleVal").textContent = state.mScale + "%"; $("ox").textContent = state.mOffX; $("oy").textContent = state.mOffY;
+      $("gridOpVal").textContent = state.gridOpacity + "%"; $("labelSzVal").textContent = state.labelSize + "%";
+      setSeg("rotSeg", "rot", state.rot); setSeg("labelSeg", "label", state.label);
+    }
+    function setSeg(segId, key, val) {
+      $(segId).querySelectorAll("button").forEach(b => {
+        const v = b.dataset.rot !== undefined ? parseInt(b.dataset.rot) : b.dataset.label;
+        b.classList.toggle("active", String(v) === String(val));
+      });
+    }
+    function readDims() {
+      state.cabW = num("cabW"); state.cabH = num("cabH");
+      state.pxW = Math.max(1, Math.round(num("pxW"))); state.pxH = Math.max(1, Math.round(num("pxH")));
+      state.cols = Math.max(1, Math.round(num("cols"))); state.rows = Math.max(1, Math.round(num("rows")));
+      state.gap = num("gap");
+      $("preset").value = "";
+      computeFitZoom(); updateStats(); save();
+    }
+
+    function bind() {
+      ["cabW","cabH","pxW","pxH","cols","rows","gap"].forEach(id => $(id).addEventListener("input", readDims));
+      $("preset").addEventListener("change", (e) => {
+        if (!e.target.value) return;
+        const [cw, ch, pw, ph] = e.target.value.split(",").map(Number);
+        state.cabW = cw; state.cabH = ch; state.pxW = pw; state.pxH = ph;
+        syncInputsFromState(); computeFitZoom(); updateStats(); save();
+      });
+
+      $("fit").addEventListener("change", e => { state.fit = e.target.value; save(); });
+      $("route").addEventListener("change", e => { state.route = e.target.value; save(); });
+      $("startCorner").addEventListener("change", e => { state.startCorner = e.target.value; save(); });
+
+      $("rotSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.rot = parseInt(b.dataset.rot); setSeg("rotSeg","rot",state.rot); save(); });
+      $("labelSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.label = b.dataset.label; setSeg("labelSeg","label",state.label); save(); });
+
+      $("mScale").addEventListener("input", e => { state.mScale = +e.target.value; $("scaleVal").textContent = state.mScale + "%"; save(); });
+      $("mOffX").addEventListener("input", e => { state.mOffX = +e.target.value; $("ox").textContent = state.mOffX; save(); });
+      $("mOffY").addEventListener("input", e => { state.mOffY = +e.target.value; $("oy").textContent = state.mOffY; save(); });
+      $("centerMedia").addEventListener("click", () => { state.mOffX = 0; state.mOffY = 0; syncInputsFromState(); save(); });
+      $("resetMedia").addEventListener("click", () => { state.mScale = 100; state.mOffX = 0; state.mOffY = 0; state.rot = 0; state.fit = "cover"; syncInputsFromState(); save(); });
+
+      ["showGrid","showRoute","showPixelGrid","dim"].forEach(id => $(id).addEventListener("change", e => { state[id] = e.target.checked; save(); }));
+      $("gridColor").addEventListener("input", e => { state.gridColor = e.target.value; save(); });
+      $("seamColor").addEventListener("input", e => { state.seamColor = e.target.value; save(); });
+      $("gridOpacity").addEventListener("input", e => { state.gridOpacity = +e.target.value; $("gridOpVal").textContent = state.gridOpacity + "%"; save(); });
+      $("labelSize").addEventListener("input", e => { state.labelSize = +e.target.value; $("labelSzVal").textContent = state.labelSize + "%"; save(); });
+
+      // media buttons
+      $("loadBtn").addEventListener("click", () => $("fileInput").click());
+      $("dropzone").addEventListener("click", () => $("fileInput").click());
+      $("testBtn").addEventListener("click", useTestPattern);
+      $("fileInput").addEventListener("change", e => loadFile(e.target.files[0]));
+      $("exportFeedBtn").addEventListener("click", exportFeed);
+      $("exportMapBtn").addEventListener("click", exportMap);
+
+      // drag-drop
+      const dz = $("dropzone");
+      ["dragenter","dragover"].forEach(ev => { dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add("drag"); }); wrap.addEventListener(ev, e => e.preventDefault()); });
+      ["dragleave","drop"].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove("drag"); }));
+      dz.addEventListener("drop", e => loadFile(e.dataTransfer.files[0]));
+      wrap.addEventListener("drop", e => { e.preventDefault(); if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); });
+
+      // transport
+      $("playBtn").addEventListener("click", togglePlay);
+      $("loopBtn").addEventListener("click", () => { loopOn = !loopOn; if (media.el) media.el.loop = loopOn; $("loopBtn").style.color = loopOn ? "var(--cyan)" : "var(--muted)"; toast(loopOn ? "Loop on" : "Loop off"); });
+      $("speed").addEventListener("change", e => { if (media.el) media.el.playbackRate = +e.target.value; });
+      $("muteChk").addEventListener("change", e => { if (media.el) media.el.muted = e.target.checked; });
+      const seek = $("seek");
+      seek.addEventListener("input", () => { seeking = true; if (media.el && media.el.duration) { media.el.currentTime = (seek.value / 1000) * media.el.duration; } });
+      seek.addEventListener("change", () => { seeking = false; });
+
+      // zoom buttons
+      $("zoomIn").addEventListener("click", () => { view.zoom = Math.min(8, view.zoom * 1.2); });
+      $("zoomOut").addEventListener("click", () => { view.zoom = Math.max(0.15, view.zoom / 1.2); });
+      $("zoomFit").addEventListener("click", () => { view.zoom = 1; view.panX = 0; view.panY = 0; computeFitZoom(); });
+      $("zoomOne").addEventListener("click", () => { computeFitZoom(); view.zoom = 1 / view.fitZoom; view.panX = 0; view.panY = 0; });
+
+      // pan + wheel zoom
+      let dragging = false, sx = 0, sy = 0, spx = 0, spy = 0;
+      wrap.addEventListener("mousedown", e => { if (e.button !== 0) return; dragging = true; sx = e.clientX; sy = e.clientY; spx = view.panX; spy = view.panY; });
+      window.addEventListener("mousemove", e => { if (!dragging) return; view.panX = spx + (e.clientX - sx); view.panY = spy + (e.clientY - sy); });
+      window.addEventListener("mouseup", () => dragging = false);
+      wrap.addEventListener("wheel", e => { e.preventDefault(); const f = e.deltaY < 0 ? 1.1 : 1 / 1.1; view.zoom = Math.max(0.15, Math.min(8, view.zoom * f)); }, { passive: false });
+
+      window.addEventListener("resize", () => { computeFitZoom(); });
+
+      // keyboard
+      window.addEventListener("keydown", e => {
+        if (e.target.matches("input, select, textarea")) return;
+        if (e.code === "Space") { e.preventDefault(); togglePlay(); }
+        else if (e.key === "f") $("zoomFit").click();
+        else if (e.key === "+" || e.key === "=") $("zoomIn").click();
+        else if (e.key === "-") $("zoomOut").click();
+      });
+    }
+
+    // ============================================================
+    //  NEON GLASS CONTEXT MENU
+    // ============================================================
+    function initMenu() {
+      const menu = $("pmMenu"), search = $("pmSearch");
+      const items = Array.from(menu.querySelectorAll("li"));
+      const PAD = { x: 16, y: 16 };
+      let cleanupTimer;
+
+      function openAt(x, y) {
+        menu.classList.add("open");
+        const box = menu.getBoundingClientRect();
+        if (x + box.width > innerWidth - PAD.x) x = innerWidth - box.width - PAD.x;
+        if (y + box.height > innerHeight - PAD.y) y = innerHeight - box.height - PAD.y;
+        menu.style.left = Math.max(PAD.x, x) + "px";
+        menu.style.top = Math.max(PAD.y, y) + "px";
+        clearTimeout(cleanupTimer);
+      }
+      function close() { menu.classList.remove("open"); cleanupTimer = setTimeout(reset, 220); }
+      function reset() { search.value = ""; filter(""); items.forEach(el => el.classList.remove("selected")); }
+      function filter(q) {
+        q = q.trim().toLowerCase(); let shown = 0;
+        items.forEach(el => { const m = !q || el.textContent.trim().toLowerCase().includes(q); el.classList.toggle("nm-hidden", !m); if (m) shown++; });
+        menu.querySelectorAll(".nm-section").forEach(sec => { sec.style.display = sec.querySelectorAll("li:not(.nm-hidden)").length ? "" : "none"; });
+        menu.querySelectorAll("hr").forEach(hr => hr.style.display = q ? "none" : "");
+        menu.classList.toggle("nm-no-results", shown === 0);
+      }
+      function run(cmd) {
+        if (cmd === "play") togglePlay();
+        else if (cmd === "loop") $("loopBtn").click();
+        else if (cmd.startsWith("fit:")) { state.fit = cmd.split(":")[1]; $("fit").value = state.fit; save(); }
+        else if (cmd.startsWith("toggle:")) { const k = cmd.split(":")[1]; state[k] = !state[k]; $(k).checked = state[k]; save(); }
+        else if (cmd === "cycleLabel") { const order = ["number","grid","none"]; state.label = order[(order.indexOf(state.label)+1)%3]; setSeg("labelSeg","label",state.label); save(); toast("Labels: " + state.label); }
+        else if (cmd === "zoomFit") $("zoomFit").click();
+        else if (cmd === "zoomOne") $("zoomOne").click();
+        else if (cmd === "exportFeed") exportFeed();
+        else if (cmd === "exportMap") exportMap();
+        else if (cmd === "fullscreen") { const el = $("canvasWrap"); (el.requestFullscreen ? el.requestFullscreen() : 0); }
+      }
+
+      wrap.addEventListener("contextmenu", e => { e.preventDefault(); openAt(e.clientX, e.clientY); requestAnimationFrame(() => search.focus()); });
+      menu.addEventListener("click", e => { const li = e.target.closest("li"); if (!li || li.classList.contains("nm-hidden")) return; items.forEach(el => el.classList.remove("selected")); li.classList.add("selected"); run(li.dataset.cmd); setTimeout(close, 170); });
+      search.addEventListener("input", e => filter(e.target.value));
+      search.addEventListener("keydown", e => { if (e.key === "Enter") { const f = items.find(el => !el.classList.contains("nm-hidden")); if (f) f.click(); } });
+      document.addEventListener("pointerdown", e => { if (!menu.contains(e.target) && menu.classList.contains("open")) close(); });
+      document.addEventListener("keydown", e => { if (e.key === "Escape" && menu.classList.contains("open")) close(); });
+      items.forEach(li => li.addEventListener("keydown", e => {
+        const vis = items.filter(el => !el.classList.contains("nm-hidden")); const i = vis.indexOf(li);
+        if (e.key === "ArrowDown") { e.preventDefault(); (vis[i+1]||vis[0]).focus(); }
+        else if (e.key === "ArrowUp") { e.preventDefault(); (vis[i-1]||vis[vis.length-1]).focus(); }
+        else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); li.click(); }
+      }));
+    }
+
+    // ============================================================
+    //  INIT
+    // ============================================================
+    load();
+    syncInputsFromState();
+    bind();
+    initMenu();
+    computeFitZoom();
+    updateStats();
+    requestAnimationFrame(tick);
+  })();
+  </script>
+</body>
+</html>

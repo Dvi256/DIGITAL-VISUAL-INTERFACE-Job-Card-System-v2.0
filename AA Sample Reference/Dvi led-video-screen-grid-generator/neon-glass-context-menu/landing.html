@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GRIDFORGE — Neon LED Screen Mapper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Asap:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   GRIDFORGE — neon-glass landing
+   Glow/border technique adapted from the Neon Glass Context Menu
+   (conic-gradient borders + noise-masked color bleed), restyled
+   into an n8n-style node hero + ftmo-style premium glass cards.
+   ============================================================ */
+
+:root{
+  --hue1: 280;            /* magenta / electric violet */
+  --hue2: 192;            /* cyan */
+  --border: 1px;
+  --radius: 22px;
+  --ease: cubic-bezier(0.5, 1, 0.89, 1);
+  --bg: #06070d;
+  --ink: #eaf1ff;
+  --muted: #8b94ad;
+  --line: hsl(var(--hue2) 12% 16%);
+  --noise: url('https://assets.codepen.io/13471/noise-base.png');
+}
+
+*{ box-sizing:border-box; }
+html{ scroll-behavior:smooth; }
+
+body{
+  margin:0;
+  min-height:100svh;
+  font-family:'Asap', sans-serif;
+  color:var(--ink);
+  background:
+    radial-gradient(900px 520px at 80% -8%, hsl(var(--hue1) 70% 14% / .55), transparent 60%),
+    radial-gradient(820px 520px at -5% 10%, hsl(var(--hue2) 70% 14% / .45), transparent 55%),
+    var(--bg);
+  overflow-x:hidden;
+}
+
+a{ color:inherit; text-decoration:none; }
+h1,h2,h3{ font-family:'Space Grotesk', sans-serif; letter-spacing:-.02em; margin:0; }
+.mono{ font-family:'Space Mono', monospace; }
+
+.wrap{ width:min(1180px, 92vw); margin-inline:auto; }
+
+/* ---------- animated node-mesh background (n8n vibe) ---------- */
+#mesh{ position:fixed; inset:0; z-index:0; opacity:.6; pointer-events:none; }
+
+/* ---------- reusable neon-glass shell ---------- */
+.glass{
+  position:relative;
+  border-radius:var(--radius);
+  border:var(--border) solid hsl(var(--hue2) 12% 20%);
+  background:
+    linear-gradient(235deg, hsl(var(--hue1) 50% 10% / .8), hsl(var(--hue1) 50% 10% / 0) 33%),
+    linear-gradient(45deg,  hsl(var(--hue2) 50% 10% / .8), hsl(var(--hue2) 50% 10% / 0) 33%),
+    linear-gradient(hsl(220deg 25% 5% / .72));
+  backdrop-filter: blur(12px);
+  box-shadow: hsl(var(--hue2) 50% 2%) 0 10px 16px -8px, hsl(var(--hue2) 50% 4%) 0 20px 36px -14px;
+  isolation:isolate;
+}
+.glass > .inner{ position:relative; z-index:6; }
+
+/* the four glow / shine pieces, lifted from the pen and made generic */
+.shine,.glow{ pointer-events:none; position:absolute; display:block; aspect-ratio:1; width:75%; height:auto; }
+.shine{ --hue:var(--hue1); }
+.shine-b{ --hue:var(--hue2); --conic:135deg; }
+.glow{ --hue:var(--hue1); }
+.glow-b{ --hue:var(--hue2); --conic:135deg; }
+
+.shine,.shine::before,.shine::after{
+  border-radius:0; border-top-right-radius:inherit; border-bottom-left-radius:inherit;
+  border:1px solid transparent;
+  right:calc(var(--border) * -1); top:calc(var(--border) * -1); left:auto;
+  z-index:1; --start:12%;
+  background:conic-gradient(from var(--conic,-45deg) at center in oklch,
+    transparent var(--start,0%), hsl(var(--hue), var(--sat,80%), var(--lit,60%)), transparent var(--end,50%)) border-box;
+  -webkit-mask:linear-gradient(transparent),linear-gradient(black);
+  mask:linear-gradient(transparent),linear-gradient(black);
+  -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
+  -webkit-mask-clip:padding-box,border-box; mask-clip:padding-box,border-box;
+  -webkit-mask-composite:source-out; mask-composite:subtract;
+}
+.shine::before,.shine::after{ content:""; width:auto; inset:-2px; -webkit-mask:none; mask:none; }
+.shine::after{ z-index:2; --start:17%; --end:33%;
+  background:conic-gradient(from var(--conic,-45deg) at center in oklch,
+    transparent var(--start,0%), hsl(var(--hue),var(--sat,80%),var(--lit,85%)), transparent var(--end,50%)); }
+.shine-b{ top:auto; bottom:calc(var(--border) * -1); left:calc(var(--border) * -1); right:auto; }
+
+.glow{
+  border-top-right-radius:calc(var(--radius)*2.5); border-bottom-left-radius:calc(var(--radius)*2.5);
+  border:calc(var(--radius)*1.25) solid transparent; inset:calc(var(--radius)*-2);
+  left:auto; bottom:auto;
+  -webkit-mask:var(--noise); mask:var(--noise); -webkit-mask-mode:luminance; mask-mode:luminance;
+  -webkit-mask-size:29%; mask-size:29%;
+  filter:blur(12px) saturate(1.25) brightness(.55); mix-blend-mode:plus-lighter; z-index:3;
+}
+.glow-b{ inset:calc(var(--radius)*-2); top:auto; right:auto; }
+.glow::before,.glow::after{ content:""; position:absolute; inset:0; border:inherit; border-radius:inherit;
+  background:conic-gradient(from var(--conic,-45deg) at center in oklch,
+    transparent var(--start,0%), hsl(var(--hue),var(--sat,95%),var(--lit,60%)), transparent var(--end,50%)) border-box;
+  -webkit-mask:linear-gradient(transparent),linear-gradient(black);
+  mask:linear-gradient(transparent),linear-gradient(black);
+  -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
+  -webkit-mask-clip:padding-box,border-box; mask-clip:padding-box,border-box;
+  -webkit-mask-composite:source-out; mask-composite:subtract;
+  filter:saturate(2) brightness(1); }
+.glow::after{ --lit:70%; --sat:100%; --start:15%; --end:35%;
+  border-width:calc(var(--radius)*1.75); border-radius:calc(var(--radius)*2.75);
+  inset:calc(var(--radius)*-.25); z-index:4; opacity:.75; }
+.glow-bright{ --lit:80%; --sat:100%; --start:13%; --end:37%;
+  border-width:5px; border-radius:calc(var(--radius)+2px); inset:-7px; left:auto;
+  filter:blur(2px) brightness(.7); }
+.glow-bright::after{ content:none; }
+.glow-bright.glow-b{ inset:-7px; right:auto; top:auto; }
+
+/* hover lift for interactive cards */
+.glass.lift{ transition:transform .35s var(--ease), box-shadow .35s var(--ease); }
+.glass.lift:hover{ transform:translateY(-6px);
+  box-shadow: hsl(var(--hue1) 60% 30% / .4) 0 18px 40px -12px, hsl(var(--hue2) 60% 30% / .35) 0 28px 60px -18px; }
+
+/* ---------- top nav ---------- */
+header.nav{ position:sticky; top:0; z-index:30;
+  backdrop-filter:blur(10px); background:hsl(220 30% 5% / .55);
+  border-bottom:1px solid hsl(var(--hue2) 12% 14%); }
+.nav .wrap{ display:flex; align-items:center; gap:1.5rem; height:66px; }
+.logo{ display:flex; align-items:center; gap:.6rem; font-family:'Space Grotesk'; font-weight:700; font-size:1.15rem; }
+.logo .dot{ width:26px; height:26px; border-radius:8px; display:grid; place-items:center;
+  background:linear-gradient(135deg, hsl(var(--hue1) 90% 60%), hsl(var(--hue2) 90% 55%));
+  box-shadow:0 0 18px hsl(var(--hue1) 90% 60% / .6); }
+.logo .dot svg{ width:15px; height:15px; }
+.nav nav{ display:flex; gap:1.4rem; margin-left:1rem; color:var(--muted); font-size:.92rem; }
+.nav nav a{ transition:color .2s; }
+.nav nav a:hover{ color:var(--ink); }
+.nav .spacer{ flex:1; }
+
+/* buttons */
+.btn{ --bh:var(--hue1); display:inline-flex; align-items:center; gap:.5rem; cursor:pointer;
+  font-family:'Space Grotesk'; font-weight:600; font-size:.92rem; line-height:1;
+  padding:.8em 1.25em; border-radius:12px; border:1px solid transparent; transition:.25s var(--ease); }
+.btn.ghost{ color:var(--ink); border-color:hsl(var(--hue2) 14% 22%); background:hsl(var(--hue2) 20% 10% / .4); }
+.btn.ghost:hover{ border-color:hsl(var(--hue2) 50% 45%); color:#fff; box-shadow:0 0 0 4px hsl(var(--hue2) 60% 40% / .12); }
+.btn.solid{ color:#06070d;
+  background:linear-gradient(135deg, hsl(var(--hue1) 95% 68%), hsl(var(--hue2) 95% 60%));
+  box-shadow:0 8px 26px -8px hsl(var(--hue1) 90% 55% / .7), inset 0 0 0 1px hsl(0 0 100% / .25); }
+.btn.solid:hover{ filter:brightness(1.08); transform:translateY(-2px);
+  box-shadow:0 14px 36px -8px hsl(var(--hue1) 90% 55% / .85), inset 0 0 0 1px hsl(0 0 100% / .35); }
+
+/* ---------- hero ---------- */
+.hero{ position:relative; z-index:5; padding:5.5rem 0 3rem; }
+.eyebrow{ display:inline-flex; align-items:center; gap:.55rem; font-family:'Space Mono'; font-size:.74rem;
+  letter-spacing:.18em; text-transform:uppercase; color:hsl(var(--hue2) 60% 72%);
+  padding:.45em .9em; border-radius:999px; border:1px solid hsl(var(--hue2) 30% 25% / .6);
+  background:hsl(var(--hue2) 40% 12% / .5); }
+.eyebrow .pulse{ width:7px; height:7px; border-radius:50%; background:hsl(var(--hue2) 90% 60%);
+  box-shadow:0 0 10px hsl(var(--hue2) 90% 60%); animation:pulse 1.6s infinite; }
+@keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:.25} }
+
+.hero h1{ font-size:clamp(2.6rem, 6vw, 4.7rem); line-height:1.02; margin:1.2rem 0 0; max-width:14ch; }
+.hero h1 .grad{
+  background:linear-gradient(115deg, hsl(var(--hue1) 95% 72%), hsl(var(--hue2) 95% 65%) 60%, hsl(var(--hue1) 95% 75%));
+  -webkit-background-clip:text; background-clip:text; color:transparent; }
+.hero p.lede{ color:var(--muted); font-size:clamp(1rem,1.6vw,1.18rem); max-width:46ch; margin:1.3rem 0 0; line-height:1.6; }
+.hero .cta{ display:flex; gap:.85rem; margin-top:2rem; flex-wrap:wrap; }
+.hero .trust{ display:flex; gap:1.6rem; margin-top:2.4rem; color:var(--muted); font-size:.85rem; flex-wrap:wrap; }
+.hero .trust b{ color:var(--ink); }
+
+.hero-grid{ display:grid; grid-template-columns:1.05fr .95fr; gap:2.5rem; align-items:center; }
+
+/* the floating preview panel — the product mock as a glass card */
+.preview{ padding:1.1rem; }
+.preview .bar{ display:flex; gap:.4rem; align-items:center; margin-bottom:.9rem; }
+.preview .bar i{ width:11px; height:11px; border-radius:50%; background:hsl(var(--hue2) 10% 30%); display:block; }
+.preview .bar i:nth-child(1){ background:hsl(350 80% 60%); }
+.preview .bar i:nth-child(2){ background:hsl(45 90% 60%); }
+.preview .bar i:nth-child(3){ background:hsl(140 70% 55%); }
+.preview .bar span{ margin-left:.5rem; font-family:'Space Mono'; font-size:.72rem; color:var(--muted); }
+
+.ledgrid{ display:grid; grid-template-columns:repeat(12,1fr); gap:5px; aspect-ratio:16/9;
+  padding:10px; border-radius:14px; background:hsl(220 40% 4%); border:1px solid hsl(var(--hue2) 12% 16%); }
+.ledgrid .px{ border-radius:3px; background:hsl(var(--hue2) 30% 12%); position:relative; transition:background .4s; }
+.preview .meta{ display:flex; justify-content:space-between; margin-top:.9rem; font-family:'Space Mono'; font-size:.74rem; color:var(--muted); }
+.preview .meta b{ color:hsl(var(--hue2) 70% 70%); }
+
+/* ---------- stat band (ftmo vibe) ---------- */
+.stats{ position:relative; z-index:5; margin-top:3rem; }
+.stats .row{ display:grid; grid-template-columns:repeat(4,1fr); gap:1.2rem; }
+.stat{ padding:1.4rem 1.5rem; }
+.stat .num{ font-family:'Space Grotesk'; font-weight:700; font-size:2.2rem; line-height:1;
+  background:linear-gradient(120deg, hsl(var(--hue1) 90% 72%), hsl(var(--hue2) 90% 66%));
+  -webkit-background-clip:text; background-clip:text; color:transparent; }
+.stat .lab{ color:var(--muted); font-size:.85rem; margin-top:.5rem; }
+
+/* ---------- section heads ---------- */
+section.block{ position:relative; z-index:5; padding:5.5rem 0; }
+.sec-head{ text-align:center; max-width:60ch; margin:0 auto 3rem; }
+.sec-head .eyebrow{ margin-bottom:1rem; }
+.sec-head h2{ font-size:clamp(1.9rem,3.6vw,2.9rem); }
+.sec-head p{ color:var(--muted); margin-top:1rem; line-height:1.6; }
+
+/* feature cards */
+.features{ display:grid; grid-template-columns:repeat(3,1fr); gap:1.3rem; }
+.feature{ padding:1.6rem; }
+.feature .ico{ width:46px; height:46px; border-radius:12px; display:grid; place-items:center; margin-bottom:1rem;
+  background:linear-gradient(135deg, hsl(var(--hue1) 60% 20%), hsl(var(--hue2) 60% 18%));
+  border:1px solid hsl(var(--hue2) 30% 30% / .5); color:hsl(var(--hue2) 80% 75%); }
+.feature h3{ font-size:1.18rem; }
+.feature p{ color:var(--muted); font-size:.92rem; line-height:1.6; margin:.6rem 0 0; }
+
+/* pricing tiers (ftmo challenge-card vibe) */
+.tiers{ display:grid; grid-template-columns:repeat(3,1fr); gap:1.3rem; align-items:stretch; }
+.tier{ padding:1.8rem; display:flex; flex-direction:column; }
+.tier.feat{ --hue1:300; }
+.tier .tag{ font-family:'Space Mono'; font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+.tier .price{ font-family:'Space Grotesk'; font-weight:700; font-size:2.6rem; margin:.6rem 0 .2rem; }
+.tier .price span{ font-size:1rem; color:var(--muted); font-weight:400; }
+.tier ul{ list-style:none; padding:0; margin:1.3rem 0; display:flex; flex-direction:column; gap:.75rem; flex:1; }
+.tier li{ display:flex; gap:.6rem; align-items:flex-start; font-size:.92rem; color:#cfd8ee; }
+.tier li svg{ flex:none; width:18px; height:18px; color:hsl(var(--hue2) 80% 65%); margin-top:1px; }
+.badge-feat{ position:absolute; top:-12px; left:50%; transform:translateX(-50%); z-index:7;
+  font-family:'Space Mono'; font-size:.68rem; letter-spacing:.12em; text-transform:uppercase;
+  padding:.4em .9em; border-radius:999px; color:#06070d;
+  background:linear-gradient(135deg, hsl(var(--hue1) 95% 70%), hsl(var(--hue2) 95% 62%));
+  box-shadow:0 6px 20px -6px hsl(var(--hue1) 90% 60% / .8); }
+
+/* CTA closer */
+.closer{ position:relative; z-index:5; padding:2rem 0 6rem; }
+.closer .glass{ padding:3.2rem; text-align:center; }
+.closer h2{ font-size:clamp(1.9rem,4vw,3rem); }
+.closer p{ color:var(--muted); max-width:50ch; margin:1rem auto 2rem; line-height:1.6; }
+
+footer{ position:relative; z-index:5; border-top:1px solid hsl(var(--hue2) 12% 12%); padding:2.5rem 0;
+  color:var(--muted); font-size:.85rem; }
+footer .wrap{ display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; align-items:center; }
+
+/* reveal on scroll */
+.reveal{ opacity:0; transform:translateY(24px); transition:opacity .7s var(--ease), transform .7s var(--ease); }
+.reveal.in{ opacity:1; transform:none; }
+
+/* hue controls (homage to the original pen) */
+.hue-dock{ position:fixed; bottom:18px; right:18px; z-index:40; display:flex; gap:.6rem; align-items:center;
+  padding:.6rem .8rem; border-radius:14px; backdrop-filter:blur(10px);
+  background:hsl(220 30% 6% / .7); border:1px solid hsl(var(--hue2) 14% 18%); font-size:.74rem; color:var(--muted); }
+.hue-dock input[type=range]{ width:90px; accent-color:hsl(var(--hue2) 80% 60%); }
+.hue-dock button{ cursor:pointer; font-family:'Space Mono'; font-size:.72rem; color:var(--ink);
+  background:hsl(var(--hue1) 40% 16%); border:1px solid hsl(var(--hue1) 40% 30%); border-radius:8px; padding:.4em .7em; }
+
+@media (max-width:920px){
+  .hero-grid{ grid-template-columns:1fr; }
+  .stats .row{ grid-template-columns:repeat(2,1fr); }
+  .features,.tiers{ grid-template-columns:1fr; }
+  .nav nav{ display:none; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="mesh"></canvas>
+
+<!-- ============ NAV ============ -->
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="#">
+      <span class="dot">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#06070d" stroke-width="2.4"><path d="M4 4h16v16H4z"/><path d="M9 4v16M15 4v16M4 9h16M4 15h16"/></svg>
+      </span>
+      GRIDFORGE
+    </a>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="#how">Workflow</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#" onclick="openPalette();return false;">⌘ Command</a>
+    </nav>
+    <span class="spacer"></span>
+    <a class="btn ghost" href="#">Sign in</a>
+    <a class="btn solid" href="#pricing">Launch the mapper</a>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<div class="hero wrap">
+  <div class="hero-grid">
+    <div class="reveal">
+      <span class="eyebrow"><span class="pulse"></span> Pixel-perfect LED mapping</span>
+      <h1>Map any <span class="grad">LED video wall</span> in minutes, not spreadsheets.</h1>
+      <p class="lede">GridForge turns cabinet counts, pixel pitch and processor limits into a clean, send-ready grid — drag panels, auto-balance ports, and export a map your processor actually understands.</p>
+      <div class="cta">
+        <a class="btn solid" href="#pricing">Start mapping free →</a>
+        <a class="btn ghost" href="#how">See the workflow</a>
+      </div>
+      <div class="trust">
+        <span><b>12,400+</b> walls mapped</span>
+        <span><b>0</b> dead pixels shipped</span>
+        <span><b>Novastar · Brompton · Colorlight</b> presets</span>
+      </div>
+    </div>
+
+    <!-- product mock as a neon glass panel -->
+    <div class="reveal">
+      <div class="glass preview">
+        <span class="shine"></span><span class="shine shine-b"></span>
+        <span class="glow"></span><span class="glow glow-b"></span>
+        <span class="glow glow-bright"></span><span class="glow glow-bright glow-b"></span>
+        <div class="inner">
+          <div class="bar"><i></i><i></i><i></i><span class="mono">wall_main · 7680×4320 · P2.6</span></div>
+          <div class="ledgrid" id="ledgrid"></div>
+          <div class="meta"><span>36 cabinets · 6 ports</span><span>load <b>92%</b> balanced</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- stat band -->
+  <div class="stats">
+    <div class="row">
+      <div class="glass stat reveal"><div class="inner"><div class="num" data-count="8294400">0</div><div class="lab">Pixels routed per second</div></div></div>
+      <div class="glass stat reveal"><div class="inner"><div class="num" data-count="60" data-suffix="s">0</div><div class="lab">Avg. time to a full map</div></div></div>
+      <div class="glass stat reveal"><div class="inner"><div class="num" data-count="98" data-suffix="%">0</div><div class="lab">Port utilisation, auto-tuned</div></div></div>
+      <div class="glass stat reveal"><div class="inner"><div class="num" data-count="40" data-suffix="+">0</div><div class="lab">Processor presets included</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ FEATURES ============ -->
+<section class="block wrap" id="features">
+  <div class="sec-head reveal">
+    <span class="eyebrow"><span class="pulse"></span> Everything on one canvas</span>
+    <h2>Built for the people who actually hang the panels.</h2>
+    <p>No more counting cabinets on a napkin. GridForge keeps geometry, data routing and power on a single live canvas.</p>
+  </div>
+  <div class="features">
+    <div class="glass feature lift reveal"><span class="shine"></span><span class="glow glow-bright"></span>
+      <div class="inner">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+        <h3>Drag-snap cabinets</h3>
+        <p>Drop panels onto a magnetic grid that snaps to real pixel pitch. Irregular and creative shapes welcome — not just rectangles.</p>
+      </div>
+    </div>
+    <div class="glass feature lift reveal"><span class="shine shine-b"></span><span class="glow glow-bright glow-b"></span>
+      <div class="inner">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h6l2 3 2-3h6"/><circle cx="4" cy="7" r="1.6"/><circle cx="20" cy="7" r="1.6"/><path d="M12 10v10"/></svg></div>
+        <h3>Auto port balancing</h3>
+        <p>Tell it the processor and pixel budget; GridForge distributes cabinets across outputs so no port ever redlines.</p>
+      </div>
+    </div>
+    <div class="glass feature lift reveal"><span class="shine"></span><span class="glow glow-bright"></span>
+      <div class="inner">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="8"/></svg></div>
+        <h3>Live power & weight</h3>
+        <p>Each cabinet carries its draw and mass. Totals roll up live so the rigger and the electrician sign off the same number.</p>
+      </div>
+    </div>
+    <div class="glass feature lift reveal"><span class="shine shine-b"></span><span class="glow glow-bright glow-b"></span>
+      <div class="inner">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 17l6-6 4 4 6-8"/><path d="M4 21h16"/></svg></div>
+        <h3>One-click export</h3>
+        <p>Push to Novastar, Brompton or Colorlight layouts, or hand over a clean PDF the on-site crew can read at 2am.</p>
+      </div>
+    </div>
+    <div class="glass feature lift reveal"><span class="shine"></span><span class="glow glow-bright"></span>
+      <div class="inner">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg></div>
+        <h3>Command palette</h3>
+        <p>Press <kbd class="mono">⌘K</kbd> anywhere. Search panels, jump to a port, change pitch — the whole tool from the keyboard.</p>
+      </div>
+    </div>
+    <div class="glass feature lift reveal"><span class="shine shine-b"></span><span class="glow glow-bright glow-b"></span>
+      <div class="inner">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13A4 4 0 0119 7"/></svg></div>
+        <h3>Share & version</h3>
+        <p>Every map gets a link and a history. Roll back a re-pitch, compare two layouts, and brief the whole crew in one place.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WORKFLOW (n8n node row) ============ -->
+<section class="block wrap" id="how">
+  <div class="sec-head reveal">
+    <span class="eyebrow"><span class="pulse"></span> The workflow</span>
+    <h2>Four nodes between an idea and a lit wall.</h2>
+    <p>It reads like an automation graph because that's exactly how it runs under the hood.</p>
+  </div>
+  <div class="features" style="grid-template-columns:repeat(4,1fr);">
+    <div class="glass feature lift reveal"><span class="glow glow-bright"></span><div class="inner">
+      <div class="ico mono" style="font-weight:700;color:hsl(var(--hue1) 80% 75%)">01</div>
+      <h3>Define</h3><p>Pitch, resolution, cabinet size and target processor.</p></div></div>
+    <div class="glass feature lift reveal"><span class="glow glow-bright glow-b"></span><div class="inner">
+      <div class="ico mono" style="font-weight:700;color:hsl(var(--hue2) 80% 75%)">02</div>
+      <h3>Lay out</h3><p>Drag cabinets onto the canvas; GridForge snaps the geometry.</p></div></div>
+    <div class="glass feature lift reveal"><span class="glow glow-bright"></span><div class="inner">
+      <div class="ico mono" style="font-weight:700;color:hsl(var(--hue1) 80% 75%)">03</div>
+      <h3>Balance</h3><p>Auto-route ports and check power, weight and limits.</p></div></div>
+    <div class="glass feature lift reveal"><span class="glow glow-bright glow-b"></span><div class="inner">
+      <div class="ico mono" style="font-weight:700;color:hsl(var(--hue2) 80% 75%)">04</div>
+      <h3>Export</h3><p>Ship the processor file and the crew PDF. Wall's lit.</p></div></div>
+  </div>
+</section>
+
+<!-- ============ PRICING (ftmo-style tiers) ============ -->
+<section class="block wrap" id="pricing">
+  <div class="sec-head reveal">
+    <span class="eyebrow"><span class="pulse"></span> Pricing</span>
+    <h2>Pick the rig that fits the gig.</h2>
+    <p>Start free on a single wall. Scale to a full touring inventory when the shows get bigger.</p>
+  </div>
+  <div class="tiers">
+    <div class="glass tier lift reveal"><span class="glow glow-bright"></span><div class="inner" style="display:flex;flex-direction:column;height:100%">
+      <span class="tag">Solo</span>
+      <div class="price">$0 <span>/ forever</span></div>
+      <p style="color:var(--muted);font-size:.9rem;margin:.2rem 0 0">For one wall and the occasional one-off.</p>
+      <ul>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> 1 active map</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Drag-snap canvas</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> PDF export</li>
+      </ul>
+      <a class="btn ghost" href="#" style="justify-content:center">Start free</a>
+    </div></div>
+
+    <div class="glass tier feat lift reveal">
+      <span class="badge-feat">Most popular</span>
+      <span class="shine"></span><span class="shine shine-b"></span>
+      <span class="glow"></span><span class="glow glow-b"></span>
+      <span class="glow glow-bright"></span><span class="glow glow-bright glow-b"></span>
+      <div class="inner" style="display:flex;flex-direction:column;height:100%">
+        <span class="tag">Studio</span>
+        <div class="price">$39 <span>/ month</span></div>
+        <p style="color:var(--muted);font-size:.9rem;margin:.2rem 0 0">For the busy rental house and design studio.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Unlimited maps & versions</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Auto port balancing</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Novastar · Brompton · Colorlight export</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Power & weight rollups</li>
+        </ul>
+        <a class="btn solid" href="#" style="justify-content:center">Start 14-day trial</a>
+      </div>
+    </div>
+
+    <div class="glass tier lift reveal"><span class="glow glow-bright glow-b"></span><div class="inner" style="display:flex;flex-direction:column;height:100%">
+      <span class="tag">Touring</span>
+      <div class="price">Custom</div>
+      <p style="color:var(--muted);font-size:.9rem;margin:.2rem 0 0">Shared inventory across every truck and crew.</p>
+      <ul>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Team workspaces & roles</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> Inventory & cabinet library</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg> SSO & priority support</li>
+      </ul>
+      <a class="btn ghost" href="#" style="justify-content:center">Talk to us</a>
+    </div></div>
+  </div>
+</section>
+
+<!-- ============ CLOSER ============ -->
+<div class="closer wrap">
+  <div class="glass reveal">
+    <span class="shine"></span><span class="shine shine-b"></span>
+    <span class="glow"></span><span class="glow glow-b"></span>
+    <span class="glow glow-bright"></span><span class="glow glow-bright glow-b"></span>
+    <div class="inner">
+      <h2>Your next wall is one canvas away.</h2>
+      <p>Spin up a map, drag the cabinets, let GridForge balance the ports. The processor file is waiting at the end.</p>
+      <a class="btn solid" href="#" style="font-size:1.05rem;padding:1em 1.6em">Open the mapper →</a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 GRIDFORGE · A neon-glass concept by Dvi AV</span>
+    <span class="mono">Design language remixed from the “Neon Glass Context Menu” pen</span>
+  </div>
+</footer>
+
+<!-- ============ COMMAND PALETTE (the original pen, reused) ============ -->
+<aside id="menu" class="glass" style="position:fixed;left:50%;top:18%;transform:translateX(-50%);width:min(420px,90vw);padding:1em;display:none;z-index:60;">
+  <span class="shine"></span><span class="shine shine-b"></span>
+  <span class="glow"></span><span class="glow glow-b"></span>
+  <span class="glow glow-bright"></span><span class="glow glow-bright glow-b"></span>
+  <div class="inner" style="display:flex;flex-direction:column;gap:.6em;">
+    <label style="display:grid;grid-template:1fr/1fr;">
+      <svg style="grid-area:1/1;align-self:center;margin-left:.6em;width:18px;opacity:.5;z-index:2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+      <input id="palette-input" type="text" placeholder="Search panels, ports, commands…" style="grid-area:1/1;color:#fff;font-family:'Asap';font-weight:300;border:1px solid hsl(var(--hue2) 13% 18% / .6);background:hsl(var(--hue1) 20% 14% / .4);border-radius:9px;padding:.7em .7em .7em 2.4em;outline:none;" />
+    </label>
+    <div style="font-size:.72rem;color:var(--muted);padding:0 .4em">Suggestions</div>
+    <ul id="palette-list" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.3em;color:#aeb6cc;font-size:.9rem"></ul>
+  </div>
+</aside>
+
+<!-- ============ HUE DOCK (homage to the pen's color sliders) ============ -->
+<div class="hue-dock">
+  <span class="mono">hue</span>
+  <input id="h1" type="range" min="0" max="360" value="280" title="Primary hue">
+  <input id="h2" type="range" min="0" max="360" value="192" title="Secondary hue">
+  <button id="randhue">randomize</button>
+</div>
+
+<script>
+/* ---------- LED grid preview animation ---------- */
+(function(){
+  const grid = document.getElementById('ledgrid');
+  const cells = 12*7;
+  for(let i=0;i<cells;i++){ const d=document.createElement('div'); d.className='px'; grid.appendChild(d); }
+  const px=[...grid.children];
+  function tick(){
+    px.forEach(p=>{
+      if(Math.random()<0.06){
+        const useH1=Math.random()<0.5;
+        const h=getComputedStyle(document.body).getPropertyValue(useH1?'--hue1':'--hue2');
+        const l=35+Math.random()*40;
+        p.style.background=`hsl(${h} 90% ${l}%)`;
+        p.style.boxShadow=`0 0 8px hsl(${h} 90% ${l}% / .8)`;
+        setTimeout(()=>{ p.style.background='hsl('+h+' 30% 12%)'; p.style.boxShadow='none'; }, 350+Math.random()*500);
+      }
+    });
+  }
+  setInterval(tick, 220);
+})();
+
+/* ---------- animated node mesh (n8n vibe) ---------- */
+(function(){
+  const c=document.getElementById('mesh'), x=c.getContext('2d');
+  let w,h,nodes;
+  function size(){ w=c.width=innerWidth; h=c.height=innerHeight;
+    const n=Math.min(70, Math.floor(w*h/26000));
+    nodes=Array.from({length:n},()=>({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-.5)*.25,vy:(Math.random()-.5)*.25})); }
+  size(); addEventListener('resize', size);
+  function hue(v){ return getComputedStyle(document.body).getPropertyValue(v).trim(); }
+  function draw(){
+    x.clearRect(0,0,w,h);
+    const h1=hue('--hue1'), h2=hue('--hue2');
+    for(const n of nodes){ n.x+=n.vx; n.y+=n.vy; if(n.x<0||n.x>w)n.vx*=-1; if(n.y<0||n.y>h)n.vy*=-1; }
+    for(let i=0;i<nodes.length;i++){
+      for(let j=i+1;j<nodes.length;j++){
+        const a=nodes[i],b=nodes[j],dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy);
+        if(d<150){ x.strokeStyle=`hsl(${(i%2?h1:h2)} 80% 60% / ${(1-d/150)*.18})`; x.lineWidth=1;
+          x.beginPath(); x.moveTo(a.x,a.y); x.lineTo(b.x,b.y); x.stroke(); }
+      }
+    }
+    for(let i=0;i<nodes.length;i++){ const n=nodes[i]; x.fillStyle=`hsl(${(i%2?h1:h2)} 85% 65% / .8)`;
+      x.beginPath(); x.arc(n.x,n.y,1.6,0,7); x.fill(); }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ---------- reveal on scroll ---------- */
+const io=new IntersectionObserver((es)=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} }),{threshold:.12});
+document.querySelectorAll('.reveal').forEach((el,i)=>{ el.style.transitionDelay=(i%4*60)+'ms'; io.observe(el); });
+
+/* ---------- animated stat counters ---------- */
+const cs=new IntersectionObserver((es)=>es.forEach(e=>{
+  if(!e.isIntersecting) return; cs.unobserve(e.target);
+  const el=e.target, end=+el.dataset.count, suf=el.dataset.suffix||'', dur=1400, t0=performance.now();
+  (function run(t){ const p=Math.min(1,(t-t0)/dur), v=Math.floor(end*(1-Math.pow(1-p,3)));
+    el.textContent=v.toLocaleString()+suf; if(p<1)requestAnimationFrame(run); })(t0);
+},{threshold:.5});
+document.querySelectorAll('.num[data-count]').forEach(el=>cs.observe(el));
+
+/* ---------- command palette ---------- */
+const cmds=[
+  {i:'▦',t:'New LED map',s:'create'},
+  {i:'⇄',t:'Auto-balance ports',s:'route'},
+  {i:'⤓',t:'Export to Novastar',s:'export'},
+  {i:'⚡',t:'Power & weight report',s:'report'},
+  {i:'◳',t:'Change pixel pitch',s:'config'},
+  {i:'⧉',t:'Duplicate current wall',s:'edit'},
+];
+const list=document.getElementById('palette-list'), menu=document.getElementById('menu'), pin=document.getElementById('palette-input');
+function renderCmds(q=''){
+  list.innerHTML='';
+  cmds.filter(c=>c.t.toLowerCase().includes(q.toLowerCase())).forEach((c,idx)=>{
+    const li=document.createElement('li');
+    li.style.cssText='display:flex;align-items:center;gap:.6em;padding:.6em .7em;border-radius:9px;cursor:pointer;transition:.15s;'+(idx===0?'background:hsl(var(--hue1) 30% 18% / .6);color:#fff;':'');
+    li.innerHTML='<span style="opacity:.7">'+c.i+'</span>'+c.t+'<span class="mono" style="margin-left:auto;font-size:.7rem;color:var(--muted)">'+c.s+'</span>';
+    li.onmouseenter=()=>{ [...list.children].forEach(x=>x.style.background='transparent'); li.style.background='hsl(var(--hue1) 30% 18% / .6)'; li.style.color='#fff'; };
+    list.appendChild(li);
+  });
+}
+renderCmds();
+function openPalette(){ menu.style.display='block'; menu.classList.add('open'); pin.value=''; renderCmds(); setTimeout(()=>pin.focus(),20); }
+function closePalette(){ menu.style.display='none'; }
+pin.addEventListener('input',()=>renderCmds(pin.value));
+addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); menu.style.display==='block'?closePalette():openPalette(); }
+  if(e.key==='Escape') closePalette();
+});
+addEventListener('pointerdown',e=>{ if(menu.style.display==='block' && !menu.contains(e.target) && !e.target.closest('[onclick*=openPalette]')) closePalette(); });
+
+/* ---------- hue controls (homage to the pen) ---------- */
+const h1=document.getElementById('h1'), h2=document.getElementById('h2'), rnd=document.getElementById('randhue');
+h1.addEventListener('input',()=>document.body.style.setProperty('--hue1',h1.value));
+h2.addEventListener('input',()=>document.body.style.setProperty('--hue2',h2.value));
+rnd.addEventListener('click',()=>{ const a=Math.floor(Math.random()*360), b=(a+90+Math.floor(Math.random()*100))%360;
+  h1.value=a; h2.value=b; document.body.style.setProperty('--hue1',a); document.body.style.setProperty('--hue2',b); });
+</script>
+</body>
+</html>

@@ -1,0 +1,4563 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DVi Job Card Studio</title>
+  <script defer src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --bg: #eef2f3;
+      --surface: #ffffff;
+      --surface-soft: #f7f9f9;
+      --ink: #172126;
+      --muted: #64727a;
+      --line: #d8e1e5;
+      --line-strong: #9eafb6;
+      --teal: #087f7b;
+      --teal-dark: #075f5d;
+      --amber: #b67700;
+      --amber-soft: #fff4d8;
+      --red: #b83228;
+      --green: #247a3d;
+      --shadow: 0 16px 48px rgba(20, 32, 38, 0.12);
+      --radius: 8px;
+      --control: 42px;
+      --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      --mono: "Aptos Mono", "SFMono-Regular", Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font);
+      font-size: 14px;
+      letter-spacing: 0;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+      letter-spacing: 0;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.54;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      min-height: var(--control);
+      padding: 9px 11px;
+      outline: none;
+      transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px rgba(8, 127, 123, 0.16);
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: #34454c;
+      font-size: 12px;
+      font-weight: 760;
+      text-transform: uppercase;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 14px 18px;
+      background: rgba(255, 255, 255, 0.94);
+      border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(14px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 240px;
+    }
+
+    .brand-mark {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: var(--ink);
+      color: #fff;
+      font-weight: 900;
+      font-size: 18px;
+      line-height: 1;
+      box-shadow: inset 0 -4px 0 rgba(255, 255, 255, 0.12);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.15;
+    }
+
+    .brand span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+      margin-top: 2px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      min-height: var(--control);
+      border-radius: 6px;
+      padding: 0 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: #fff;
+      color: var(--ink);
+      border: 1px solid var(--line);
+      font-weight: 760;
+      white-space: nowrap;
+      transition: transform 120ms ease, border-color 160ms ease, background 160ms ease;
+    }
+
+    .btn:hover {
+      border-color: var(--line-strong);
+      background: var(--surface-soft);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn.primary {
+      background: var(--teal);
+      color: #fff;
+      border-color: var(--teal);
+    }
+
+    .btn.primary:hover {
+      background: var(--teal-dark);
+      border-color: var(--teal-dark);
+    }
+
+    .btn.warn {
+      background: var(--amber-soft);
+      color: #533700;
+      border-color: #f0cf80;
+    }
+
+    .btn.danger {
+      color: #fff;
+      background: var(--red);
+      border-color: var(--red);
+    }
+
+    .btn.icon {
+      width: var(--control);
+      padding: 0;
+    }
+
+    .btn svg,
+    .tool-btn svg {
+      width: 17px;
+      height: 17px;
+      stroke-width: 2.25;
+      flex: 0 0 auto;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(380px, 470px) minmax(0, 1fr);
+      gap: 16px;
+      padding: 16px;
+      min-height: 0;
+    }
+
+    .editor,
+    .preview-shell {
+      min-width: 0;
+    }
+
+    .editor {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 12px;
+      min-height: 0;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      padding: 4px;
+      background: #dfe7ea;
+      border-radius: 8px;
+      border: 1px solid #d2dde1;
+      gap: 4px;
+    }
+
+    .tab {
+      min-height: 38px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: #42535a;
+      background: transparent;
+      font-weight: 800;
+    }
+
+    .tab.active {
+      background: #fff;
+      color: var(--ink);
+      box-shadow: 0 1px 3px rgba(19, 33, 40, 0.12);
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      min-height: 0;
+    }
+
+    .editor-panel {
+      overflow: auto;
+    }
+
+    .section {
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section:last-child {
+      border-bottom: 0;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .section h2 {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.2;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    .section-count {
+      min-width: 28px;
+      height: 24px;
+      border-radius: 999px;
+      display: inline-grid;
+      place-items: center;
+      padding: 0 8px;
+      background: #edf5f4;
+      color: var(--teal-dark);
+      font-weight: 900;
+      font-size: 12px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .grid.two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .field-row {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: minmax(0, 0.75fr) minmax(0, 1fr);
+      align-items: end;
+    }
+
+    .field-help {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.35;
+      text-transform: none;
+    }
+
+    .toggle-line {
+      text-transform: none;
+    }
+
+    .default-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .smart-builder {
+      border: 1px solid #cfe0df;
+      border-radius: 8px;
+      background: #f6fbfa;
+      padding: 12px;
+      display: grid;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .builder-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .builder-head strong {
+      display: block;
+      font-size: 13px;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+
+    .builder-head span {
+      color: var(--muted);
+      display: block;
+      font-size: 11px;
+      font-weight: 760;
+      line-height: 1.35;
+      margin-top: 2px;
+    }
+
+    .builder-badge {
+      min-height: 26px;
+      border-radius: 999px;
+      padding: 4px 9px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #e8f4ec;
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 950;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .builder-grid {
+      display: grid;
+      grid-template-columns: minmax(130px, 0.9fr) minmax(0, 1.5fr) 86px auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .crew-builder-grid {
+      grid-template-columns: minmax(140px, 0.9fr) minmax(0, 1.25fr) auto auto;
+    }
+
+    .builder-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .agent-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .agent-card {
+      min-height: 88px;
+      border: 1px solid #cfe0df;
+      border-radius: 8px;
+      background: #f6fbfa;
+      padding: 12px;
+      display: grid;
+      gap: 7px;
+      text-align: left;
+      color: var(--ink);
+    }
+
+    .agent-card strong {
+      font-size: 12px;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+
+    .agent-card span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 720;
+      line-height: 1.35;
+    }
+
+    .agent-log {
+      display: grid;
+      gap: 8px;
+    }
+
+    .agent-log-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-soft);
+      padding: 9px 10px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 760;
+      line-height: 1.35;
+    }
+
+    .default-card {
+      border: 1px solid #d6e3e0;
+      border-radius: 8px;
+      background: #fff;
+      padding: 9px 10px;
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .default-card strong {
+      font-size: 12px;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+
+    .default-card span {
+      color: var(--teal-dark);
+      font-size: 12px;
+      font-weight: 850;
+      overflow-wrap: anywhere;
+    }
+
+    .library-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      padding: 10px;
+      border: 1px solid #cfe0df;
+      border-radius: 8px;
+      background: #f0faf8;
+    }
+
+    .metric {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .metric strong {
+      font-size: 16px;
+      line-height: 1;
+      color: var(--teal-dark);
+    }
+
+    .metric span {
+      color: #4d6067;
+      font-size: 11px;
+      font-weight: 820;
+      text-transform: uppercase;
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      border: 1px solid var(--line);
+      background: var(--surface-soft);
+      border-radius: 6px;
+      padding: 3px;
+      min-height: var(--control);
+    }
+
+    .segment {
+      border-radius: 5px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 820;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+    }
+
+    .segment.active {
+      background: #fff;
+      color: var(--ink);
+      box-shadow: 0 1px 2px rgba(18, 32, 38, 0.16);
+    }
+
+    .toggle-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #34454c;
+      font-weight: 780;
+      font-size: 13px;
+    }
+
+    .toggle-line input {
+      width: 18px;
+      min-height: 18px;
+      height: 18px;
+      accent-color: var(--teal);
+      padding: 0;
+    }
+
+    .row-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .item-row {
+      display: grid;
+      grid-template-columns: minmax(116px, 0.82fr) 74px minmax(0, 1.28fr) var(--control);
+      gap: 8px;
+      align-items: end;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-soft);
+    }
+
+    .crew-row {
+      grid-template-columns: minmax(126px, 0.9fr) minmax(0, 1.25fr) var(--control);
+    }
+
+    .smart-select {
+      font-weight: 760;
+      cursor: pointer;
+    }
+
+    .smart-select option {
+      font-weight: 650;
+    }
+
+    .pack-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .pack-card {
+      min-height: 72px;
+      border-radius: 8px;
+      border: 1px solid #bfd5d4;
+      background: #f6fbfa;
+      padding: 10px;
+      display: grid;
+      gap: 4px;
+      text-align: left;
+      color: var(--ink);
+    }
+
+    .pack-card:hover {
+      border-color: var(--teal);
+      background: #edf8f7;
+    }
+
+    .pack-card strong {
+      font-size: 12px;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+
+    .pack-card span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 720;
+      line-height: 1.3;
+    }
+
+    .tool-btn {
+      width: var(--control);
+      min-height: var(--control);
+      border-radius: 6px;
+      display: inline-grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #415159;
+    }
+
+    .tool-btn:hover {
+      border-color: var(--line-strong);
+      color: var(--red);
+    }
+
+    .quick-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pack-grid + .quick-grid {
+      margin-top: 10px;
+    }
+
+    .default-grid + .quick-grid {
+      margin-top: 10px;
+    }
+
+    .chip {
+      min-height: 34px;
+      padding: 0 11px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid var(--line);
+      color: #384950;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .chip:hover {
+      border-color: var(--teal);
+      color: var(--teal-dark);
+    }
+
+    .saved-tools {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .saved-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .saved-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 11px;
+      display: grid;
+      gap: 7px;
+      background: #fff;
+      text-align: left;
+      color: var(--ink);
+    }
+
+    .saved-card:hover,
+    .saved-card.active {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px rgba(8, 127, 123, 0.11);
+    }
+
+    .saved-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .saved-title span:first-child {
+      overflow-wrap: anywhere;
+    }
+
+    .saved-meta {
+      color: var(--muted);
+      font-size: 12px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 24px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #e8f4ec;
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .status-pill.draft {
+      background: #eef1f2;
+      color: #53636a;
+    }
+
+    .status-pill.pending {
+      background: var(--amber-soft);
+      color: #6a4500;
+    }
+
+    .status-pill.cancelled {
+      background: #fbe9e7;
+      color: var(--red);
+    }
+
+    .preview-shell {
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 12px;
+      min-height: 0;
+    }
+
+    .preview-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    .preview-title {
+      min-width: 0;
+    }
+
+    .preview-title strong {
+      display: block;
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+
+    .preview-title span {
+      color: var(--muted);
+      display: block;
+      margin-top: 2px;
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 40vw;
+    }
+
+    .preview-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .ops-readout {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .readout-card {
+      min-height: 62px;
+      border-radius: 8px;
+      border: 1px solid #cfe0df;
+      background: #f6fbfa;
+      padding: 10px;
+      display: grid;
+      align-content: center;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .readout-card span {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .readout-card strong {
+      color: var(--teal-dark);
+      font-size: 14px;
+      line-height: 1.08;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .ops-intel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      padding: 12px;
+      display: grid;
+      gap: 12px;
+      box-shadow: var(--shadow);
+    }
+
+    .intel-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(150px, 210px);
+      gap: 12px;
+      align-items: center;
+    }
+
+    .intel-head strong {
+      display: block;
+      font-size: 13px;
+      text-transform: uppercase;
+      color: var(--ink);
+    }
+
+    .intel-head span {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 720;
+    }
+
+    .readiness {
+      display: grid;
+      gap: 6px;
+    }
+
+    .readiness span {
+      justify-self: end;
+      margin: 0;
+      color: var(--teal-dark);
+      font-size: 13px;
+      font-weight: 950;
+    }
+
+    .readiness-track {
+      height: 8px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #dce6e9;
+    }
+
+    .readiness-fill {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--teal);
+      transition: width 220ms ease, background 220ms ease;
+    }
+
+    .check-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .check-chip {
+      min-height: 48px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 10px;
+      display: grid;
+      gap: 3px;
+      background: var(--surface-soft);
+    }
+
+    .check-chip strong {
+      font-size: 12px;
+      line-height: 1.2;
+      text-transform: uppercase;
+      overflow-wrap: anywhere;
+    }
+
+    .check-chip span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 720;
+      line-height: 1.3;
+    }
+
+    .check-chip.good {
+      border-color: rgba(36, 122, 61, 0.35);
+      background: #f1faf4;
+    }
+
+    .check-chip.warn {
+      border-color: rgba(182, 119, 0, 0.42);
+      background: #fff8e7;
+    }
+
+    .check-chip.critical {
+      border-color: rgba(184, 50, 40, 0.42);
+      background: #fff0ef;
+    }
+
+    .paper-wrap {
+      min-height: 0;
+      overflow: auto;
+      padding: 20px;
+      background:
+        linear-gradient(90deg, rgba(23, 33, 38, 0.04) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(23, 33, 38, 0.04) 1px, transparent 1px);
+      background-size: 22px 22px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    .paper {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      background: #fff;
+      color: #111;
+      box-shadow: 0 18px 54px rgba(20, 32, 38, 0.2);
+      padding: 14mm;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.25;
+    }
+
+    .paper.landscape {
+      width: 297mm;
+      min-height: 210mm;
+      padding: 12mm;
+      font-size: 10pt;
+    }
+
+    .print-head {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding-bottom: 10px;
+      border-bottom: 3px solid #111;
+      margin-bottom: 10px;
+    }
+
+    .print-logo {
+      width: 50px;
+      height: 50px;
+      display: grid;
+      place-items: center;
+      border: 2px solid #111;
+      font-weight: 900;
+      font-size: 20px;
+      letter-spacing: 0;
+    }
+
+    .print-head h2 {
+      margin: 0;
+      font-size: 23pt;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .print-head p {
+      margin: 4px 0 0;
+      font-size: 9pt;
+      font-weight: 700;
+      color: #333;
+      text-transform: uppercase;
+    }
+
+    .print-meta {
+      text-align: right;
+      display: grid;
+      gap: 4px;
+      font-size: 8.5pt;
+      color: #222;
+      text-transform: uppercase;
+    }
+
+    .job-table,
+    .crew-table,
+    .mini-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .job-table th,
+    .job-table td,
+    .crew-table th,
+    .crew-table td,
+    .mini-table th,
+    .mini-table td {
+      border: 1px solid #111;
+      vertical-align: top;
+      padding: 7px;
+      overflow-wrap: anywhere;
+    }
+
+    .job-table th,
+    .crew-table th,
+    .mini-table th {
+      background: #efefef;
+      text-align: left;
+      font-weight: 900;
+      font-size: 8.5pt;
+      text-transform: uppercase;
+    }
+
+    .job-table td {
+      font-weight: 800;
+      min-height: 60px;
+    }
+
+    #printVenue {
+      white-space: pre-line;
+    }
+
+    .job-table .equipment-cell {
+      font-weight: 700;
+    }
+
+    .job-table ul,
+    .notes-list {
+      margin: 0;
+      padding-left: 16px;
+    }
+
+    .job-table li {
+      margin: 0 0 3px;
+    }
+
+    .paper.landscape .job-table .event-col {
+      width: 23%;
+    }
+
+    .paper.landscape .job-table .venue-col {
+      width: 21%;
+    }
+
+    .paper.landscape .job-table .equipment-col {
+      width: 34%;
+    }
+
+    .paper.landscape .job-table .date-col {
+      width: 11%;
+    }
+
+    .crew-area {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 74mm;
+      gap: 10px;
+      margin-top: 10px;
+      align-items: start;
+    }
+
+    .paper:not(.landscape) .crew-area {
+      grid-template-columns: 1fr;
+    }
+
+    .crew-table th:first-child {
+      width: 30%;
+    }
+
+    .crew-table td:first-child {
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .crew-table td:last-child {
+      font-weight: 760;
+    }
+
+    .side-stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .mini-table th {
+      width: 36%;
+    }
+
+    .notes-box {
+      border: 1px solid #111;
+      padding: 8px;
+      min-height: 36mm;
+      font-weight: 700;
+      white-space: pre-wrap;
+    }
+
+    .empty-state {
+      color: var(--muted);
+      border: 1px dashed var(--line-strong);
+      border-radius: 8px;
+      min-height: 88px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 14px;
+      font-weight: 750;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 24% -10%, rgba(0, 216, 255, 0.14), transparent 420px),
+        radial-gradient(circle at 88% 8%, rgba(120, 255, 95, 0.09), transparent 360px),
+        #07090e;
+      color: #f0f4f8;
+    }
+
+    .topbar {
+      background: rgba(7, 9, 14, 0.9);
+      border-bottom-color: #1c2538;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .brand-mark {
+      border: 1px solid #2b3952;
+      background:
+        linear-gradient(90deg, rgba(0, 216, 255, 0.2) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(120, 255, 95, 0.16) 1px, transparent 1px),
+        #101826;
+      background-size: 10px 10px;
+      color: #f0f4f8;
+      text-shadow: 0 0 12px rgba(0, 216, 255, 0.8);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 0 20px rgba(0, 216, 255, 0.08);
+    }
+
+    .brand h1 {
+      color: #f7fbff;
+    }
+
+    .brand span,
+    .preview-title span,
+    .field-help,
+    .saved-meta,
+    .readout-card span {
+      color: #8092a7;
+    }
+
+    .tabs,
+    .panel,
+    .preview-toolbar,
+    .ops-intel,
+    .smart-builder,
+    .agent-card,
+    .library-metrics,
+    .pack-card,
+    .default-card,
+    .saved-card,
+    .item-row,
+    .readout-card {
+      background: #0e121f;
+      border-color: #1c2538;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45), 0 0 25px rgba(0, 216, 255, 0.04);
+    }
+
+    .section {
+      border-bottom-color: #1c2538;
+    }
+
+    .section h2,
+    .preview-title strong,
+    .intel-head strong,
+    .builder-head strong,
+    .agent-card strong,
+    .saved-title,
+    label {
+      color: #dfe8f2;
+    }
+
+    input,
+    select,
+    textarea {
+      background: #080d16;
+      color: #f0f4f8;
+      border-color: #263550;
+    }
+
+    option {
+      background: #080d16;
+      color: #f0f4f8;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: #00d8ff;
+      box-shadow: 0 0 0 3px rgba(0, 216, 255, 0.14);
+    }
+
+    .tab {
+      color: #8ea1b7;
+    }
+
+    .tab.active,
+    .segment.active {
+      background: #172033;
+      color: #f0f4f8;
+      box-shadow: inset 0 0 0 1px rgba(0, 216, 255, 0.18), 0 0 18px rgba(0, 216, 255, 0.07);
+    }
+
+    .segmented {
+      background: #080d16;
+      border-color: #263550;
+    }
+
+    .segment {
+      color: #8ea1b7;
+    }
+
+    .btn,
+    .tool-btn,
+    .chip {
+      background: #121a2b;
+      color: #eaf2fb;
+      border-color: #263550;
+    }
+
+    .btn:hover,
+    .tool-btn:hover,
+    .chip:hover,
+    .pack-card:hover,
+    .saved-card:hover,
+    .saved-card.active {
+      border-color: #00d8ff;
+      background: #16233a;
+      color: #f5fbff;
+      box-shadow: 0 0 0 3px rgba(0, 216, 255, 0.08);
+    }
+
+    .btn.primary {
+      background: #00a8c7;
+      color: #031117;
+      border-color: #00d8ff;
+    }
+
+    .btn.primary:hover {
+      background: #00d8ff;
+      border-color: #78ff5f;
+    }
+
+    .btn.warn {
+      background: rgba(255, 159, 28, 0.16);
+      color: #ffdba3;
+      border-color: rgba(255, 159, 28, 0.45);
+    }
+
+    .btn.danger {
+      background: #b91f4a;
+      color: #fff;
+      border-color: #ff4d8d;
+    }
+
+    .section-count,
+    .status-pill,
+    .builder-badge,
+    .metric strong,
+    .default-card span,
+    .readout-card strong,
+    .readiness span {
+      color: #78ff5f;
+    }
+
+    .section-count,
+    .status-pill,
+    .builder-badge {
+      background: rgba(120, 255, 95, 0.12);
+    }
+
+    .status-pill.pending {
+      background: rgba(255, 159, 28, 0.16);
+      color: #ffcf8a;
+    }
+
+    .status-pill.draft {
+      background: rgba(128, 146, 167, 0.16);
+      color: #aebbd0;
+    }
+
+    .status-pill.cancelled {
+      background: rgba(255, 77, 141, 0.16);
+      color: #ff8ab7;
+    }
+
+    .pack-card span {
+      color: #9cafc5;
+    }
+
+    .readiness-track {
+      background: #162033;
+    }
+
+    .readiness-fill {
+      background: linear-gradient(90deg, #00d8ff, #78ff5f);
+      box-shadow: 0 0 14px rgba(0, 216, 255, 0.22);
+    }
+
+    .check-chip {
+      background: #111a2a;
+      border-color: #263550;
+    }
+
+    .check-chip span,
+    .intel-head span,
+    .builder-head span,
+    .agent-card span {
+      color: #9cafc5;
+    }
+
+    .agent-card:hover {
+      border-color: #00d8ff;
+      background: #16233a;
+      box-shadow: 0 0 0 3px rgba(0, 216, 255, 0.08);
+    }
+
+    .agent-log-item {
+      background: #111a2a;
+      border-color: #263550;
+      color: #9cafc5;
+    }
+
+    .check-chip.good {
+      border-color: rgba(120, 255, 95, 0.28);
+      background: rgba(120, 255, 95, 0.08);
+    }
+
+    .check-chip.good strong {
+      color: #78ff5f;
+    }
+
+    .check-chip.warn {
+      border-color: rgba(255, 159, 28, 0.45);
+      background: rgba(255, 159, 28, 0.1);
+    }
+
+    .check-chip.warn strong {
+      color: #ffcf8a;
+    }
+
+    .check-chip.critical {
+      border-color: rgba(255, 77, 141, 0.48);
+      background: rgba(255, 77, 141, 0.1);
+    }
+
+    .check-chip.critical strong {
+      color: #ff8ab7;
+    }
+
+    .paper-wrap {
+      background:
+        linear-gradient(90deg, rgba(0, 216, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(120, 255, 95, 0.04) 1px, transparent 1px),
+        #080d16;
+      background-size: 22px 22px;
+      border-color: #1c2538;
+    }
+
+    .empty-state {
+      color: #9cafc5;
+      border-color: #2b3952;
+    }
+
+    /* Final console polish: alignment, density, and responsive robustness */
+    .topbar {
+      min-height: 72px;
+      padding: 12px clamp(12px, 2vw, 22px);
+    }
+
+    .top-actions .btn,
+    .preview-actions .btn,
+    .builder-grid .btn,
+    .crew-builder-grid .btn {
+      min-width: max-content;
+    }
+
+    .btn span,
+    .tab span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .layout {
+      align-items: start;
+      grid-template-columns: minmax(420px, 500px) minmax(0, 1fr);
+      gap: clamp(14px, 1.8vw, 22px);
+      padding: clamp(12px, 1.8vw, 22px);
+    }
+
+    .editor {
+      position: sticky;
+      top: 88px;
+      max-height: calc(100vh - 104px);
+    }
+
+    .editor-panel {
+      min-height: 0;
+      scrollbar-color: #2b3952 #080d16;
+      scrollbar-width: thin;
+    }
+
+    .tabs {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 5px;
+      padding: 5px;
+    }
+
+    .tab {
+      min-width: 0;
+      padding: 0 7px;
+    }
+
+    .section {
+      padding: clamp(14px, 1.4vw, 18px);
+    }
+
+    .section-head {
+      min-height: 32px;
+    }
+
+    .grid {
+      gap: 11px;
+    }
+
+    .smart-builder,
+    .ops-intel,
+    .preview-toolbar,
+    .readout-card,
+    .agent-card,
+    .pack-card,
+    .default-card,
+    .item-row,
+    .saved-card {
+      border-radius: 8px;
+    }
+
+    .smart-builder,
+    .ops-intel {
+      padding: 13px;
+    }
+
+    .builder-grid {
+      grid-template-columns: minmax(126px, 0.9fr) minmax(190px, 1.55fr) 78px max-content;
+    }
+
+    .crew-builder-grid {
+      grid-template-columns: minmax(132px, 0.9fr) minmax(190px, 1.25fr) max-content max-content;
+    }
+
+    .builder-head,
+    .intel-head,
+    .preview-toolbar,
+    .saved-title {
+      min-width: 0;
+    }
+
+    .builder-head > div:first-child,
+    .intel-head > div:first-child,
+    .preview-title {
+      min-width: 0;
+    }
+
+    .ops-readout {
+      grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+    }
+
+    .readout-card {
+      min-height: 66px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .readout-card::after {
+      content: "";
+      position: absolute;
+      inset: auto 10px 8px 10px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(120, 255, 95, 0.45), transparent);
+      opacity: 0.65;
+    }
+
+    .readout-card strong {
+      font-family: var(--mono);
+      font-size: clamp(13px, 1.2vw, 15px);
+    }
+
+    .check-grid {
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    }
+
+    .check-chip,
+    .agent-card,
+    .pack-card {
+      align-content: start;
+    }
+
+    .agent-grid {
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    }
+
+    .agent-card {
+      grid-template-rows: auto 1fr;
+      min-height: 104px;
+    }
+
+    .pack-grid {
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    }
+
+    .default-grid {
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+
+    .library-metrics {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .item-row {
+      grid-template-columns: minmax(120px, 0.82fr) 74px minmax(170px, 1.28fr) var(--control);
+    }
+
+    .crew-row {
+      grid-template-columns: minmax(130px, 0.9fr) minmax(170px, 1.25fr) var(--control);
+    }
+
+    .quick-grid {
+      align-items: center;
+    }
+
+    .chip {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .paper-wrap {
+      min-height: 420px;
+      overscroll-behavior: contain;
+      scrollbar-color: #2b3952 #080d16;
+      scrollbar-width: thin;
+    }
+
+    .paper {
+      border-radius: 2px;
+    }
+
+    /* Command-center redesign pass */
+    .layout {
+      grid-template-columns: minmax(440px, 520px) minmax(0, 1fr);
+      align-items: start;
+    }
+
+    .editor {
+      position: static;
+      max-height: none;
+    }
+
+    .editor-panel {
+      overflow: visible;
+    }
+
+    .preview-shell {
+      align-self: start;
+    }
+
+    .top-actions {
+      gap: 7px;
+    }
+
+    .top-actions .btn {
+      min-height: 40px;
+    }
+
+    .tabs {
+      background: rgba(8, 13, 22, 0.92);
+      border-color: #263550;
+      box-shadow: inset 0 0 0 1px rgba(0, 216, 255, 0.04), 0 10px 28px rgba(0, 0, 0, 0.3);
+    }
+
+    .tab {
+      position: relative;
+      min-height: 42px;
+      color: #9cafc5;
+    }
+
+    .tab.active {
+      background: linear-gradient(180deg, #1b2942, #111a2b);
+      color: #f7fbff;
+      border: 1px solid rgba(0, 216, 255, 0.28);
+    }
+
+    .tab.active::after {
+      content: "";
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      bottom: 4px;
+      height: 2px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #00d8ff, #78ff5f);
+    }
+
+    .panel,
+    .preview-toolbar,
+    .ops-intel,
+    .smart-builder,
+    .readout-card {
+      border-color: rgba(81, 113, 151, 0.5);
+    }
+
+    .section {
+      padding: 18px;
+    }
+
+    .section-head {
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+      border-bottom: 1px solid rgba(81, 113, 151, 0.32);
+    }
+
+    .section h2 {
+      font-size: 13px;
+      color: #f7fbff;
+    }
+
+    .smart-builder {
+      background:
+        linear-gradient(135deg, rgba(0, 216, 255, 0.08), transparent 34%),
+        linear-gradient(225deg, rgba(120, 255, 95, 0.07), transparent 38%),
+        #0d1422;
+    }
+
+    .builder-head {
+      align-items: center;
+      padding-bottom: 2px;
+    }
+
+    .builder-badge,
+    .section-count {
+      border: 1px solid rgba(120, 255, 95, 0.22);
+    }
+
+    .agent-grid {
+      gap: 9px;
+    }
+
+    .agent-card {
+      min-height: 96px;
+      background:
+        linear-gradient(135deg, rgba(255, 159, 28, 0.08), transparent 38%),
+        #0e121f;
+      transition: transform 140ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+    }
+
+    .agent-card:hover {
+      transform: translateY(-1px);
+    }
+
+    .agent-card strong {
+      color: #f7fbff;
+    }
+
+    .agent-log-item {
+      border-left: 3px solid #00d8ff;
+    }
+
+    .preview-toolbar,
+    .ops-intel {
+      background:
+        linear-gradient(90deg, rgba(0, 216, 255, 0.06), transparent 42%),
+        #0e121f;
+    }
+
+    .readout-card {
+      background:
+        linear-gradient(180deg, rgba(0, 216, 255, 0.06), rgba(120, 255, 95, 0.03)),
+        #0e121f;
+    }
+
+    .check-chip {
+      min-height: 56px;
+    }
+
+    .field-help {
+      max-width: 64ch;
+    }
+
+    /* Boss-ready executive theme */
+    body {
+      background:
+        linear-gradient(180deg, #f4f7f8 0%, #e9eff1 100%);
+      color: #172126;
+    }
+
+    .topbar {
+      background: rgba(255, 255, 255, 0.96);
+      border-bottom: 1px solid #d8e2e6;
+      box-shadow: 0 8px 26px rgba(24, 38, 46, 0.08);
+    }
+
+    .brand-mark {
+      background: #152229;
+      border: 1px solid #152229;
+      color: #fff;
+      text-shadow: none;
+      box-shadow: none;
+    }
+
+    .brand h1 {
+      color: #172126;
+    }
+
+    .brand span,
+    .preview-title span,
+    .field-help,
+    .saved-meta,
+    .readout-card span,
+    .builder-head span,
+    .agent-card span,
+    .intel-head span,
+    .check-chip span {
+      color: #60717a;
+    }
+
+    .layout {
+      grid-template-columns: minmax(430px, 500px) minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .tabs,
+    .panel,
+    .preview-toolbar,
+    .ops-intel,
+    .smart-builder,
+    .agent-card,
+    .library-metrics,
+    .pack-card,
+    .default-card,
+    .saved-card,
+    .item-row,
+    .readout-card,
+    .check-chip,
+    .agent-log-item {
+      background: #ffffff;
+      border-color: #d8e2e6;
+      box-shadow: 0 10px 30px rgba(24, 38, 46, 0.08);
+    }
+
+    .tabs {
+      background: #edf3f5;
+      box-shadow: inset 0 0 0 1px rgba(24, 38, 46, 0.03);
+    }
+
+    .tab {
+      color: #52636c;
+      min-height: 42px;
+    }
+
+    .tab.active {
+      background: #ffffff;
+      color: #172126;
+      border: 1px solid #cfdce0;
+      box-shadow: 0 2px 8px rgba(24, 38, 46, 0.08);
+    }
+
+    .tab.active::after {
+      background: #087f7b;
+      bottom: 5px;
+    }
+
+    .section {
+      border-bottom-color: #e1eaed;
+    }
+
+    .section-head {
+      border-bottom-color: #e1eaed;
+    }
+
+    .section h2,
+    .preview-title strong,
+    .intel-head strong,
+    .builder-head strong,
+    .agent-card strong,
+    .saved-title,
+    label {
+      color: #172126;
+    }
+
+    input,
+    select,
+    textarea {
+      background: #ffffff;
+      color: #172126;
+      border-color: #cfdce0;
+    }
+
+    option {
+      background: #ffffff;
+      color: #172126;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: #087f7b;
+      box-shadow: 0 0 0 3px rgba(8, 127, 123, 0.14);
+    }
+
+    .btn,
+    .tool-btn,
+    .chip {
+      background: #ffffff;
+      color: #172126;
+      border-color: #cfdce0;
+      box-shadow: 0 1px 2px rgba(24, 38, 46, 0.04);
+    }
+
+    .btn:hover,
+    .tool-btn:hover,
+    .chip:hover,
+    .pack-card:hover,
+    .saved-card:hover,
+    .saved-card.active,
+    .agent-card:hover {
+      border-color: #087f7b;
+      background: #f4fbfa;
+      color: #172126;
+      box-shadow: 0 0 0 3px rgba(8, 127, 123, 0.08);
+    }
+
+    .btn.primary {
+      background: #087f7b;
+      color: #ffffff;
+      border-color: #087f7b;
+    }
+
+    .btn.primary:hover {
+      background: #075f5d;
+      border-color: #075f5d;
+      color: #ffffff;
+    }
+
+    .btn.warn {
+      background: #fff6e3;
+      color: #6a4500;
+      border-color: #e8c474;
+    }
+
+    .btn.danger {
+      background: #b83228;
+      color: #ffffff;
+      border-color: #b83228;
+    }
+
+    .smart-builder {
+      background: #ffffff;
+      border-left: 4px solid #087f7b;
+    }
+
+    .agent-card {
+      background: #ffffff;
+      min-height: 92px;
+      border-left: 4px solid #d8e2e6;
+    }
+
+    .agent-card:hover {
+      transform: translateY(-1px);
+      border-left-color: #087f7b;
+    }
+
+    .smart-scoreboard {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .score-tile {
+      min-height: 72px;
+      border: 1px solid #d8e2e6;
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, rgba(8, 127, 123, 0.08), transparent 58%),
+        #ffffff;
+      padding: 11px;
+      display: grid;
+      align-content: center;
+      gap: 6px;
+      box-shadow: 0 10px 26px rgba(24, 38, 46, 0.07);
+      min-width: 0;
+    }
+
+    .score-tile span {
+      color: #60717a;
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      line-height: 1.15;
+    }
+
+    .score-tile strong {
+      color: #075f5d;
+      font-size: 18px;
+      line-height: 1;
+      overflow-wrap: anywhere;
+    }
+
+    .workflow-runner {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(142px, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .flow-node {
+      position: relative;
+      min-height: 136px;
+      border: 1px solid #d8e2e6;
+      border-left: 4px solid #d8e2e6;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #172126;
+      padding: 10px;
+      text-align: left;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      align-content: start;
+      gap: 8px;
+      box-shadow: 0 10px 26px rgba(24, 38, 46, 0.07);
+      transition: transform 140ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .flow-node:hover {
+      transform: translateY(-1px);
+      border-color: #087f7b;
+      border-left-color: #087f7b;
+      background: #f4fbfa;
+      box-shadow: 0 0 0 3px rgba(8, 127, 123, 0.08), 0 12px 26px rgba(24, 38, 46, 0.09);
+    }
+
+    .flow-node.ready {
+      border-left-color: #087f7b;
+    }
+
+    .flow-node.warn {
+      border-left-color: #b67700;
+    }
+
+    .flow-node.critical {
+      border-left-color: #b83228;
+    }
+
+    .flow-kicker {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .flow-step {
+      color: #809099;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .flow-status {
+      max-width: 100%;
+      min-height: 20px;
+      border: 1px solid #d8e2e6;
+      border-radius: 999px;
+      background: #eef3f5;
+      color: #52636c;
+      padding: 3px 7px;
+      font-size: 9px;
+      font-weight: 950;
+      line-height: 1.1;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .flow-node.ready .flow-status {
+      background: #e8f4ec;
+      color: #247a3d;
+      border-color: #c9e4d0;
+    }
+
+    .flow-node.warn .flow-status {
+      background: #fff6e3;
+      color: #6a4500;
+      border-color: #e8c474;
+    }
+
+    .flow-node.critical .flow-status {
+      background: #fff0ef;
+      color: #b83228;
+      border-color: #efc0bc;
+    }
+
+    .flow-node strong {
+      color: #172126;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 950;
+      line-height: 1.15;
+      text-transform: uppercase;
+      min-width: 0;
+    }
+
+    .flow-node strong span {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .flow-node svg {
+      width: 16px;
+      height: 16px;
+      color: #087f7b;
+      flex: 0 0 auto;
+    }
+
+    .flow-node > span:last-child {
+      color: #60717a;
+      font-size: 11px;
+      font-weight: 730;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
+    .agent-log-item {
+      border-left: 4px solid #087f7b;
+      color: #52636c;
+    }
+
+    .builder-badge,
+    .section-count,
+    .status-pill {
+      background: #e8f4ec;
+      color: #247a3d;
+      border-color: #c9e4d0;
+    }
+
+    .readout-card {
+      background: #ffffff;
+    }
+
+    .readout-card::after {
+      background: #087f7b;
+      opacity: 0.35;
+    }
+
+    .readout-card strong,
+    .readiness span,
+    .metric strong,
+    .default-card span {
+      color: #087f7b;
+    }
+
+    .readiness-track {
+      background: #e3ecef;
+    }
+
+    .readiness-fill {
+      background: linear-gradient(90deg, #087f7b, #247a3d);
+      box-shadow: none;
+    }
+
+    .check-chip.good {
+      background: #f0faf3;
+      border-color: #c9e4d0;
+    }
+
+    .check-chip.good strong {
+      color: #247a3d;
+    }
+
+    .check-chip.warn {
+      background: #fff8e7;
+      border-color: #e8c474;
+    }
+
+    .check-chip.warn strong {
+      color: #8a5b00;
+    }
+
+    .check-chip.critical {
+      background: #fff0ef;
+      border-color: #efc0bc;
+    }
+
+    .check-chip.critical strong {
+      color: #b83228;
+    }
+
+    .paper-wrap {
+      background:
+        linear-gradient(90deg, rgba(23, 33, 38, 0.035) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(23, 33, 38, 0.035) 1px, transparent 1px),
+        #edf3f5;
+      border-color: #d8e2e6;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75);
+    }
+
+    .paper {
+      box-shadow: 0 18px 44px rgba(24, 38, 46, 0.16);
+    }
+
+    @media (max-width: 1100px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .editor {
+        position: static;
+        max-height: none;
+        min-height: auto;
+      }
+
+      .preview-title span {
+        max-width: 80vw;
+      }
+    }
+
+    @media (max-width: 720px) {
+      :root {
+        --control: 40px;
+      }
+
+      .topbar,
+      .preview-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .top-actions,
+      .preview-actions {
+        justify-content: stretch;
+      }
+
+      .top-actions .btn,
+      .preview-actions .btn {
+        flex: 1 1 auto;
+      }
+
+      .tabs {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+
+      .tab {
+        min-height: 52px;
+        flex-direction: column;
+        gap: 3px;
+        padding: 4px 3px;
+        font-size: 10px;
+        line-height: 1.05;
+      }
+
+      .tab svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .layout {
+        padding: 10px;
+      }
+
+      .ops-readout {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .intel-head,
+      .check-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .readiness span {
+        justify-self: start;
+      }
+
+      .grid.two,
+      .grid.three,
+      .field-row,
+      .item-row,
+      .crew-row,
+      .saved-tools,
+      .library-metrics,
+      .smart-scoreboard,
+      .pack-grid,
+      .agent-grid,
+      .default-grid,
+      .builder-grid,
+      .crew-builder-grid,
+      .workflow-runner {
+        grid-template-columns: 1fr;
+      }
+
+      .flow-node {
+        min-height: 112px;
+      }
+
+      .builder-head {
+        display: grid;
+      }
+
+      .tool-btn,
+      .btn.icon {
+        width: 100%;
+      }
+
+      .paper-wrap {
+        padding: 10px;
+      }
+
+      .paper,
+      .paper.landscape {
+        width: 100%;
+        min-height: auto;
+        padding: 14px;
+        font-size: 9pt;
+      }
+
+      .print-head {
+        grid-template-columns: auto 1fr;
+      }
+
+      .print-meta {
+        grid-column: 1 / -1;
+        text-align: left;
+      }
+
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .topbar,
+      .editor,
+      .preview-toolbar,
+      .ops-readout,
+      .ops-intel {
+        display: none !important;
+      }
+
+      .app,
+      .layout,
+      .preview-shell,
+      .preview-shell.panel,
+      .paper-wrap {
+        display: block;
+        padding: 0;
+        margin: 0;
+        border: 0;
+        box-shadow: none;
+        background: #fff;
+        overflow: visible;
+      }
+
+      .paper,
+      .paper.landscape {
+        width: auto;
+        min-height: auto;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+        page-break-after: avoid;
+      }
+    }
+  </style>
+  <style id="printPageStyle">
+    @page { size: A4 landscape; margin: 10mm; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">DVi</div>
+        <div>
+          <h1>Job Card Studio</h1>
+          <span id="activeLabel">Unsaved job card</span>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="btn" id="newBtn" type="button" title="New job card">
+          <i data-lucide="file-plus-2"></i>
+          <span>New</span>
+        </button>
+        <button class="btn primary" id="saveBtn" type="button" title="Save job card">
+          <i data-lucide="save"></i>
+          <span>Save</span>
+        </button>
+        <button class="btn primary" id="quickAutoCompleteBtn" type="button" title="Auto complete job card">
+          <i data-lucide="sparkles"></i>
+          <span>Auto</span>
+        </button>
+        <button class="btn" id="quickDispatchCheckBtn" type="button" title="Run dispatch check">
+          <i data-lucide="radar"></i>
+          <span>Check</span>
+        </button>
+        <button class="btn" id="duplicateBtn" type="button" title="Duplicate job card">
+          <i data-lucide="copy"></i>
+          <span>Duplicate</span>
+        </button>
+        <button class="btn warn" id="printBtn" type="button" title="Print or save as PDF">
+          <i data-lucide="printer"></i>
+          <span>Print / PDF</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="editor">
+        <nav class="tabs" aria-label="Editor sections">
+          <button class="tab active" type="button" data-tab="agent">
+            <i data-lucide="bot"></i>
+            <span>Smart Build</span>
+          </button>
+          <button class="tab" type="button" data-tab="details">
+            <i data-lucide="clipboard-list"></i>
+            <span>Details</span>
+          </button>
+          <button class="tab" type="button" data-tab="equipment">
+            <i data-lucide="boxes"></i>
+            <span>Equipment</span>
+          </button>
+          <button class="tab" type="button" data-tab="crew">
+            <i data-lucide="users"></i>
+            <span>Crew</span>
+          </button>
+          <button class="tab" type="button" data-tab="library">
+            <i data-lucide="archive"></i>
+            <span>Saved</span>
+          </button>
+        </nav>
+
+        <div class="editor-panel panel">
+          <section class="section tab-panel hidden" data-panel="details">
+            <div class="section-head">
+              <h2>Job Details</h2>
+              <span class="section-count" id="detailQuality">0</span>
+            </div>
+            <div class="grid">
+              <div class="library-metrics" aria-label="Dropdown library size">
+                <div class="metric">
+                  <strong id="metricEquipment">0</strong>
+                  <span>Items</span>
+                </div>
+                <div class="metric">
+                  <strong id="metricCrew">0</strong>
+                  <span>Crew</span>
+                </div>
+                <div class="metric">
+                  <strong id="metricVenues">0</strong>
+                  <span>Venues</span>
+                </div>
+                <div class="metric">
+                  <strong id="metricPacks">0</strong>
+                  <span>Packs</span>
+                </div>
+              </div>
+              <label>
+                Event / Company
+                <select class="smart-select" id="jobTitle" data-bind="jobTitle" data-list="events" data-custom-label="Custom event"></select>
+              </label>
+              <div class="grid two">
+                <label>
+                  Venue
+                  <select class="smart-select" id="venue" data-bind="venue" data-list="venues" data-custom-label="Custom venue"></select>
+                </label>
+                <label>
+                  Location / Hall
+                  <select class="smart-select" data-bind="location" data-list="locations" data-custom-label="Custom location"></select>
+                </label>
+              </div>
+              <div class="grid two">
+                <label>
+                  Client
+                  <select class="smart-select" data-bind="client" data-list="clients" data-custom-label="Custom client"></select>
+                </label>
+                <label>
+                  Job Number
+                  <input data-bind="jobNumber" type="text" autocomplete="off">
+                </label>
+              </div>
+              <div class="grid two">
+                <label>
+                  Setup Start
+                  <input data-bind="setupStart" type="date">
+                </label>
+                <label>
+                  Setup End
+                  <input data-bind="setupEnd" type="date">
+                </label>
+              </div>
+              <div class="grid two">
+                <label>
+                  Event Start
+                  <input data-bind="eventStart" type="date">
+                </label>
+                <label>
+                  Event End
+                  <input data-bind="eventEnd" type="date">
+                </label>
+              </div>
+              <div class="grid two">
+                <label>
+                  Status
+                  <select data-bind="status">
+                    <option>Confirmed</option>
+                    <option>Pending</option>
+                    <option>Draft</option>
+                    <option>Cancelled</option>
+                  </select>
+                </label>
+              </div>
+              <div class="grid two">
+                <label>
+                  Paper
+                  <div class="segmented" role="group" aria-label="Paper orientation">
+                    <button class="segment active" type="button" data-orientation="landscape">
+                      <i data-lucide="panel-top"></i>
+                      <span>Landscape</span>
+                    </button>
+                    <button class="segment" type="button" data-orientation="portrait">
+                      <i data-lucide="panel-left"></i>
+                      <span>Portrait</span>
+                    </button>
+                  </div>
+                </label>
+                <label>
+                  Output
+                  <span class="toggle-line">
+                    <input data-bind="uppercase" type="checkbox">
+                    Uppercase job card
+                  </span>
+                </label>
+              </div>
+              <label>
+                Notes
+                <textarea data-bind="notes"></textarea>
+              </label>
+            </div>
+          </section>
+
+          <section class="section tab-panel hidden" data-panel="equipment">
+            <div class="section-head">
+              <h2>Equipment</h2>
+              <button class="btn" id="addEquipmentBtn" type="button" title="Add equipment">
+                <i data-lucide="plus"></i>
+                <span>Add</span>
+              </button>
+            </div>
+            <div class="field-help">Choose a package, tap common items, or use the dropdown inside each row.</div>
+            <div class="smart-builder" aria-label="Equipment dropdown builder">
+              <div class="builder-head">
+                <div>
+                  <strong>Equipment Dropdown Builder</strong>
+                  <span>Select category, item, and quantity. One click adds it to the card.</span>
+                </div>
+                <div class="builder-badge" id="equipmentBuilderCount">0 items</div>
+              </div>
+              <div class="builder-grid">
+                <label>
+                  Category
+                  <select class="smart-select" id="builderEquipmentCategory"></select>
+                </label>
+                <label>
+                  Equipment
+                  <select class="smart-select" id="builderEquipmentItem"></select>
+                </label>
+                <label>
+                  Qty
+                  <select class="smart-select" id="builderEquipmentQty"></select>
+                </label>
+                <button class="btn primary" id="builderAddEquipment" type="button" title="Add selected equipment">
+                  <i data-lucide="plus"></i>
+                  <span>Add Item</span>
+                </button>
+              </div>
+            </div>
+            <div class="pack-grid" id="equipmentPacks"></div>
+            <div class="quick-grid" id="equipmentTemplates"></div>
+            <div class="row-list" id="equipmentRows" style="margin-top: 12px;"></div>
+          </section>
+
+          <section class="section tab-panel hidden" data-panel="crew">
+            <div class="section-head">
+              <h2>Crew Assignments</h2>
+              <button class="btn" id="addCrewBtn" type="button" title="Add crew">
+                <i data-lucide="user-plus"></i>
+                <span>Add</span>
+              </button>
+            </div>
+            <div class="field-help">Roles and names are picked from your recurring DVi team list.</div>
+            <label class="toggle-line">
+              <input data-bind="autoCrew" type="checkbox">
+              Auto-fill fixed department crew
+            </label>
+            <div class="smart-builder" aria-label="Crew dropdown builder">
+              <div class="builder-head">
+                <div>
+                  <strong>Crew Dropdown Builder</strong>
+                  <span>Select department and crew member. Fixed departments auto-pick their usual person.</span>
+                </div>
+                <div class="builder-badge" id="crewBuilderCount">0 crew</div>
+              </div>
+              <div class="builder-grid crew-builder-grid">
+                <label>
+                  Department
+                  <select class="smart-select" id="builderCrewRole"></select>
+                </label>
+                <label>
+                  Crew Member
+                  <select class="smart-select" id="builderCrewMember"></select>
+                </label>
+                <button class="btn primary" id="builderAddCrew" type="button" title="Add selected crew">
+                  <i data-lucide="user-plus"></i>
+                  <span>Add Crew</span>
+                </button>
+                <button class="btn" id="builderAddFixedCrew" type="button" title="Add all fixed departments">
+                  <i data-lucide="wand-2"></i>
+                  <span>Fixed Crew</span>
+                </button>
+              </div>
+              <div class="builder-actions">
+                <button class="btn" id="builderFillCrewBlanks" type="button" title="Fill fixed department blanks">
+                  <i data-lucide="sparkles"></i>
+                  <span>Fill Blanks</span>
+                </button>
+              </div>
+            </div>
+            <div class="default-grid" id="fixedCrewDefaults"></div>
+            <div class="quick-grid" id="roleTemplates"></div>
+            <div class="row-list" id="crewRows" style="margin-top: 12px;"></div>
+          </section>
+
+          <section class="section tab-panel" data-panel="agent">
+            <div class="section-head">
+              <h2>Smart Build</h2>
+              <span class="section-count" id="agentActionCount">0</span>
+            </div>
+            <div class="field-help">Build a complete job card with clicks. The system adds likely equipment, departments, fixed crew, and readiness checks.</div>
+            <div class="smart-scoreboard" aria-label="Job readiness metrics">
+              <div class="score-tile">
+                <span>Readiness</span>
+                <strong id="smartReadinessScore">0%</strong>
+              </div>
+              <div class="score-tile">
+                <span>Equipment</span>
+                <strong id="smartEquipmentCount">0</strong>
+              </div>
+              <div class="score-tile">
+                <span>Crew</span>
+                <strong id="smartCrewCount">0</strong>
+              </div>
+              <div class="score-tile">
+                <span>Open Checks</span>
+                <strong id="smartOpenChecks">0</strong>
+              </div>
+            </div>
+            <div class="workflow-runner" aria-label="One-click job card workflow">
+              <button class="flow-node" id="flowDetailsBtn" type="button" title="Open job details">
+                <span class="flow-kicker">
+                  <span class="flow-step">01</span>
+                  <span class="flow-status" id="flowStatusDetails">Needed</span>
+                </span>
+                <strong><i data-lucide="clipboard-list"></i><span>Job Details</span></strong>
+                <span>Event, venue, client, setup range, and event range.</span>
+              </button>
+              <button class="flow-node" id="flowBuildBtn" type="button" title="Build selected job type">
+                <span class="flow-kicker">
+                  <span class="flow-step">02</span>
+                  <span class="flow-status" id="flowStatusBuild">Build</span>
+                </span>
+                <strong><i data-lucide="boxes"></i><span>Build Loadout</span></strong>
+                <span>Add the selected job type equipment and departments.</span>
+              </button>
+              <button class="flow-node" id="flowAutoBtn" type="button" title="Auto complete crew">
+                <span class="flow-kicker">
+                  <span class="flow-step">03</span>
+                  <span class="flow-status" id="flowStatusCrew">Add</span>
+                </span>
+                <strong><i data-lucide="users-round"></i><span>Assign Crew</span></strong>
+                <span>Infer departments and fill fixed crew names.</span>
+              </button>
+              <button class="flow-node" id="flowCheckBtn" type="button" title="Run readiness check">
+                <span class="flow-kicker">
+                  <span class="flow-step">04</span>
+                  <span class="flow-status" id="flowStatusCheck">Review</span>
+                </span>
+                <strong><i data-lucide="radar"></i><span>Run Checks</span></strong>
+                <span>Scan dates, identity, crew gaps, power, and loadout.</span>
+              </button>
+              <button class="flow-node" id="flowPrintBtn" type="button" title="Print or save PDF">
+                <span class="flow-kicker">
+                  <span class="flow-step">05</span>
+                  <span class="flow-status" id="flowStatusPrint">Hold</span>
+                </span>
+                <strong><i data-lucide="printer"></i><span>Print Pack</span></strong>
+                <span>Create the clean boss-ready job card PDF.</span>
+              </button>
+            </div>
+            <div class="smart-builder" aria-label="Smart job type builder">
+              <div class="builder-head">
+                <div>
+                  <strong>Quick Job Builder</strong>
+                  <span>Choose a common production type and let the system add equipment plus expected departments.</span>
+                </div>
+                <div class="builder-badge" id="agentModeBadge">Smart Local</div>
+              </div>
+              <div class="builder-grid">
+                <label>
+                  Job Type
+                  <select class="smart-select" id="agentPackSelect"></select>
+                </label>
+                <button class="btn primary" id="agentApplyPack" type="button" title="Build selected job type">
+                  <i data-lucide="wand-2"></i>
+                  <span>Build</span>
+                </button>
+                <button class="btn" id="agentAutoComplete" type="button" title="Complete missing crew and power checks">
+                  <i data-lucide="sparkles"></i>
+                  <span>Complete</span>
+                </button>
+                <button class="btn warn" id="agentDispatchCheck" type="button" title="Run dispatch check">
+                  <i data-lucide="radar"></i>
+                  <span>Check</span>
+                </button>
+              </div>
+            </div>
+            <div class="agent-grid" style="margin-top: 12px;">
+              <button class="agent-card" type="button" data-agent-action="crewFromEquipment">
+                <strong>Crew From Equipment</strong>
+                <span>Adds screen, camera, sound, lighting, platform, plinths, and power roles based on equipment.</span>
+              </button>
+              <button class="agent-card" type="button" data-agent-action="powerReady">
+                <strong>Power Ready</strong>
+                <span>Adds fueled generator and Power crew when technical loadout needs power confirmation.</span>
+              </button>
+              <button class="agent-card" type="button" data-agent-action="liveFeedReady">
+                <strong>Live Feed Ready</strong>
+                <span>Adds camera department, screen department, and video support for live-feed jobs.</span>
+              </button>
+              <button class="agent-card" type="button" data-agent-action="stageReady">
+                <strong>Stage Ready</strong>
+                <span>Adds platform, white marley, lighting, and platform crew for stage-style jobs.</span>
+              </button>
+              <button class="agent-card" type="button" data-agent-action="fixedCrew">
+                <strong>Fixed Crew</strong>
+                <span>Adds or fills the departments where the crew member rarely changes.</span>
+              </button>
+              <button class="agent-card" type="button" data-agent-action="cleanBlanks">
+                <strong>Clean Blank Rows</strong>
+                <span>Removes empty equipment and crew rows before saving or printing.</span>
+              </button>
+            </div>
+            <div class="agent-log" id="agentLog" style="margin-top: 12px;"></div>
+          </section>
+
+          <section class="section tab-panel hidden" data-panel="library">
+            <div class="section-head">
+              <h2>Saved Cards</h2>
+              <button class="btn danger" id="deleteBtn" type="button" title="Delete current saved job">
+                <i data-lucide="trash-2"></i>
+                <span>Delete</span>
+              </button>
+            </div>
+            <div class="saved-tools">
+              <label>
+                Search
+                <input id="savedSearch" type="search" placeholder="Event, venue, client">
+              </label>
+              <button class="btn" id="exportBtn" type="button" title="Export saved job cards">
+                <i data-lucide="download"></i>
+                <span>Export</span>
+              </button>
+            </div>
+            <div class="grid two" style="margin-top: 12px;">
+              <button class="btn" id="importBtn" type="button" title="Import job card data">
+                <i data-lucide="upload"></i>
+                <span>Import</span>
+              </button>
+              <input class="hidden" id="importInput" type="file" accept="application/json,.json">
+            </div>
+            <div class="saved-list" id="savedList" style="margin-top: 14px;"></div>
+          </section>
+        </div>
+      </aside>
+
+      <section class="preview-shell">
+        <div class="preview-toolbar">
+          <div class="preview-title">
+            <strong>Live Job Card</strong>
+            <span id="previewSubtitle"></span>
+          </div>
+          <div class="preview-actions">
+            <button class="btn" id="clearBtn" type="button" title="Clear current form">
+              <i data-lucide="eraser"></i>
+              <span>Clear</span>
+            </button>
+            <button class="btn primary" id="saveBtnSecondary" type="button" title="Save job card">
+              <i data-lucide="save"></i>
+              <span>Save</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="ops-readout" aria-label="Production readout">
+          <div class="readout-card">
+            <span>Status</span>
+            <strong id="readoutStatus">Draft</strong>
+          </div>
+          <div class="readout-card">
+            <span>Setup</span>
+            <strong id="readoutSetup">Pending</strong>
+          </div>
+          <div class="readout-card">
+            <span>Event</span>
+            <strong id="readoutEvent">Pending</strong>
+          </div>
+          <div class="readout-card">
+            <span>Equipment</span>
+            <strong id="readoutEquipment">0</strong>
+          </div>
+          <div class="readout-card">
+            <span>Crew</span>
+            <strong id="readoutCrew">0</strong>
+          </div>
+          <div class="readout-card">
+            <span>Fixed</span>
+            <strong id="readoutFixedCrew">0</strong>
+          </div>
+        </div>
+
+        <div class="ops-intel" aria-label="Operations intelligence">
+          <div class="intel-head">
+            <div>
+              <strong>Job Readiness</strong>
+              <span id="intelSummary">Watching this job card live</span>
+            </div>
+            <div class="readiness">
+              <span id="readinessLabel">0%</span>
+              <div class="readiness-track">
+                <div class="readiness-fill" id="readinessFill"></div>
+              </div>
+            </div>
+          </div>
+          <div class="check-grid" id="opsChecks"></div>
+        </div>
+
+        <div class="paper-wrap panel">
+          <article class="paper landscape" id="paper">
+            <header class="print-head">
+              <div class="print-logo">DVi</div>
+              <div>
+                <h2>JOB CARD</h2>
+                <p>Production and technical deployment</p>
+              </div>
+              <div class="print-meta">
+                <span id="printJobNumber"></span>
+                <span id="printStatus"></span>
+              </div>
+            </header>
+
+            <table class="job-table">
+              <thead>
+                <tr>
+                  <th class="event-col">Event</th>
+                  <th class="venue-col">Venue</th>
+                  <th class="equipment-col">Equipment</th>
+                  <th class="date-col">Set Up Date</th>
+                  <th class="date-col">Event Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td id="printEvent"></td>
+                  <td id="printVenue"></td>
+                  <td class="equipment-cell">
+                    <ul id="printEquipment"></ul>
+                  </td>
+                  <td id="printSetupDate"></td>
+                  <td id="printEventDate"></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="crew-area">
+              <table class="crew-table">
+                <thead>
+                  <tr>
+                    <th>Role</th>
+                    <th>Assigned Crew</th>
+                  </tr>
+                </thead>
+                <tbody id="printCrew"></tbody>
+              </table>
+
+              <div class="side-stack">
+                <table class="mini-table">
+                  <tbody>
+                    <tr>
+                      <th>Client</th>
+                      <td id="printClient"></td>
+                    </tr>
+                    <tr>
+                      <th>Location</th>
+                      <td id="printLocation"></td>
+                    </tr>
+                    <tr>
+                      <th>Equipment Count</th>
+                      <td id="printEquipmentCount"></td>
+                    </tr>
+                    <tr>
+                      <th>Crew Count</th>
+                      <td id="printCrewCount"></td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div>
+                  <table class="mini-table">
+                    <thead>
+                      <tr>
+                        <th colspan="2">Notes</th>
+                      </tr>
+                    </thead>
+                  </table>
+                  <div class="notes-box" id="printNotes"></div>
+                </div>
+              </div>
+            </div>
+
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "dvi-job-card-studio-v1";
+
+    const equipmentCatalog = [
+      { category: "LED Screens", item: "4X2M LED SCREEN" },
+      { category: "LED Screens", item: "4X2M LED SCREENS" },
+      { category: "LED Screens", item: "4X4M LED SCREEN" },
+      { category: "LED Screens", item: "5X3M LED SCREEN" },
+      { category: "LED Screens", item: "5X3M LED SCREENS" },
+      { category: "LED Screens", item: "6X3M LED SCREEN" },
+      { category: "LED Screens", item: "8X3M LED SCREEN" },
+      { category: "LED Screens", item: "LED SCREEN IN TENT" },
+      { category: "LED Screens", item: "LED SCREENS" },
+      { category: "Sound", item: "PA SYSTEM" },
+      { category: "Sound", item: "PA SYSTEM D&B" },
+      { category: "Sound", item: "PUBLIC ADDRESS SYSTEM" },
+      { category: "Sound", item: "PUBLIC ADDRESS SYSTEM D&B" },
+      { category: "Sound", item: "PA SYSTEM FOR COCKTAIL" },
+      { category: "Sound", item: "ENHANCEMENT OF PA SYSTEM" },
+      { category: "Microphones", item: "DELEGATE MICROPHONES" },
+      { category: "Microphones", item: "DELEGATE MICS" },
+      { category: "Microphones", item: "5 DELEGATE MICROPHONES" },
+      { category: "Microphones", item: "9 DELEGATE MICS" },
+      { category: "Microphones", item: "10 DELEGATE MICS" },
+      { category: "Microphones", item: "12 DELEGATE MICS" },
+      { category: "Microphones", item: "60 DELEGATE MICROPHONES" },
+      { category: "Microphones", item: "81 DELEGATE MICS" },
+      { category: "Microphones", item: "6 WIRELESS MICROPHONES" },
+      { category: "Microphones", item: "2 LAPEL MICROPHONES" },
+      { category: "Microphones", item: "7 HAND HELD MICS" },
+      { category: "Microphones", item: "CONDENSOR MICROPHONES" },
+      { category: "Podium & Plinths", item: "DIGITAL PODIUM" },
+      { category: "Podium & Plinths", item: "4 DIGITAL PLINTHS" },
+      { category: "Podium & Plinths", item: "5 DIGITAL PLINTHS" },
+      { category: "Podium & Plinths", item: "NETWORK DIGITAL PLINTHS TO SOUND SYSTEM" },
+      { category: "Monitors & Signage", item: "COMFORT MONITOR" },
+      { category: "Monitors & Signage", item: "2 COMFORT MONITORS" },
+      { category: "Monitors & Signage", item: "55 INCH COMFORT MONITOR" },
+      { category: "Monitors & Signage", item: "43 INCH TV" },
+      { category: "Monitors & Signage", item: "2 DIGITAL SIGNAGES" },
+      { category: "Monitors & Signage", item: "4 DIGITAL SIGNAGES" },
+      { category: "Lighting", item: "5 KEY LIGHTS" },
+      { category: "Lighting", item: "KEY LIGHTS" },
+      { category: "Lighting", item: "6 KEY LIGHTS" },
+      { category: "Lighting", item: "8 KEY LIGHTS" },
+      { category: "Lighting", item: "10 KEY LIGHTS" },
+      { category: "Lighting", item: "6 MOOD LIGHTS" },
+      { category: "Lighting", item: "MOOD LIGHTS" },
+      { category: "Lighting", item: "8 MOOD LIGHTS" },
+      { category: "Lighting", item: "10 MOOD LIGHTS" },
+      { category: "Lighting", item: "12 MOOD LIGHTS" },
+      { category: "Lighting", item: "14 MOOD LIGHTS" },
+      { category: "Lighting", item: "18 MOOD LIGHTS" },
+      { category: "Lighting", item: "16 LED PARS" },
+      { category: "Lighting", item: "4 MOVING HEADS" },
+      { category: "Lighting", item: "MOVING HEADS" },
+      { category: "Lighting", item: "ASSORTED LIGHTS" },
+      { category: "Lighting", item: "EFFECT LIGHTS" },
+      { category: "Camera & Stream", item: "2 CAMERAS FOR LIVE FEED" },
+      { category: "Camera & Stream", item: "CAMERAS FOR LIVE FEED" },
+      { category: "Camera & Stream", item: "VIDEO CONFERENCING - 2 CAMERAS" },
+      { category: "Camera & Stream", item: "VIDEO CONFERENCING" },
+      { category: "Camera & Stream", item: "VIDEO CONFERENCING - 3 CAMERAS" },
+      { category: "Camera & Stream", item: "LIVE STREAMING TO YOUTUBE" },
+      { category: "Camera & Stream", item: "LIVE BROADCASTING EQUIPMENT" },
+      { category: "Camera & Stream", item: "PHOTOGRAPHY" },
+      { category: "Camera & Stream", item: "VIDEOGRAPHY" },
+      { category: "Power", item: "FUELED GENERATOR" },
+      { category: "Power", item: "12 EXTENSION CABLES" },
+      { category: "Stage & Rigging", item: "STEEL FRAMES" },
+      { category: "Stage & Rigging", item: "STEEL FRAMES FOR BANNERS" },
+      { category: "Stage & Rigging", item: "TRUSS STRUCTURE" },
+      { category: "Stage & Rigging", item: "SUSPENDED TRUSS STRUCTURE" },
+      { category: "Stage & Rigging", item: "4.8X2.4X0.3M PLATFORM" },
+      { category: "Stage & Rigging", item: "4.8X2.4X0.4M PLATFORM" },
+      { category: "Stage & Rigging", item: "6X2.4X0.3M PLATFORM" },
+      { category: "Stage & Rigging", item: "6X3.6X0.5M PLATFORM" },
+      { category: "Stage & Rigging", item: "8X2.5X0.3M PLATFORM" },
+      { category: "Stage & Rigging", item: "9.6X2.4X0.6M PLATFORM" },
+      { category: "Stage & Rigging", item: "10X2.4X0.5M PLATFORM" },
+      { category: "Stage & Rigging", item: "14X2.4X0.6M PLATFORM" },
+      { category: "Stage & Rigging", item: "14.6X2.4X0.5M PLATFORM" },
+      { category: "Stage & Rigging", item: "PLATFORM" },
+      { category: "Finish", item: "WHITE MARLEY" },
+      { category: "Finish", item: "WHITE MARLEY TO COVER HOTEL PLATFORM" },
+      { category: "Finish", item: "BLUE COVER" },
+      { category: "Finish", item: "RED CARPET FOR PLATFORM" },
+      { category: "Exhibition", item: "15 EXHIBITION LIGHTS" },
+      { category: "Exhibition", item: "18 POSTER BOARDS" },
+      { category: "Exhibition", item: "6 PANEL SEATS" },
+      { category: "Exhibition", item: "POSTER BOARDS" },
+      { category: "Other", item: "DJ FOR COCKTAIL" },
+      { category: "Other", item: "1 MIXER" },
+      { category: "Other", item: "1 CASUAL" }
+    ];
+
+    const roleOptions = [
+      "RIGGERS",
+      "RIGGING",
+      "SCREEN",
+      "SCREENS",
+      "VISUAL TECHNICIAN",
+      "CAMERAS",
+      "CAMERA WORKS",
+      "POWER",
+      "POWER TECHNICIAN",
+      "DRIVER",
+      "DRIVERS",
+      "SOUND",
+      "SOUND TECHNICIAN",
+      "LIGHTING",
+      "LIGHTING TECHNICIAN",
+      "PODIUM",
+      "PLINTHS",
+      "PODIUM / PLINTHS",
+      "PLINTHS AND PODIUM",
+      "PLATFORM",
+      "MONITOR",
+      "TV",
+      "SIGNAGES",
+      "PHOTOGRAPHY",
+      "VIDEOGRAPHY",
+      "POSTER BOARDS"
+    ];
+
+    const crewMembers = [
+      "AGABA GODRICK",
+      "AISHA NAMBIRO",
+      "AMISSI",
+      "ATUHAIRE DARIUS",
+      "AWEKO RONALD",
+      "BUSUULWA WILLIAM",
+      "DEERRICK OCAYA",
+      "ELVIS",
+      "HAMIS",
+      "INTWAARI DANIEL",
+      "JJUMA SSAKA",
+      "KIBUUKA TONNY",
+      "KILAGGA MARK",
+      "LOOKY LUKINDU",
+      "LOOKY LUKOMA",
+      "MAWERERE ANTHONY",
+      "MUKIIBI MOSES",
+      "MULINDWA TONNY",
+      "NAMBIRO AISHA",
+      "NSAMBA ALLAN",
+      "NSUBUGA THOMAS",
+      "OCAYA DERRICK",
+      "OLOYA KENNEDY",
+      "OZIA NORMAN",
+      "PATRICK",
+      "SAIDI HASSAN",
+      "SAIDI HASSANI",
+      "SAIDI HASSANI MAHINE",
+      "SSEBUFU MOSES",
+      "SSEKANDI FRED",
+      "TENDO PAUL",
+      "VALENTINE MASAMBAGA",
+      "WAGABA EDDY",
+      "WAMPAMBA JOSEPH"
+    ];
+
+    const fixedCrewAssignments = [
+      { department: "Power", roles: ["POWER", "POWER TECHNICIAN"], member: "AWEKO RONALD" },
+      { department: "Platform", roles: ["PLATFORM"], member: "NSUBUGA THOMAS" },
+      { department: "Plinths / Podium", roles: ["PLINTHS", "PODIUM", "PODIUM / PLINTHS", "PLINTHS AND PODIUM"], member: "SSEBUFU MOSES" },
+      { department: "Monitor", roles: ["MONITOR"], member: "SSEBUFU MOSES" },
+      { department: "Cameras", roles: ["CAMERAS", "CAMERA WORKS"], member: "ATUHAIRE DARIUS" },
+      { department: "Driver", roles: ["DRIVER", "DRIVERS"], member: "SAIDI HASSANI" }
+    ];
+
+    const venues = [
+      "AKAMA RESORT",
+      "BAMBARA",
+      "BAMUS SAROVAR PORTICO HOTEL",
+      "CTF",
+      "DFCU HEADQUARTERS",
+      "FOUR POINTS",
+      "GAYAZA HIGH SCHOOL",
+      "GOLDEN TULIP",
+      "KOLOLO",
+      "KOLOLO AIRSTRIP",
+      "MACHEDA PALMS",
+      "MAKERERE UNIVERSITY",
+      "MESTIL HOTEL",
+      "MESTIL HOTEL - BUNYONYI HALL",
+      "MUK SPH",
+      "NAGURU SKYZ HOTEL",
+      "NV HEAD OFFICES",
+      "PARLIAMENT OF UGANDA",
+      "PROTEA HOTEL",
+      "SERENA HOTEL",
+      "SERENA KIGO",
+      "SERENA KIGO - VICTORIA HALL",
+      "SERENA KIGO - POOLSIDE",
+      "SERENA KIGO - TURACO",
+      "SHERATON HOTEL",
+      "SPEKE RESORT MUNYONYO",
+      "SPEKE RESORT MUNYONYO - RWENZORI HALL"
+    ];
+
+    const locations = [
+      "BUNYONYI HALL",
+      "CHAPEL",
+      "COCKTAIL AREA",
+      "CTF",
+      "DFCU 7TH FLOOR",
+      "KIGO",
+      "KOLOLO",
+      "MAIN EVENT",
+      "MAKERERE",
+      "MUNYONYO",
+      "NAGURU",
+      "POOLSIDE",
+      "RWENZORI HALL",
+      "TENT",
+      "TURACO",
+      "VICTORIA HALL"
+    ];
+
+    const venueLocationDefaults = {
+      "MESTIL HOTEL - BUNYONYI HALL": "BUNYONYI HALL",
+      "SERENA KIGO - VICTORIA HALL": "VICTORIA HALL",
+      "SERENA KIGO - POOLSIDE": "POOLSIDE",
+      "SERENA KIGO - TURACO": "TURACO",
+      "SPEKE RESORT MUNYONYO - RWENZORI HALL": "RWENZORI HALL",
+      "FOUR POINTS": "VICTORIA HALL",
+      "DFCU HEADQUARTERS": "DFCU 7TH FLOOR",
+      "KOLOLO AIRSTRIP": "KOLOLO"
+    };
+
+    const clients = [
+      "BANK OF BARODA",
+      "BRITAM",
+      "CICCQSU",
+      "DFCU BANK",
+      "EPRC",
+      "GAYAZA HIGH SCHOOL",
+      "HUAWEI TECHNOLOGIES",
+      "MAKERERE UNIVERSITY",
+      "MINISTRY OF FINANCE",
+      "MUK ADVANCEMENT OFFICE",
+      "NATIONAL WATER",
+      "PAN DENTAL ACADEMY",
+      "PARLIAMENT OF UGANDA"
+    ];
+
+    const eventTemplates = [
+      "AHURO RICKY'S WEDDING",
+      "AI AND AMR SYMPOSIUM",
+      "AKABINKANO",
+      "ANGELO AND BRIDGET'S WEDDING",
+      "BANK OF BARODA AGM",
+      "BIRTHDAY FRIENDS WORKSHOP",
+      "BOOK LAUNCH",
+      "BRITAM AGM",
+      "BUDGET DAY",
+      "DFCU BOARD MEETING",
+      "DFCU SICKLE CELL RUN",
+      "ELECTION OF THE SPEAKER",
+      "EXHIBITION",
+      "HUAWEI ICT CONGRESS",
+      "MINISTRY OF FINANCE BUDGET RETREAT",
+      "ORIENTATION OF THE PARLIAMENTARIANS",
+      "PAN DENTAL ACADEMY",
+      "STATE OF THE NATION ADDRESS",
+      "THE LABOUR CONFERENCE"
+    ];
+
+    const equipmentQuickAdds = [
+      "4X2M LED SCREEN",
+      "5X3M LED SCREEN",
+      "PA SYSTEM",
+      "DIGITAL PODIUM",
+      "FUELED GENERATOR",
+      "KEY LIGHTS",
+      "MOOD LIGHTS",
+      "DELEGATE MICROPHONES",
+      "CAMERAS FOR LIVE FEED",
+      "VIDEO CONFERENCING - 2 CAMERAS",
+      "WHITE MARLEY",
+      "PLATFORM",
+      "STEEL FRAMES",
+      "DIGITAL SIGNAGES",
+      "POSTER BOARDS"
+    ];
+
+    const roleQuickAdds = [
+      "RIGGERS",
+      "SCREEN",
+      "CAMERAS",
+      "POWER",
+      "DRIVER",
+      "SOUND",
+      "LIGHTING",
+      "PODIUM",
+      "PLINTHS",
+      "PLATFORM",
+      "MONITOR",
+      "PHOTOGRAPHY",
+      "VIDEOGRAPHY"
+    ];
+
+    const equipmentPacks = [
+      {
+        name: "AGM / Conference",
+        desc: "Screens, podium, PA, delegate mics, lights, platform.",
+        equipment: [
+          ["2", "LED Screens", "4X2M LED SCREENS"],
+          ["1", "Podium & Plinths", "DIGITAL PODIUM"],
+          ["1", "Sound", "PA SYSTEM"],
+          ["10", "Microphones", "DELEGATE MICS"],
+          ["6", "Lighting", "KEY LIGHTS"],
+          ["1", "Stage & Rigging", "PLATFORM"],
+          ["1", "Finish", "WHITE MARLEY"]
+        ],
+        crew: ["RIGGERS", "SCREEN", "SOUND", "LIGHTING", "POWER", "DRIVER"]
+      },
+      {
+        name: "Live Feed",
+        desc: "LED screens, cameras, video conferencing, power.",
+        equipment: [
+          ["2", "LED Screens", "4X2M LED SCREENS"],
+          ["2", "Camera & Stream", "CAMERAS FOR LIVE FEED"],
+          ["1", "Camera & Stream", "VIDEO CONFERENCING - 2 CAMERAS"],
+          ["1", "Power", "FUELED GENERATOR"]
+        ],
+        crew: ["RIGGERS", "SCREEN", "CAMERAS", "POWER", "DRIVER"]
+      },
+      {
+        name: "Lighting + Stage",
+        desc: "Key lights, mood lights, moving heads, platform, finish.",
+        equipment: [
+          ["8", "Lighting", "KEY LIGHTS"],
+          ["12", "Lighting", "MOOD LIGHTS"],
+          ["4", "Lighting", "MOVING HEADS"],
+          ["1", "Stage & Rigging", "PLATFORM"],
+          ["1", "Finish", "WHITE MARLEY"]
+        ],
+        crew: ["LIGHTING", "PLATFORM", "POWER", "DRIVER"]
+      },
+      {
+        name: "Exhibition",
+        desc: "Screens, signage, plinths, poster boards, TV.",
+        equipment: [
+          ["1", "Monitors & Signage", "43 INCH TV"],
+          ["2", "Monitors & Signage", "DIGITAL SIGNAGES"],
+          ["5", "Podium & Plinths", "DIGITAL PLINTHS"],
+          ["18", "Exhibition", "POSTER BOARDS"]
+        ],
+        crew: ["TV", "SIGNAGES", "PLINTHS", "POSTER BOARDS", "DRIVER"]
+      }
+    ];
+
+    const defaultJob = {
+      jobTitle: "BANK OF BARODA AGM",
+      venue: "MESTIL HOTEL - BUNYONYI HALL",
+      location: "BUNYONYI HALL",
+      client: "BANK OF BARODA",
+      jobNumber: "",
+      setupStart: "2026-06-17",
+      setupEnd: "",
+      eventStart: "2026-06-19",
+      eventEnd: "",
+      status: "Confirmed",
+      orientation: "landscape",
+      uppercase: true,
+      autoCrew: true,
+      notes: "Confirm power load, generator fuel, rigging points, and platform finish before setup.",
+      equipment: [
+        { qty: "2", category: "LED Screens", item: "4X2M LED SCREENS" },
+        { qty: "1", category: "Podium & Plinths", item: "DIGITAL PODIUM" },
+        { qty: "1", category: "Sound", item: "PA SYSTEM" },
+        { qty: "9", category: "Microphones", item: "9 DELEGATE MICS" },
+        { qty: "10", category: "Lighting", item: "10 KEY LIGHTS" },
+        { qty: "2", category: "Camera & Stream", item: "VIDEO CONFERENCING - 2 CAMERAS" },
+        { qty: "1", category: "Power", item: "FUELED GENERATOR" },
+        { qty: "1", category: "Stage & Rigging", item: "14.6X2.4X0.5M PLATFORM" },
+        { qty: "1", category: "Finish", item: "WHITE MARLEY" }
+      ],
+      crew: [
+        { role: "RIGGERS", name: "" },
+        { role: "SCREEN", name: "" },
+        { role: "MONITOR", name: "SSEBUFU MOSES" },
+        { role: "POWER", name: "AWEKO RONALD" },
+        { role: "LIGHTING", name: "WAMPAMBA JOSEPH" },
+        { role: "CAMERAS", name: "ATUHAIRE DARIUS" },
+        { role: "DRIVER", name: "SAIDI HASSANI" }
+      ]
+    };
+
+    const emptyJob = () => ({
+      jobTitle: "",
+      venue: "",
+      location: "",
+      client: "",
+      jobNumber: "",
+      setupStart: "",
+      setupEnd: "",
+      eventStart: "",
+      eventEnd: "",
+      status: "Draft",
+      orientation: "landscape",
+      uppercase: true,
+      autoCrew: true,
+      notes: "",
+      equipment: [{ qty: "", category: "", item: "" }],
+      crew: [{ role: "", name: "" }]
+    });
+
+    let state = structuredClone(defaultJob);
+    let activeId = null;
+    let savedCards = readSaved();
+    let builderState = {
+      equipmentCategory: "LED Screens",
+      equipmentItem: "4X2M LED SCREEN",
+      equipmentQty: "1",
+      crewRole: "POWER",
+      crewMember: "AWEKO RONALD"
+    };
+    let agentLog = ["Smart Build ready: choose an automation or build from a job type."];
+
+    const $ = (selector, root = document) => root.querySelector(selector);
+    const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+
+    function cloneData(data) {
+      return JSON.parse(JSON.stringify(data));
+    }
+
+    function normalize(value) {
+      return String(value || "").trim();
+    }
+
+    function display(value) {
+      const clean = normalize(value);
+      if (!clean) return "";
+      return state.uppercase ? clean.toUpperCase() : clean;
+    }
+
+    function roleDisplay(value) {
+      const clean = normalize(value);
+      if (!clean) return "";
+      return clean.toUpperCase();
+    }
+
+    function uid() {
+      return "job-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
+    }
+
+    function readSaved() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function writeSaved() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(savedCards));
+    }
+
+    function uniqueSorted(values) {
+      return Array.from(new Set(values.map(normalize).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+    }
+
+    function equipmentCategories() {
+      return uniqueSorted(equipmentCatalog.map((item) => item.category));
+    }
+
+    function equipmentItemsFor(category, current = "") {
+      const base = category
+        ? equipmentCatalog.filter((item) => item.category === category).map((item) => item.item)
+        : equipmentCatalog.map((item) => item.item);
+      return uniqueSorted([current, ...base]);
+    }
+
+    function dropdownLists() {
+      return {
+        clients,
+        crewMembers,
+        events: eventTemplates,
+        locations,
+        venues
+      };
+    }
+
+    function optionsHtml(options, selected = "", placeholder = "Select", customLabel = "Custom") {
+      const selectedValue = normalize(selected);
+      const values = uniqueSorted([selectedValue, ...options]);
+      const rows = [`<option value="">${escapeHtml(placeholder)}</option>`];
+      values.forEach((value) => {
+        rows.push(`<option value="${escapeHtml(value)}"${value === selectedValue ? " selected" : ""}>${escapeHtml(value)}</option>`);
+      });
+      rows.push(`<option value="__custom__">${escapeHtml(customLabel)}...</option>`);
+      return rows.join("");
+    }
+
+    function plainOptionsHtml(options, selected = "", placeholder = "Select") {
+      const selectedValue = normalize(selected);
+      const rows = [`<option value="">${escapeHtml(placeholder)}</option>`];
+      uniqueSorted([selectedValue, ...options]).forEach((value) => {
+        rows.push(`<option value="${escapeHtml(value)}"${value === selectedValue ? " selected" : ""}>${escapeHtml(value)}</option>`);
+      });
+      return rows.join("");
+    }
+
+    function qtyOptionsHtml(selected = "1") {
+      const quantities = ["", "1", "2", "3", "4", "5", "6", "8", "10", "12", "14", "15", "18", "20", "30", "40", "60", "81"];
+      return quantities.map((qty) => (
+        `<option value="${escapeHtml(qty)}"${qty === selected ? " selected" : ""}>${qty || "Qty"}</option>`
+      )).join("");
+    }
+
+    function ensureBuilderEquipmentItem() {
+      const options = equipmentItemsFor(builderState.equipmentCategory, builderState.equipmentItem);
+      if (!options.includes(builderState.equipmentItem)) {
+        builderState.equipmentItem = options[0] || "";
+      }
+    }
+
+    function ensureBuilderCrewMember() {
+      const fixed = defaultCrewForRole(builderState.crewRole);
+      if (state.autoCrew && fixed) {
+        builderState.crewMember = fixed;
+      } else if (!builderState.crewMember) {
+        builderState.crewMember = "";
+      }
+    }
+
+    function renderBuilderControls() {
+      ensureBuilderEquipmentItem();
+      ensureBuilderCrewMember();
+      $("#builderEquipmentCategory").innerHTML = plainOptionsHtml(equipmentCategories(), builderState.equipmentCategory, "All categories");
+      $("#builderEquipmentItem").innerHTML = plainOptionsHtml(equipmentItemsFor(builderState.equipmentCategory, builderState.equipmentItem), builderState.equipmentItem, "Equipment");
+      $("#builderEquipmentQty").innerHTML = qtyOptionsHtml(builderState.equipmentQty);
+      $("#builderCrewRole").innerHTML = plainOptionsHtml(roleOptions, builderState.crewRole, "Department");
+      $("#builderCrewMember").innerHTML = plainOptionsHtml(crewMembers, builderState.crewMember, "Crew member");
+      $("#equipmentBuilderCount").textContent = `${uniqueSorted(equipmentCatalog.map((item) => item.item)).length} items`;
+      $("#crewBuilderCount").textContent = `${crewMembers.length} crew`;
+    }
+
+    function addBuilderEquipment() {
+      const item = normalize(builderState.equipmentItem);
+      if (!item) return;
+      const match = matchEquipment(item);
+      state.equipment.push({
+        qty: builderState.equipmentQty || "",
+        category: builderState.equipmentCategory || match?.category || "",
+        item
+      });
+      renderAll();
+      setActiveTab("equipment");
+    }
+
+    function addBuilderCrew() {
+      const role = normalize(builderState.crewRole);
+      if (!role) return;
+      const row = {
+        role,
+        name: normalize(builderState.crewMember)
+      };
+      applyDefaultCrew(row);
+      state.crew.push(row);
+      renderAll();
+      setActiveTab("crew");
+    }
+
+    function addAllFixedCrew() {
+      const existingRoles = new Set(state.crew.map((row) => roleDisplay(row.role)).filter(Boolean));
+      fixedCrewAssignments.forEach((assignment) => {
+        const role = assignment.roles[0];
+        if (!existingRoles.has(role)) {
+          state.crew.push({ role, name: assignment.member });
+          existingRoles.add(role);
+        }
+      });
+      renderAll();
+      setActiveTab("crew");
+    }
+
+    function fillCrewBlanks() {
+      state.crew.forEach((row) => applyDefaultCrew(row));
+      renderAll();
+      setActiveTab("crew");
+    }
+
+    function logAgent(message) {
+      agentLog = [message, ...agentLog].slice(0, 6);
+    }
+
+    function equipmentExists(itemName) {
+      const clean = normalize(itemName).toUpperCase();
+      return state.equipment.some((row) => normalize(row.item).toUpperCase() === clean);
+    }
+
+    function roleExists(role) {
+      const clean = roleDisplay(role);
+      return state.crew.some((row) => roleDisplay(row.role) === clean);
+    }
+
+    function addEquipmentSmart(qty, category, item) {
+      if (!item || equipmentExists(item)) return false;
+      const match = matchEquipment(item);
+      state.equipment.push({
+        qty: qty || "",
+        category: category || match?.category || "",
+        item
+      });
+      return true;
+    }
+
+    function addCrewSmart(role, member = "") {
+      if (!role || roleExists(role)) return false;
+      const row = { role, name: member };
+      applyDefaultCrew(row);
+      state.crew.push(row);
+      return true;
+    }
+
+    function applyPackSmart(pack) {
+      let addedEquipment = 0;
+      let addedCrew = 0;
+      pack.equipment.forEach(([qty, category, item]) => {
+        if (addEquipmentSmart(qty, category, item)) addedEquipment += 1;
+      });
+      pack.crew.forEach((role) => {
+        if (addCrewSmart(role)) addedCrew += 1;
+      });
+      return { addedEquipment, addedCrew };
+    }
+
+    function inferCrewFromEquipment() {
+      const rules = [
+        { test: /LED|SCREEN/i, role: "SCREEN" },
+        { test: /CAMERA|VIDEO|LIVE|CONFERENCING|BROADCAST/i, role: "CAMERAS" },
+        { test: /PA SYSTEM|PUBLIC ADDRESS|SOUND|MIC/i, role: "SOUND" },
+        { test: /LIGHT|MOOD|MOVING HEAD|PARS/i, role: "LIGHTING" },
+        { test: /PLATFORM/i, role: "PLATFORM" },
+        { test: /PLINTH/i, role: "PLINTHS" },
+        { test: /PODIUM/i, role: "PODIUM" },
+        { test: /GENERATOR|POWER/i, role: "POWER" },
+        { test: /SIGNAGE/i, role: "SIGNAGES" },
+        { test: /POSTER/i, role: "POSTER BOARDS" },
+        { test: /TV|MONITOR/i, role: "MONITOR" }
+      ];
+      let added = 0;
+      state.equipment.forEach((row) => {
+        const text = `${row.category || ""} ${row.item || ""}`;
+        rules.forEach((rule) => {
+          if (rule.test.test(text) && addCrewSmart(rule.role)) added += 1;
+        });
+      });
+      return added;
+    }
+
+    function cleanBlankRows() {
+      const beforeEquipment = state.equipment.length;
+      const beforeCrew = state.crew.length;
+      state.equipment = state.equipment.filter((row) => normalize(row.qty) || normalize(row.category) || normalize(row.item));
+      state.crew = state.crew.filter((row) => normalize(row.role) || normalize(row.name));
+      if (!state.equipment.length) state.equipment.push({ qty: "", category: "", item: "" });
+      if (!state.crew.length) state.crew.push({ role: "", name: "" });
+      return {
+        equipment: Math.max(0, beforeEquipment - state.equipment.length),
+        crew: Math.max(0, beforeCrew - state.crew.length)
+      };
+    }
+
+    function runAgentAction(action) {
+      let message = "Smart Build completed.";
+      if (action === "crewFromEquipment") {
+        const added = inferCrewFromEquipment();
+        message = added ? `Smart Build added ${added} crew department${added === 1 ? "" : "s"} from equipment.` : "Smart Build found equipment crew already covered.";
+      }
+      if (action === "powerReady") {
+        const eq = addEquipmentSmart("1", "Power", "FUELED GENERATOR");
+        const crew = addCrewSmart("POWER");
+        message = `Power ready: ${eq ? "generator added" : "generator already present"}, ${crew ? "power crew added" : "power crew already present"}.`;
+      }
+      if (action === "liveFeedReady") {
+        const eq1 = addEquipmentSmart("2", "Camera & Stream", "CAMERAS FOR LIVE FEED");
+        const eq2 = addEquipmentSmart("1", "Camera & Stream", "VIDEO CONFERENCING - 2 CAMERAS");
+        const c1 = addCrewSmart("CAMERAS");
+        const c2 = addCrewSmart("SCREEN");
+        message = `Live feed ready: ${[eq1, eq2].filter(Boolean).length} equipment and ${[c1, c2].filter(Boolean).length} crew lines added.`;
+      }
+      if (action === "stageReady") {
+        const additions = [
+          addEquipmentSmart("1", "Stage & Rigging", "PLATFORM"),
+          addEquipmentSmart("1", "Finish", "WHITE MARLEY"),
+          addEquipmentSmart("8", "Lighting", "KEY LIGHTS"),
+          addCrewSmart("PLATFORM"),
+          addCrewSmart("LIGHTING")
+        ].filter(Boolean).length;
+        message = additions ? `Stage ready: ${additions} missing line${additions === 1 ? "" : "s"} added.` : "Stage ready: required lines already present.";
+      }
+      if (action === "fixedCrew") {
+        const before = fixedCrewCount();
+        addAllFixedCrew();
+        fillCrewBlanks();
+        const after = fixedCrewCount();
+        logAgent(`Fixed crew automation added or filled ${Math.max(0, after - before)} assignment${Math.max(0, after - before) === 1 ? "" : "s"}.`);
+        renderAll();
+        setActiveTab("agent");
+        return;
+      }
+      if (action === "cleanBlanks") {
+        const removed = cleanBlankRows();
+        message = `Cleanup removed ${removed.equipment} equipment blank${removed.equipment === 1 ? "" : "s"} and ${removed.crew} crew blank${removed.crew === 1 ? "" : "s"}.`;
+      }
+      if (action === "dispatchCheck") {
+        const checks = buildOpsChecks(
+          state.equipment.filter((item) => normalize(item.item)).length,
+          state.crew.filter((item) => normalize(item.role) || normalize(item.name)).length
+        );
+        const critical = checks.filter((check) => check.level === "critical").length;
+        const warn = checks.filter((check) => check.level === "warn").length;
+        message = critical ? `Dispatch blocked: ${critical} critical item${critical === 1 ? "" : "s"}.` : warn ? `Dispatch review: ${warn} confirmation${warn === 1 ? "" : "s"} remaining.` : "Dispatch check passed.";
+      }
+      logAgent(message);
+      renderAll();
+      setActiveTab("agent");
+    }
+
+    function runAutoComplete() {
+      const crewAdded = inferCrewFromEquipment();
+      const fixedBefore = fixedCrewCount();
+      state.crew.forEach((row) => applyDefaultCrew(row));
+      if (hasEquipmentText(/LED|SCREEN|LIGHT|PA SYSTEM|SOUND/i)) {
+        addCrewSmart("POWER");
+      }
+      cleanBlankRows();
+      const fixedAdded = Math.max(0, fixedCrewCount() - fixedBefore);
+      logAgent(`Auto Complete finished: ${crewAdded} crew departments inferred, ${fixedAdded} fixed names filled.`);
+      renderAll();
+      setActiveTab("agent");
+    }
+
+    function renderAgentControls() {
+      $("#agentPackSelect").innerHTML = equipmentPacks.map((pack, index) => (
+        `<option value="${index}">${escapeHtml(pack.name)}</option>`
+      )).join("");
+      $("#agentActionCount").textContent = "9";
+      $("#agentLog").innerHTML = agentLog.map((item) => `<div class="agent-log-item">${escapeHtml(item)}</div>`).join("");
+    }
+
+    function resolveCustomSelection(select, previousValue = "") {
+      if (select.value !== "__custom__") return select.value;
+      const label = select.dataset.customLabel || "Custom value";
+      const custom = prompt(`${label}:`, previousValue || "");
+      if (!custom) return previousValue || "";
+      return custom.trim();
+    }
+
+    function renderDropdowns() {
+      const lists = dropdownLists();
+      $$("select[data-list][data-bind]").forEach((select) => {
+        const key = select.dataset.bind;
+        const values = lists[select.dataset.list] || [];
+        const label = select.dataset.customLabel || "Custom";
+        select.innerHTML = optionsHtml(values, state[key], "Select", label);
+      });
+    }
+
+    function renderCatalogStats() {
+      $("#metricEquipment").textContent = uniqueSorted(equipmentCatalog.map((item) => item.item)).length;
+      $("#metricCrew").textContent = crewMembers.length;
+      $("#metricVenues").textContent = venues.length;
+      $("#metricPacks").textContent = equipmentPacks.length;
+    }
+
+    function matchEquipment(itemName) {
+      const clean = normalize(itemName).toUpperCase();
+      return equipmentCatalog.find((item) => item.item.toUpperCase() === clean);
+    }
+
+    function defaultLocationForVenue(venue) {
+      const clean = normalize(venue).toUpperCase();
+      if (!clean) return "";
+      const direct = Object.entries(venueLocationDefaults).find(([name]) => name.toUpperCase() === clean);
+      if (direct) return direct[1];
+      const dashParts = clean.split(" - ");
+      if (dashParts.length > 1) return dashParts[dashParts.length - 1];
+      return "";
+    }
+
+    function defaultCrewForRole(role) {
+      const clean = roleDisplay(role);
+      if (!clean) return "";
+      const assignment = fixedCrewAssignments.find((item) => item.roles.includes(clean));
+      return assignment ? assignment.member : "";
+    }
+
+    function isDefaultCrewName(name) {
+      const clean = roleDisplay(name);
+      return fixedCrewAssignments.some((item) => item.member === clean);
+    }
+
+    function applyDefaultCrew(row, force = false) {
+      if (!state.autoCrew) return row;
+      const defaultMember = defaultCrewForRole(row.role);
+      if (!defaultMember) return row;
+      if (force || !normalize(row.name) || isDefaultCrewName(row.name)) {
+        row.name = defaultMember;
+      }
+      return row;
+    }
+
+    function normalizeJobData(data = {}) {
+      const job = { ...emptyJob(), ...cloneData(data) };
+      job.autoCrew = data.autoCrew !== false;
+      job.setupStart = job.setupStart || job.setupDate || "";
+      job.setupEnd = job.setupEnd || "";
+      delete job.setupDate;
+      job.equipment = Array.isArray(job.equipment) && job.equipment.length ? job.equipment : [{ qty: "", category: "", item: "" }];
+      job.equipment = job.equipment.map((row) => {
+        const match = matchEquipment(row.item);
+        return {
+          qty: row.qty || "",
+          category: row.category || match?.category || "",
+          item: row.item || ""
+        };
+      });
+      job.crew = Array.isArray(job.crew) && job.crew.length ? job.crew : [{ role: "", name: "" }];
+      job.crew = job.crew.map((row) => ({
+        role: row.role || "",
+        name: row.name || ""
+      }));
+      if (job.autoCrew) {
+        job.crew.forEach((row) => {
+          if (!normalize(row.name)) row.name = defaultCrewForRole(row.role);
+        });
+      }
+      return job;
+    }
+
+    function setActiveTab(tabName) {
+      $$(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.tab === tabName));
+      $$(".tab-panel").forEach((panel) => panel.classList.toggle("hidden", panel.dataset.panel !== tabName));
+      refreshIcons();
+    }
+
+    function formatDate(input) {
+      if (!input) return "";
+      const parts = input.split("-");
+      if (parts.length !== 3) return input;
+      const year = parts[0];
+      const month = parts[1];
+      const day = parts[2];
+      return `${day}${suffix(Number(day))}/${month}/${year}`;
+    }
+
+    function formatDateRange(start, end) {
+      if (!start && !end) return "";
+      if (!end || start === end) return formatDate(start || end);
+      const a = splitDate(start);
+      const b = splitDate(end);
+      if (a && b && a.year === b.year && a.month === b.month) {
+        return `${a.day}${suffix(Number(a.day))}-${b.day}${suffix(Number(b.day))}/${b.month}/${b.year}`;
+      }
+      return `${formatDate(start)} - ${formatDate(end)}`;
+    }
+
+    function splitDate(input) {
+      const parts = String(input || "").split("-");
+      if (parts.length !== 3) return null;
+      return { year: parts[0], month: parts[1], day: parts[2] };
+    }
+
+    function suffix(day) {
+      if ([11, 12, 13].includes(day % 100)) return "TH";
+      const last = day % 10;
+      if (last === 1) return "ST";
+      if (last === 2) return "ND";
+      if (last === 3) return "RD";
+      return "TH";
+    }
+
+    function equipmentLabel(item) {
+      const qty = normalize(item.qty);
+      const name = display(item.item);
+      if (!qty && !name) return "";
+      return `${qty ? qty + " " : ""}${name}`.trim();
+    }
+
+    function groupedCrew() {
+      const groups = [];
+      state.crew.forEach((row) => {
+        const role = roleDisplay(row.role);
+        const name = display(row.name);
+        if (!role && !name) return;
+        const last = groups[groups.length - 1];
+        if (last && last.role === role) {
+          if (name) last.names.push(name);
+        } else {
+          groups.push({ role, names: name ? [name] : [] });
+        }
+      });
+      return groups;
+    }
+
+    function fixedCrewCount() {
+      return state.crew.filter((row) => {
+        const defaultMember = defaultCrewForRole(row.role);
+        return defaultMember && roleDisplay(row.name) === defaultMember;
+      }).length;
+    }
+
+    function hasEquipmentText(pattern) {
+      return state.equipment.some((item) => pattern.test(`${item.category || ""} ${item.item || ""}`));
+    }
+
+    function hasCrewRole(roles) {
+      const wanted = roles.map(roleDisplay);
+      return state.crew.some((row) => wanted.includes(roleDisplay(row.role)));
+    }
+
+    function dateValue(value) {
+      return value ? new Date(`${value}T00:00:00`) : null;
+    }
+
+    function buildOpsChecks(equipmentCount, crewCount) {
+      const checks = [];
+      const add = (level, title, detail) => checks.push({ level, title, detail });
+      const setupStart = dateValue(state.setupStart);
+      const setupEnd = dateValue(state.setupEnd);
+      const eventStart = dateValue(state.eventStart);
+      const eventEnd = dateValue(state.eventEnd);
+      const unassigned = state.crew.filter((row) => normalize(row.role) && !normalize(row.name) && !defaultCrewForRole(row.role));
+
+      if (normalize(state.jobTitle) && normalize(state.venue) && normalize(state.location) && normalize(state.client)) {
+        add("good", "Identity locked", "Event, client, venue, and location are set.");
+      } else {
+        add("critical", "Missing identity", "Fill event, client, venue, and location.");
+      }
+
+      if (setupStart && setupEnd && setupEnd < setupStart) {
+        add("critical", "Setup dates reversed", "Setup end is before setup start.");
+      } else if (setupStart) {
+        add("good", "Setup window ready", formatDateRange(state.setupStart, state.setupEnd) || "Setup date set.");
+      } else {
+        add("critical", "Setup missing", "Add setup start, and setup end when needed.");
+      }
+
+      if (eventStart && eventEnd && eventEnd < eventStart) {
+        add("critical", "Event dates reversed", "Event end is before event start.");
+      } else if (eventStart) {
+        add("good", "Event window ready", formatDateRange(state.eventStart, state.eventEnd) || "Event date set.");
+      } else {
+        add("critical", "Event date missing", "Add event start, and event end when needed.");
+      }
+
+      if (setupStart && eventStart && setupStart > eventStart) {
+        add("warn", "Setup starts late", "Setup starts after the event start date.");
+      }
+
+      if (equipmentCount) {
+        add("good", "Loadout active", `${equipmentCount} equipment line${equipmentCount === 1 ? "" : "s"} selected.`);
+      } else {
+        add("critical", "No equipment", "Add equipment or apply a package.");
+      }
+
+      if (crewCount) {
+        add("good", "Crew board active", `${crewCount} crew line${crewCount === 1 ? "" : "s"} selected.`);
+      } else {
+        add("critical", "No crew", "Add departments and crew.");
+      }
+
+      if (unassigned.length) {
+        add("warn", "Flexible crew pending", `${unassigned.length} department${unassigned.length === 1 ? "" : "s"} still need names.`);
+      } else if (crewCount) {
+        add("good", "Crew names clean", "No flexible departments are blank.");
+      }
+
+      if (fixedCrewCount()) {
+        add("good", "Fixed departments filled", `${fixedCrewCount()} fixed assignment${fixedCrewCount() === 1 ? "" : "s"} applied.`);
+      }
+
+      if (hasEquipmentText(/LED|SCREEN/i) && !hasCrewRole(["SCREEN", "SCREENS", "VISUAL TECHNICIAN"])) {
+        add("warn", "Screen crew check", "LED/screen equipment exists but no screen role is assigned.");
+      }
+
+      if (hasEquipmentText(/CAMERA|VIDEO|LIVE|CONFERENCING|BROADCAST/i) && !hasCrewRole(["CAMERAS", "CAMERA WORKS"])) {
+        add("warn", "Camera crew check", "Camera or live-feed equipment needs camera crew.");
+      }
+
+      if (hasEquipmentText(/PLATFORM/i) && !hasCrewRole(["PLATFORM"])) {
+        add("warn", "Platform crew check", "Platform equipment exists but platform crew is not assigned.");
+      }
+
+      if (hasEquipmentText(/LED|SCREEN|LIGHT|PA SYSTEM|SOUND/i) && !hasEquipmentText(/GENERATOR|POWER/i) && !hasCrewRole(["POWER", "POWER TECHNICIAN"])) {
+        add("warn", "Power confirmation", "Technical loadout should confirm generator or power crew.");
+      }
+
+      return checks;
+    }
+
+    function renderOpsIntelligence(equipmentCount, crewCount) {
+      const checks = buildOpsChecks(equipmentCount, crewCount);
+      const critical = checks.filter((check) => check.level === "critical").length;
+      const warn = checks.filter((check) => check.level === "warn").length;
+      const readiness = Math.max(0, Math.min(100, 100 - critical * 22 - warn * 9));
+      $("#readinessLabel").textContent = `${readiness}%`;
+      $("#readinessFill").style.width = `${readiness}%`;
+      $("#readinessFill").style.background = readiness < 55
+        ? "linear-gradient(90deg, #b83228, #b67700)"
+        : readiness < 82
+          ? "linear-gradient(90deg, #b67700, #087f7b)"
+          : "linear-gradient(90deg, #087f7b, #247a3d)";
+      $("#intelSummary").textContent = critical
+        ? `${critical} critical item${critical === 1 ? "" : "s"} before dispatch`
+        : warn
+          ? `${warn} confirmation${warn === 1 ? "" : "s"} to review`
+          : "Ready for operations review";
+      $("#opsChecks").innerHTML = checks.slice(0, 8).map((check) => `
+        <div class="check-chip ${check.level}">
+          <strong>${escapeHtml(check.title)}</strong>
+          <span>${escapeHtml(check.detail)}</span>
+        </div>
+      `).join("");
+    }
+
+    function currentWorkflowStats() {
+      const equipmentCount = state.equipment.filter((item) => normalize(item.item)).length;
+      const crewCount = state.crew.filter((item) => normalize(item.role) || normalize(item.name)).length;
+      const checks = buildOpsChecks(equipmentCount, crewCount);
+      const critical = checks.filter((check) => check.level === "critical").length;
+      const warn = checks.filter((check) => check.level === "warn").length;
+      const readiness = Math.max(0, Math.min(100, 100 - critical * 22 - warn * 9));
+      const unassigned = state.crew.filter((row) => normalize(row.role) && !normalize(row.name) && !defaultCrewForRole(row.role)).length;
+      const detailsReady = ["jobTitle", "venue", "location", "client", "setupStart", "eventStart"]
+        .every((field) => normalize(state[field]));
+
+      return {
+        equipmentCount,
+        crewCount,
+        checks,
+        critical,
+        warn,
+        readiness,
+        unassigned,
+        detailsReady
+      };
+    }
+
+    function setFlowStatus(statusId, level, text) {
+      const status = $(`#${statusId}`);
+      if (!status) return;
+      const node = status.closest(".flow-node");
+      if (node) {
+        node.classList.remove("ready", "warn", "critical");
+        node.classList.add(level);
+      }
+      status.textContent = text;
+    }
+
+    function renderWorkflowRunner() {
+      const stats = currentWorkflowStats();
+      const openChecks = stats.critical + stats.warn;
+      const fixedCount = fixedCrewCount();
+
+      $("#agentActionCount").textContent = `${stats.readiness}%`;
+      $("#smartReadinessScore").textContent = `${stats.readiness}%`;
+      $("#smartEquipmentCount").textContent = stats.equipmentCount;
+      $("#smartCrewCount").textContent = stats.crewCount;
+      $("#smartOpenChecks").textContent = stats.critical
+        ? `${stats.critical} critical`
+        : stats.warn
+          ? `${stats.warn} review`
+          : "Clear";
+
+      setFlowStatus("flowStatusDetails", stats.detailsReady ? "ready" : "warn", stats.detailsReady ? "Ready" : "Needed");
+      setFlowStatus("flowStatusBuild", stats.equipmentCount ? "ready" : "warn", stats.equipmentCount ? `${stats.equipmentCount} items` : "Build");
+      setFlowStatus("flowStatusCrew", stats.crewCount && !stats.unassigned ? "ready" : "warn", stats.crewCount ? (stats.unassigned ? `${stats.unassigned} open` : `${stats.crewCount} crew`) : "Add");
+      setFlowStatus("flowStatusCheck", stats.critical ? "critical" : stats.warn ? "warn" : "ready", stats.critical ? "Block" : stats.warn ? `${stats.warn} review` : "Pass");
+      setFlowStatus("flowStatusPrint", stats.critical ? "warn" : stats.warn ? "warn" : "ready", stats.critical ? "Hold" : stats.warn ? "Review" : "Print");
+
+      if (fixedCount) {
+        $("#smartCrewCount").textContent = `${stats.crewCount}`;
+      }
+      $("#smartOpenChecks").title = openChecks ? `${openChecks} open readiness check${openChecks === 1 ? "" : "s"}` : "No open readiness checks";
+    }
+
+    function scoreDetails() {
+      const fields = ["jobTitle", "venue", "location", "client", "setupStart", "eventStart"];
+      const filled = fields.filter((field) => normalize(state[field])).length;
+      const hasEquipment = state.equipment.some((item) => normalize(item.item));
+      const hasCrew = state.crew.some((item) => normalize(item.role) || normalize(item.name));
+      return filled + (hasEquipment ? 1 : 0) + (hasCrew ? 1 : 0);
+    }
+
+    function hydrateForm() {
+      $$("[data-bind]").forEach((input) => {
+        const key = input.dataset.bind;
+        if (input.type === "checkbox") {
+          input.checked = Boolean(state[key]);
+        } else {
+          input.value = state[key] || "";
+        }
+      });
+      $$(".segment").forEach((button) => {
+        button.classList.toggle("active", button.dataset.orientation === state.orientation);
+      });
+    }
+
+    function renderEquipmentRows() {
+      const container = $("#equipmentRows");
+      container.innerHTML = "";
+      state.equipment.forEach((item, index) => {
+        const category = normalize(item.category);
+        const itemOptions = equipmentItemsFor(category, item.item);
+        const row = document.createElement("div");
+        row.className = "item-row";
+        row.innerHTML = `
+          <label>
+            Category
+            <select class="smart-select" data-eq-index="${index}" data-eq-field="category" data-custom-label="Custom category">
+              ${optionsHtml(equipmentCategories(), category, "Category", "Custom category")}
+            </select>
+          </label>
+          <label>
+            Qty
+            <input type="text" value="${escapeHtml(item.qty)}" data-eq-index="${index}" data-eq-field="qty" inputmode="numeric">
+          </label>
+          <label>
+            Item
+            <select class="smart-select" data-eq-index="${index}" data-eq-field="item" data-custom-label="Custom equipment">
+              ${optionsHtml(itemOptions, item.item, "Equipment", "Custom equipment")}
+            </select>
+          </label>
+          <button class="tool-btn" type="button" data-remove-equipment="${index}" title="Remove equipment" aria-label="Remove equipment">
+            <i data-lucide="x"></i>
+          </button>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function renderCrewRows() {
+      const container = $("#crewRows");
+      container.innerHTML = "";
+      state.crew.forEach((item, index) => {
+        const row = document.createElement("div");
+        row.className = "item-row crew-row";
+        row.innerHTML = `
+          <label>
+            Role
+            <select class="smart-select" data-crew-index="${index}" data-crew-field="role" data-custom-label="Custom role">
+              ${optionsHtml(roleOptions, item.role, "Role", "Custom role")}
+            </select>
+            <span class="field-help">${defaultCrewForRole(item.role) ? `Fixed: ${escapeHtml(defaultCrewForRole(item.role))}` : "Flexible department"}</span>
+          </label>
+          <label>
+            Crew Member
+            <select class="smart-select" data-crew-index="${index}" data-crew-field="name" data-custom-label="Custom crew member">
+              ${optionsHtml(crewMembers, item.name, "Crew member", "Custom crew member")}
+            </select>
+          </label>
+          <button class="tool-btn" type="button" data-remove-crew="${index}" title="Remove crew" aria-label="Remove crew">
+            <i data-lucide="x"></i>
+          </button>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function renderQuickAdds() {
+      const packs = $("#equipmentPacks");
+      packs.innerHTML = equipmentPacks.map((pack, index) => `
+        <button class="pack-card" type="button" data-apply-pack="${index}">
+          <strong>${escapeHtml(pack.name)}</strong>
+          <span>${escapeHtml(pack.desc)}</span>
+        </button>
+      `).join("");
+
+      const equipment = $("#equipmentTemplates");
+      equipment.innerHTML = equipmentQuickAdds.map((name) => (
+        `<button class="chip" type="button" data-add-equipment-template="${escapeHtml(name)}">${escapeHtml(name)}</button>`
+      )).join("");
+
+      const roles = $("#roleTemplates");
+      roles.innerHTML = roleQuickAdds.map((name) => (
+        `<button class="chip" type="button" data-add-role-template="${escapeHtml(name)}">${escapeHtml(name)}</button>`
+      )).join("");
+    }
+
+    function renderFixedCrewDefaults() {
+      const container = $("#fixedCrewDefaults");
+      container.innerHTML = fixedCrewAssignments.map((item) => `
+        <div class="default-card">
+          <strong>${escapeHtml(item.department)}</strong>
+          <span>${escapeHtml(item.member)}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderSavedList() {
+      const query = normalize($("#savedSearch").value).toLowerCase();
+      const container = $("#savedList");
+      const filtered = savedCards
+        .slice()
+        .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+        .filter((card) => {
+          const data = card.data || {};
+          const haystack = [data.jobTitle, data.venue, data.location, data.client, data.jobNumber].join(" ").toLowerCase();
+          return haystack.includes(query);
+        });
+
+      if (!filtered.length) {
+        container.innerHTML = `<div class="empty-state">No saved job cards</div>`;
+        $("#deleteBtn").disabled = !activeId;
+        return;
+      }
+
+      container.innerHTML = filtered.map((card) => {
+        const data = card.data || {};
+        const status = normalize(data.status || "Draft").toLowerCase();
+        return `
+          <button class="saved-card ${card.id === activeId ? "active" : ""}" type="button" data-load-card="${card.id}">
+            <div class="saved-title">
+              <span>${escapeHtml(data.jobTitle || "Untitled job card")}</span>
+              <span class="status-pill ${status}">${escapeHtml(data.status || "Draft")}</span>
+            </div>
+            <div class="saved-meta">
+              <span>${escapeHtml(data.venue || "No venue")}</span>
+              <span>${escapeHtml(data.location || "No location")}</span>
+              <span>${escapeHtml(formatDateRange(data.eventStart, data.eventEnd) || "No date")}</span>
+            </div>
+          </button>
+        `;
+      }).join("");
+      $("#deleteBtn").disabled = !activeId;
+    }
+
+    function renderPreview() {
+      const paper = $("#paper");
+      paper.classList.toggle("landscape", state.orientation === "landscape");
+      $("#printPageStyle").textContent = `@page { size: A4 ${state.orientation}; margin: 10mm; }`;
+
+      $("#printJobNumber").textContent = display(state.jobNumber ? `Job No: ${state.jobNumber}` : "Job No: Pending");
+      $("#printStatus").textContent = display(`Status: ${state.status || "Draft"}`);
+      $("#printEvent").textContent = display(state.jobTitle) || "EVENT / COMPANY";
+      $("#printVenue").textContent = [display(state.venue), display(state.location)].filter(Boolean).join("\n") || "VENUE";
+      $("#printSetupDate").textContent = display(formatDateRange(state.setupStart, state.setupEnd)) || "SETUP DATE";
+      $("#printEventDate").textContent = display(formatDateRange(state.eventStart, state.eventEnd)) || "EVENT DATE";
+      $("#printClient").textContent = display(state.client) || "N/A";
+      $("#printLocation").textContent = display(state.location) || "N/A";
+      const equipmentCount = state.equipment.filter((item) => normalize(item.item)).length;
+      const crewCount = state.crew.filter((item) => normalize(item.role) || normalize(item.name)).length;
+      $("#printEquipmentCount").textContent = equipmentCount;
+      $("#printCrewCount").textContent = crewCount;
+      $("#printNotes").textContent = display(state.notes) || " ";
+      $("#readoutStatus").textContent = state.status || "Draft";
+      $("#readoutSetup").textContent = formatDateRange(state.setupStart, state.setupEnd) || "Pending";
+      $("#readoutEvent").textContent = formatDateRange(state.eventStart, state.eventEnd) || "Pending";
+      $("#readoutEquipment").textContent = equipmentCount;
+      $("#readoutCrew").textContent = crewCount;
+      $("#readoutFixedCrew").textContent = fixedCrewCount();
+      renderOpsIntelligence(equipmentCount, crewCount);
+
+      const equipment = state.equipment.map(equipmentLabel).filter(Boolean);
+      $("#printEquipment").innerHTML = equipment.length
+        ? equipment.map((item) => `<li>${escapeHtml(item)}</li>`).join("")
+        : `<li>EQUIPMENT</li>`;
+
+      const crew = groupedCrew();
+      $("#printCrew").innerHTML = crew.length
+        ? crew.map((group) => `
+          <tr>
+            <td>${escapeHtml(group.role || "CREW")}</td>
+            <td>${escapeHtml(group.names.join(", ") || "TO BE ASSIGNED")}</td>
+          </tr>
+        `).join("")
+        : `<tr><td>CREW</td><td>TO BE ASSIGNED</td></tr>`;
+
+      const title = state.jobTitle || "Unsaved job card";
+      $("#activeLabel").textContent = activeId ? `Saved: ${title}` : "Unsaved job card";
+      $("#previewSubtitle").textContent = [title, state.venue, state.location, formatDateRange(state.eventStart, state.eventEnd)].filter(Boolean).join(" | ");
+      $("#detailQuality").textContent = `${scoreDetails()}/8`;
+      document.title = `${title || "DVi"} - Job Card Studio`;
+    }
+
+    function renderAll() {
+      renderDropdowns();
+      renderBuilderControls();
+      renderAgentControls();
+      hydrateForm();
+      renderEquipmentRows();
+      renderCrewRows();
+      renderSavedList();
+      renderPreview();
+      renderCatalogStats();
+      renderFixedCrewDefaults();
+      renderWorkflowRunner();
+      refreshIcons();
+    }
+
+    function saveCurrent() {
+      const now = new Date().toISOString();
+      if (!activeId) activeId = uid();
+      const existing = savedCards.find((card) => card.id === activeId);
+      const record = {
+        id: activeId,
+        updatedAt: now,
+        data: normalizeJobData(state)
+      };
+      if (existing) {
+        Object.assign(existing, record);
+      } else {
+        savedCards.push(record);
+      }
+      writeSaved();
+      renderAll();
+    }
+
+    function duplicateCurrent() {
+      activeId = null;
+      state.jobTitle = state.jobTitle ? `${state.jobTitle} COPY` : "JOB CARD COPY";
+      saveCurrent();
+    }
+
+    function deleteCurrent() {
+      if (!activeId) return;
+      const title = state.jobTitle || "this job card";
+      const ok = confirm(`Delete ${title}?`);
+      if (!ok) return;
+      savedCards = savedCards.filter((card) => card.id !== activeId);
+      writeSaved();
+      activeId = null;
+      state = emptyJob();
+      renderAll();
+    }
+
+    function clearCurrent() {
+      const ok = confirm("Clear the current form?");
+      if (!ok) return;
+      activeId = null;
+      state = emptyJob();
+      renderAll();
+    }
+
+    function loadCard(id) {
+      const card = savedCards.find((item) => item.id === id);
+      if (!card) return;
+      activeId = card.id;
+      state = normalizeJobData(card.data || {});
+      renderAll();
+      setActiveTab("details");
+    }
+
+    function exportSaved() {
+      const payload = {
+        app: "DVi Job Card Studio",
+        exportedAt: new Date().toISOString(),
+        cards: savedCards
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `dvi-job-cards-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      URL.revokeObjectURL(link.href);
+      link.remove();
+    }
+
+    function importSaved(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(String(reader.result || "{}"));
+          const cards = Array.isArray(parsed) ? parsed : parsed.cards;
+          if (!Array.isArray(cards)) throw new Error("No cards found");
+          const cleaned = cards
+            .filter((card) => card && card.data)
+            .map((card) => ({
+              id: card.id || uid(),
+              updatedAt: card.updatedAt || new Date().toISOString(),
+              data: normalizeJobData(card.data)
+            }));
+          savedCards = mergeCards(savedCards, cleaned);
+          writeSaved();
+          renderAll();
+          setActiveTab("library");
+        } catch (error) {
+          alert("Could not import that file.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function mergeCards(current, incoming) {
+      const map = new Map(current.map((card) => [card.id, card]));
+      incoming.forEach((card) => map.set(card.id, card));
+      return Array.from(map.values());
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function refreshIcons() {
+      if (window.lucide && typeof window.lucide.createIcons === "function") {
+        window.lucide.createIcons();
+      }
+    }
+
+    document.addEventListener("input", (event) => {
+      const target = event.target;
+      if (target.matches("[data-bind]") && target.tagName !== "SELECT") {
+        const key = target.dataset.bind;
+        state[key] = target.type === "checkbox" ? target.checked : target.value;
+        renderPreview();
+        if (key === "status") renderSavedList();
+      }
+
+      if (target.matches("[data-eq-index]") && target.tagName !== "SELECT") {
+        const index = Number(target.dataset.eqIndex);
+        const field = target.dataset.eqField;
+        state.equipment[index][field] = target.value;
+        renderPreview();
+      }
+
+      if (target.matches("[data-crew-index]") && target.tagName !== "SELECT") {
+        const index = Number(target.dataset.crewIndex);
+        const field = target.dataset.crewField;
+        state.crew[index][field] = target.value;
+        renderPreview();
+      }
+
+      if (target.id === "savedSearch") {
+        renderSavedList();
+      }
+    });
+
+    document.addEventListener("change", (event) => {
+      const target = event.target;
+      if (target.id === "builderEquipmentCategory") {
+        builderState.equipmentCategory = target.value;
+        builderState.equipmentItem = "";
+        renderBuilderControls();
+        return;
+      }
+
+      if (target.id === "builderEquipmentItem") {
+        builderState.equipmentItem = target.value;
+        const match = matchEquipment(target.value);
+        if (match) builderState.equipmentCategory = match.category;
+        renderBuilderControls();
+        return;
+      }
+
+      if (target.id === "builderEquipmentQty") {
+        builderState.equipmentQty = target.value;
+        return;
+      }
+
+      if (target.id === "builderCrewRole") {
+        builderState.crewRole = target.value;
+        builderState.crewMember = defaultCrewForRole(target.value) || "";
+        renderBuilderControls();
+        return;
+      }
+
+      if (target.id === "builderCrewMember") {
+        builderState.crewMember = target.value;
+        return;
+      }
+
+      if (target.matches("[data-bind]")) {
+        const key = target.dataset.bind;
+        state[key] = target.type === "checkbox" ? target.checked : resolveCustomSelection(target, state[key]);
+        if (key === "venue") {
+          const venueLocation = defaultLocationForVenue(state.venue);
+          if (venueLocation) state.location = venueLocation;
+        }
+        if (key === "autoCrew" && state.autoCrew) {
+          state.crew.forEach((row) => applyDefaultCrew(row));
+        }
+        renderAll();
+      }
+
+      if (target.matches("[data-eq-index]")) {
+        const index = Number(target.dataset.eqIndex);
+        const field = target.dataset.eqField;
+        const previous = state.equipment[index][field] || "";
+        const value = target.tagName === "SELECT" ? resolveCustomSelection(target, previous) : target.value;
+        state.equipment[index][field] = value;
+        if (field === "item") {
+          const match = matchEquipment(value);
+          if (match && !state.equipment[index].category) state.equipment[index].category = match.category;
+        }
+        renderAll();
+      }
+
+      if (target.matches("[data-crew-index]")) {
+        const index = Number(target.dataset.crewIndex);
+        const field = target.dataset.crewField;
+        const previous = state.crew[index][field] || "";
+        state.crew[index][field] = target.tagName === "SELECT" ? resolveCustomSelection(target, previous) : target.value;
+        if (field === "role") applyDefaultCrew(state.crew[index]);
+        renderAll();
+      }
+
+      if (target.id === "importInput" && target.files && target.files[0]) {
+        importSaved(target.files[0]);
+        target.value = "";
+      }
+    });
+
+    document.addEventListener("click", (event) => {
+      const tab = event.target.closest("[data-tab]");
+      if (tab) {
+        setActiveTab(tab.dataset.tab);
+        return;
+      }
+
+      const orientation = event.target.closest("[data-orientation]");
+      if (orientation) {
+        state.orientation = orientation.dataset.orientation;
+        renderAll();
+        return;
+      }
+
+      const removeEquipment = event.target.closest("[data-remove-equipment]");
+      if (removeEquipment) {
+        const index = Number(removeEquipment.dataset.removeEquipment);
+        state.equipment.splice(index, 1);
+        if (!state.equipment.length) state.equipment.push({ qty: "", category: "", item: "" });
+        renderAll();
+        return;
+      }
+
+      const removeCrew = event.target.closest("[data-remove-crew]");
+      if (removeCrew) {
+        const index = Number(removeCrew.dataset.removeCrew);
+        state.crew.splice(index, 1);
+        if (!state.crew.length) state.crew.push({ role: "", name: "" });
+        renderAll();
+        return;
+      }
+
+      const equipmentTemplate = event.target.closest("[data-add-equipment-template]");
+      if (equipmentTemplate) {
+        const item = equipmentTemplate.dataset.addEquipmentTemplate;
+        const match = matchEquipment(item);
+        state.equipment.push({ qty: "", category: match?.category || "", item });
+        renderAll();
+        return;
+      }
+
+      const roleTemplate = event.target.closest("[data-add-role-template]");
+      if (roleTemplate) {
+        const row = { role: roleTemplate.dataset.addRoleTemplate, name: "" };
+        applyDefaultCrew(row);
+        state.crew.push(row);
+        renderAll();
+        return;
+      }
+
+      const packButton = event.target.closest("[data-apply-pack]");
+      if (packButton) {
+        const pack = equipmentPacks[Number(packButton.dataset.applyPack)];
+        if (!pack) return;
+        state.equipment = state.equipment.filter((row) => normalize(row.qty) || normalize(row.item) || normalize(row.category));
+        pack.equipment.forEach(([qty, category, item]) => {
+          state.equipment.push({ qty, category, item });
+        });
+        const existingRoles = new Set(state.crew.map((row) => roleDisplay(row.role)).filter(Boolean));
+        pack.crew.forEach((role) => {
+          if (!existingRoles.has(role)) {
+            const row = { role, name: "" };
+            applyDefaultCrew(row);
+            state.crew.push(row);
+          }
+        });
+        if (!state.equipment.length) state.equipment.push({ qty: "", category: "", item: "" });
+        if (!state.crew.length) state.crew.push({ role: "", name: "" });
+        renderAll();
+        return;
+      }
+
+      const agentButton = event.target.closest("[data-agent-action]");
+      if (agentButton) {
+        runAgentAction(agentButton.dataset.agentAction);
+        return;
+      }
+
+      const load = event.target.closest("[data-load-card]");
+      if (load) {
+        loadCard(load.dataset.loadCard);
+      }
+    });
+
+    $("#addEquipmentBtn").addEventListener("click", () => {
+      state.equipment.push({ qty: "", category: "", item: "" });
+      renderAll();
+    });
+
+    $("#addCrewBtn").addEventListener("click", () => {
+      state.crew.push({ role: "", name: "" });
+      renderAll();
+    });
+
+    $("#builderAddEquipment").addEventListener("click", addBuilderEquipment);
+    $("#builderAddCrew").addEventListener("click", addBuilderCrew);
+    $("#builderAddFixedCrew").addEventListener("click", addAllFixedCrew);
+    $("#builderFillCrewBlanks").addEventListener("click", fillCrewBlanks);
+    $("#agentApplyPack").addEventListener("click", () => {
+      const pack = equipmentPacks[Number($("#agentPackSelect").value || 0)];
+      const added = applyPackSmart(pack);
+      logAgent(`${pack.name} built: ${added.addedEquipment} equipment and ${added.addedCrew} crew line${added.addedCrew === 1 ? "" : "s"} added.`);
+      renderAll();
+      setActiveTab("agent");
+    });
+    $("#agentAutoComplete").addEventListener("click", runAutoComplete);
+    $("#agentDispatchCheck").addEventListener("click", () => runAgentAction("dispatchCheck"));
+    $("#quickAutoCompleteBtn").addEventListener("click", runAutoComplete);
+    $("#quickDispatchCheckBtn").addEventListener("click", () => runAgentAction("dispatchCheck"));
+    $("#flowDetailsBtn").addEventListener("click", () => {
+      setActiveTab("details");
+      setTimeout(() => $("#jobTitle")?.focus(), 0);
+    });
+    $("#flowBuildBtn").addEventListener("click", () => $("#agentApplyPack").click());
+    $("#flowAutoBtn").addEventListener("click", runAutoComplete);
+    $("#flowCheckBtn").addEventListener("click", () => runAgentAction("dispatchCheck"));
+    $("#flowPrintBtn").addEventListener("click", () => {
+      const stats = currentWorkflowStats();
+      if (stats.critical) {
+        logAgent(`Print pack held: ${stats.critical} critical readiness item${stats.critical === 1 ? "" : "s"} still open.`);
+        renderAll();
+        setActiveTab("agent");
+        return;
+      }
+      window.print();
+    });
+
+    $("#saveBtn").addEventListener("click", saveCurrent);
+    $("#saveBtnSecondary").addEventListener("click", saveCurrent);
+    $("#duplicateBtn").addEventListener("click", duplicateCurrent);
+    $("#deleteBtn").addEventListener("click", deleteCurrent);
+    $("#clearBtn").addEventListener("click", clearCurrent);
+    $("#newBtn").addEventListener("click", () => {
+      activeId = null;
+      state = emptyJob();
+      renderAll();
+      setActiveTab("agent");
+    });
+    $("#printBtn").addEventListener("click", () => window.print());
+    $("#exportBtn").addEventListener("click", exportSaved);
+    $("#importBtn").addEventListener("click", () => $("#importInput").click());
+
+    renderQuickAdds();
+    renderAll();
+  </script>
+</body>
+</html>
