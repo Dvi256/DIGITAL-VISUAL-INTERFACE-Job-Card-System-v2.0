@@ -591,7 +591,7 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
       <div><label>Priority</label><select id="f_priority"><option>Normal</option><option>High</option><option>Urgent</option></select></div>
       <div><label>Client / Company</label><select id="f_client" data-kind="clients" data-ph="— Client / Company —" onchange="maybeQuickAdd(this)"></select></div>
       <div><label>Venue</label><select id="f_venue" data-kind="venues" data-ph="— Venue —" onchange="maybeQuickAdd(this)"></select></div>
-      <div><label>Set Up Date</label><input type="date" id="f_setup" oninput="updateDatePreview()" onchange="updateDatePreview()"><div id="f_setup_fmt" class="date-preview"></div></div>
+      <div><label>Set Up Date (from — to)</label><div class="dates"><input type="date" id="f_setup_from" oninput="updateDatePreview()" onchange="updateDatePreview()"><input type="date" id="f_setup_to" oninput="updateDatePreview()" onchange="updateDatePreview()"></div><div id="f_setup_fmt" class="date-preview"></div></div>
       <div><label>Event Date (from — to)</label><div class="dates"><input type="date" id="f_from" oninput="updateDatePreview()" onchange="updateDatePreview()"><input type="date" id="f_to" oninput="updateDatePreview()" onchange="updateDatePreview()"></div><div id="f_event_fmt" class="date-preview"></div></div>
     </div>
     <div class="f-section">
@@ -693,6 +693,10 @@ function daySuffix(d){const n=d%100;if(n>=11&&n<=13)return 'th';return d%10===1?
 function fmtDateParts(y,m,d){return String(d).padStart(2,'0')+daySuffix(d)+' '+MONTHS[m-1]+' '+y;}
 const fmtD=iso=>{if(!iso)return '—';const [y,m,d]=iso.split('-').map(Number);return y&&m&&d?fmtDateParts(y,m,d):'—';};
 const fmtRange=(a,b)=>a&&b&&b!==a?fmtD(a)+' – '+fmtD(b):fmtD(a||b);
+const setupStart=j=>j?(j.setupFrom||j.setupDate||j.setupTo||''):'';
+const setupEnd=j=>j?(j.setupTo||j.setupFrom||j.setupDate||''):'';
+const fmtSetupRange=j=>fmtRange(setupStart(j),setupEnd(j));
+const setupCovers=(j,iso)=>{const s=setupStart(j),e=setupEnd(j);return !!(s&&e&&s<=iso&&iso<=e);};
 const fmtDateObj=d=>fmtDateParts(d.getFullYear(),d.getMonth()+1,d.getDate());
 const fmtDT=ts=>{const d=new Date(ts);return fmtDateObj(d)+' at '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});};
 const byId=(k,id)=>state[k].find(x=>x.id===id)||null;
@@ -811,7 +815,8 @@ function openJobModal(id){
  fillSelect($('f_type'),'eventTypes','— Event type —',j?j.typeId:'');
  fillSelect($('f_client'),'clients','— Client / Company —',j?j.clientId:'');
  fillSelect($('f_venue'),'venues','— Venue —',j?j.venueId:'');
- $('f_setup').value=j&&j.setupDate?j.setupDate:'';
+ $('f_setup_from').value=j?setupStart(j):'';
+ $('f_setup_to').value=j&&j.setupTo?j.setupTo:'';
  $('f_from').value=j&&j.eventFrom?j.eventFrom:'';
  $('f_to').value=j&&j.eventTo?j.eventTo:'';
  updateDatePreview();
@@ -825,7 +830,7 @@ function openJobModal(id){
  setTimeout(()=>$('f_event').focus(),60);
 }
 function updateDatePreview(){
- $('f_setup_fmt').textContent=$('f_setup').value?fmtD($('f_setup').value):'';
+ $('f_setup_fmt').textContent=($('f_setup_from').value||$('f_setup_to').value)?fmtRange($('f_setup_from').value,$('f_setup_to').value):'';
  $('f_event_fmt').textContent=($('f_from').value||$('f_to').value)?fmtRange($('f_from').value,$('f_to').value):'';
 }
 function closeJobModal(){$('jobModal').classList.remove('open');editingJobId=null;}
@@ -868,10 +873,12 @@ function saveJobForm(){
   roleId:r.querySelector('.cr-role').value||null,
   techId:r.querySelector('.cr-tech').value||null
  })).filter(c=>c.techId);
+ const setupFrom=$('f_setup_from').value||null,setupTo=$('f_setup_to').value||null;
  const fields={event:ev,typeId:$('f_type').value||null,clientId:$('f_client').value||null,venueId:$('f_venue').value||null,
-  setupDate:$('f_setup').value||null,eventFrom:$('f_from').value||null,eventTo:$('f_to').value||null,
+  setupFrom,setupTo,setupDate:setupFrom||setupTo,eventFrom:$('f_from').value||null,eventTo:$('f_to').value||null,
   status:$('f_status').value,priority:$('f_priority').value,notes:$('f_notes').value.trim(),
   equipment,crew,updatedAt:Date.now()};
+ if(fields.setupFrom&&fields.setupTo&&fields.setupTo<fields.setupFrom){toast('Setup end date is before the start date','err');return;}
  if(fields.eventFrom&&fields.eventTo&&fields.eventTo<fields.eventFrom){toast('Event end date is before the start date','err');return;}
  let j;
  if(editingJobId){
@@ -913,7 +920,7 @@ function openView(id){
  <div class="vw-grid">
   <div class="vw-cell"><label>Client / Company</label><b>${esc(nameOf('clients',j.clientId))}</b>${c&&(c.contact||c.phone)?`<div class="muted sm">${esc([c.contact,c.phone].filter(Boolean).join(' · '))}</div>`:''}</div>
   <div class="vw-cell"><label>Venue</label><b>${esc(nameOf('venues',j.venueId))}</b></div>
-  <div class="vw-cell"><label>Set Up Date</label><b>${fmtD(j.setupDate)}</b></div>
+  <div class="vw-cell"><label>Set Up Date</label><b>${fmtSetupRange(j)}</b></div>
   <div class="vw-cell"><label>Event Date</label><b>${fmtRange(j.eventFrom,j.eventTo)}</b></div>
  </div>
  <div class="vw-2col">
@@ -968,19 +975,37 @@ function printJob(id){
  win.document.close();
  win.focus();
 }
+function printDeliveryNote(id){
+ const j=state.jobs.find(x=>x.id===id);if(!j)return;
+ const title=deliveryNoteFileName(j);
+ const win=window.open('','_blank');
+ if(!win){toast('Allow pop-ups to open the delivery note in a new tab','err');return;}
+ win.document.open();
+ win.document.write(buildDeliveryNoteDocument(j,title));
+ win.document.close();
+ win.focus();
+}
 function cleanFilePart(s){return String(s||'').replace(/[\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim();}
 function jobCardFileName(j){
  const parts=[j.no,j.event,j.clientId?nameOf('clients',j.clientId):'',j.venueId?nameOf('venues',j.venueId):''].map(cleanFilePart).filter(Boolean);
  return parts.join(' - ')||'DVI Job Card';
 }
+function deliveryNoteFileName(j){return 'Delivery Note - '+jobCardFileName(j);}
 function buildPrintDocument(j,title){
  const base=location.href.slice(0,location.href.lastIndexOf('/')+1);
 	 const calUrl=dviGoogleCalendarUrl(j);
  const calBtn=calUrl?`<a href="${esc(calUrl)}" target="_blank" rel="noopener">Google Calendar</a>`:`<button disabled>Google Calendar</button>`;
  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${esc(title)}</title><base href="${esc(base)}"><style>${printDocCSS()}</style></head><body><div class="print-tools">${calBtn}<button onclick="window.print()">Print / Save PDF</button></div>${buildPrintHTML(j)}<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),300));<\/script></body></html>`;
 }
+function buildDeliveryNoteDocument(j,title){
+ const base=location.href.slice(0,location.href.lastIndexOf('/')+1);
+ return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${esc(title)}</title><base href="${esc(base)}"><style>${printDocCSS()}${deliveryNoteCSS()}</style></head><body><div class="print-tools"><button onclick="window.print()">Print / Save PDF</button></div>${buildDeliveryNoteHTML(j)}<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),300));<\/script></body></html>`;
+}
 function printDocCSS(){
  return `@page{size:A4;margin:10mm}*{box-sizing:border-box}body{margin:0;background:#fff;color:#111;font-family:'Segoe UI',Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}.print-tools{position:sticky;top:0;z-index:5;display:flex;justify-content:flex-end;gap:10px;padding:10px 12px;background:#15161a;border-bottom:2px solid #d4af37}.print-tools a,.print-tools button{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:9px 15px;border-radius:8px;border:1px solid #d4af37;background:#d4af37;color:#181203;text-decoration:none;font:700 13px 'Segoe UI',Arial,sans-serif;cursor:pointer}.print-tools button:disabled{opacity:.45;cursor:not-allowed}.pc{padding:10mm}.pc-band{display:flex;align-items:center;justify-content:space-between;gap:16px;background:#15161a;color:#fff;padding:14px 20px;border-radius:0}.pc-band img{height:58px}.pc-co{flex:1;text-align:center}.pc-name{font-size:21px;font-weight:800;color:#d4af37;letter-spacing:1.5px}.pc-tag{font-size:11px;color:#ddd;letter-spacing:.6px;margin-top:2px}.pc-contact{font-size:10.5px;color:#bbb;margin-top:4px}.pc-address{font-size:9.5px;color:#aaa;margin-top:3px}.pc-title{text-align:right}.pc-jc{font-size:21px;font-weight:800;letter-spacing:3px}.pc-no{color:#d4af37;font-weight:700;font-family:Consolas,monospace;margin-top:2px}.pc-statusp{font-size:10px;border:1px solid #d4af37;color:#d4af37;display:inline-block;padding:2px 9px;border-radius:10px;margin-top:5px;letter-spacing:1px}.pc-main{width:100%;border-collapse:collapse;margin-top:14px}.pc-main th{background:#f3e3b3;border:1px solid #333;padding:6px 9px;font-size:10.5px;text-align:left;letter-spacing:.5px}.pc-main td{border:1px solid #333;padding:9px;font-size:12px;font-weight:600;vertical-align:top}.pc-sub{font-weight:400;font-size:10.5px;color:#555}.pc-cols{display:flex;gap:16px;margin-top:16px;align-items:flex-start}.pc-cols>div{flex:1}.pc h4{margin:0 0 7px;font-size:12px;letter-spacing:1.2px;border-bottom:2px solid #d4af37;padding-bottom:4px}.pc-list{width:100%;border-collapse:collapse}.pc-list td{border:1px solid #444;padding:5px 8px;font-size:11px}.pc-list td.num{width:24px;text-align:center;color:#777}.rolecell{background:#f3e3b3;font-weight:700;width:40%;font-size:10px;letter-spacing:.6px;vertical-align:top}.pc-notes{margin-top:14px;border:1px solid #444;border-radius:6px;padding:9px 12px}.pc-notes p{margin:0;font-size:11.5px;line-height:1.55}@media print{body{margin:0}.print-tools{display:none}.pc{padding:0}}`;
+}
+function deliveryNoteCSS(){
+ return `.dn .pc-band{padding:13px 18px}.dn .pc-jc{font-size:19px}.dn-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.dn-meta div{border:1px solid #333;padding:8px 9px;min-height:46px}.dn-meta span{display:block;font-size:9.5px;color:#555;text-transform:uppercase;letter-spacing:.8px;font-weight:700}.dn-meta b{display:block;margin-top:4px;font-size:12px}.dn-note{margin:12px 0 0;border:1px solid #333;border-left:5px solid #d4af37;background:#fffaf0;padding:10px 12px;font-size:11.3px;line-height:1.5}.dn-items{width:100%;border-collapse:collapse;margin-top:12px}.dn-items th{background:#f3e3b3;border:1px solid #333;padding:7px 8px;font-size:10px;text-align:left;letter-spacing:.45px}.dn-items td{border:1px solid #333;padding:8px;font-size:11.2px;vertical-align:top}.dn-items .num{width:30px;text-align:center;color:#777}.dn-items .qty{width:22%}.dn-items .remarks{width:31%}.dn-remarks{border:1px solid #333;margin-top:12px;padding:10px 12px;min-height:96px}.dn-remarks h4{border:0;margin:0 0 8px;padding:0;font-size:11px;letter-spacing:1px}.dn-write-line{border-bottom:1px solid #111;height:20px;margin-top:9px}.dn-accept{margin-top:12px;border:1px solid #333;background:#f7f7f7;padding:10px 12px;font-size:10.9px;line-height:1.45}.dn-sign{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px;break-inside:avoid}.dn-signbox{border:1px solid #333;padding:12px;min-height:142px}.dn-signbox b{display:block;font-size:11px;letter-spacing:1px;margin-bottom:12px}.dn-line{display:grid;grid-template-columns:82px 1fr;gap:9px;align-items:end;margin-top:14px}.dn-line span{font-size:9.6px;color:#555;text-transform:uppercase;letter-spacing:.7px}.dn-line i{display:block;border-bottom:1px solid #111;height:20px}.dn-footer-note{margin-top:10px;font-size:9.8px;color:#444;line-height:1.45}@media(max-width:700px){.dn-meta,.dn-sign{grid-template-columns:1fr}}`;
 }
 function addJobToCalendar(id){
  const j=state.jobs.find(x=>x.id===id);if(!j)return;
@@ -994,8 +1019,8 @@ function addDaysISO(iso,days){
 }
 function compactISO(iso){return String(iso||'').replace(/-/g,'');}
 function calendarDateRange(j){
- const start=j.eventFrom||j.eventTo||j.setupDate;
- const end=j.eventTo||j.eventFrom||j.setupDate;
+ const start=j.eventFrom||j.eventTo||setupStart(j);
+ const end=j.eventTo||j.eventFrom||setupEnd(j);
  return start&&end?compactISO(start)+'/'+compactISO(addDaysISO(end,1)):'';
 }
 function jobCalendarDetails(j){
@@ -1005,7 +1030,7 @@ function jobCalendarDetails(j){
   'Job Card: '+j.no,
   'Client: '+nameOf('clients',j.clientId),
   'Venue: '+nameOf('venues',j.venueId),
-  'Setup Date: '+fmtD(j.setupDate),
+  'Setup Date: '+fmtSetupRange(j),
   'Event Date: '+fmtRange(j.eventFrom,j.eventTo),
   '',
   'Equipment:',
@@ -1067,7 +1092,7 @@ function buildPrintHTML(j){
    <td>${esc(j.event.toUpperCase())}${j.typeId?`<br><span class="pc-sub">${esc(nameOf('eventTypes',j.typeId))}</span>`:''}</td>
    <td>${clientTd}</td>
    <td>${esc(nameOf('venues',j.venueId).toUpperCase())}</td>
-   <td>${fmtD(j.setupDate)}</td>
+   <td>${fmtSetupRange(j)}</td>
    <td>${fmtRange(j.eventFrom,j.eventTo)}</td>
   </tr></tbody>
  </table>
@@ -1076,6 +1101,67 @@ function buildPrintHTML(j){
   <div><h4>CREW ASSIGNMENT</h4><table class="pc-list">${crewRows||'<tr><td>—</td><td>—</td></tr>'}</table></div>
  </div>
  ${j.notes?`<div class="pc-notes"><h4>NOTES / INSTRUCTIONS</h4><p>${esc(j.notes).replace(/\n/g,'<br>')}</p></div>`:''}
+</div>`;
+}
+function buildDeliveryNoteHTML(j){
+ const c=byId('clients',j.clientId);
+ const co=state.company;
+ const contactLine=[co.phone,co.email,co.website].filter(Boolean).map(esc).join(' &middot; ');
+ const clientName=nameOf('clients',j.clientId);
+ const clientContact=c&&(c.contact||c.phone)?`<br><span class="pc-sub">${esc([c.contact,c.phone].filter(Boolean).join(' &middot; '))}</span>`:'';
+ const itemRows=j.equipment.map((e,n)=>`<tr><td class="num">${n+1}</td><td>${esc(e.spec||'')}</td><td>${esc(e.name)}</td><td></td></tr>`).join('')||'<tr><td class="num">-</td><td colspan="3">No delivered items listed on this job card.</td></tr>';
+ return `<div class="pc dn">
+ <div class="pc-band">
+  <img src="DVI%20logos%20png/dvi%20logo.png" alt="" onerror="this.style.display='none'">
+  <div class="pc-co">
+   <div class="pc-name">${esc(co.name)}</div>
+   ${co.tagline?`<div class="pc-tag">${esc(co.tagline.toUpperCase())}</div>`:''}
+   <div class="pc-contact">${contactLine}</div>
+   ${co.address?`<div class="pc-address">${esc(co.address)}</div>`:''}
+  </div>
+  <div class="pc-title">
+   <div class="pc-jc">DELIVERY NOTE</div>
+   <div class="pc-no">${esc(j.no)}-DN</div>
+   <div class="pc-statusp">CLIENT COPY</div>
+  </div>
+ </div>
+ <div class="dn-meta">
+  <div><span>Delivery note no.</span><b>${esc(j.no)}-DN</b></div>
+  <div><span>Job card no.</span><b>${esc(j.no)}</b></div>
+  <div><span>Issued date</span><b>${fmtDateObj(new Date())}</b></div>
+ </div>
+ <table class="pc-main">
+  <thead><tr><th>EVENT</th><th>CLIENT / COMPANY</th><th>VENUE</th><th>SET UP DATE</th><th>EVENT DATE</th></tr></thead>
+  <tbody><tr>
+   <td>${esc(j.event.toUpperCase())}${j.typeId?`<br><span class="pc-sub">${esc(nameOf('eventTypes',j.typeId))}</span>`:''}</td>
+   <td>${esc(clientName.toUpperCase())}${clientContact}</td>
+   <td>${esc(nameOf('venues',j.venueId).toUpperCase())}</td>
+   <td>${fmtSetupRange(j)}</td>
+   <td>${fmtRange(j.eventFrom,j.eventTo)}</td>
+  </tr></tbody>
+ </table>
+ <div class="dn-note"><b>Delivery acknowledgement:</b> the items below have been delivered for the event stated above. Any missing item, damage, substitution, or client-requested change should be written in the remarks section before signing.</div>
+ <table class="dn-items">
+  <thead><tr><th>No.</th><th class="qty">Qty / Size / Spec</th><th>Delivered Item</th><th class="remarks">Condition / Client Remarks</th></tr></thead>
+  <tbody>${itemRows}</tbody>
+ </table>
+ <div class="dn-remarks"><h4>DELIVERY REMARKS / CLIENT REQUESTS</h4><div class="dn-write-line"></div><div class="dn-write-line"></div><div class="dn-write-line"></div></div>
+ <div class="dn-accept"><b>Acceptance:</b> by signing below, the client representative confirms that the listed items were delivered to site, except for any notes written above.</div>
+ <div class="dn-sign">
+  <div class="dn-signbox">
+   <b>CLIENT RECEIVED BY</b>
+   <div class="dn-line"><span>Name</span><i></i></div>
+   <div class="dn-line"><span>Signature</span><i></i></div>
+   <div class="dn-line"><span>Date / Time</span><i></i></div>
+  </div>
+  <div class="dn-signbox">
+   <b>DVI DELIVERED BY</b>
+   <div class="dn-line"><span>Name</span><i></i></div>
+   <div class="dn-line"><span>Signature</span><i></i></div>
+   <div class="dn-line"><span>Date / Time</span><i></i></div>
+  </div>
+ </div>
+ <div class="dn-footer-note">Keep a signed copy of this Delivery Note with the job record.</div>
 </div>`;
 }
 
@@ -1291,11 +1377,11 @@ function endDashboardPanelPointer(){
 function renderDashboard(){
  const t=todayISO();const jobs=state.jobs;
  const liveTest=(j,iso)=>{const f=j.eventFrom,to=j.eventTo||j.eventFrom;return f&&f<=iso&&iso<=to;};
- const primaryDate=j=>j.eventFrom||j.setupDate||j.eventTo||'';
+ const primaryDate=j=>j.eventFrom||setupStart(j)||j.eventTo||'';
  const activeJobs=jobs.filter(j=>ACTIVE.includes(j.status));
  const upcomingJobs=activeJobs.filter(j=>primaryDate(j)&&primaryDate(j)>=t).sort((a,b)=>primaryDate(a).localeCompare(primaryDate(b)));
  const upcoming=upcomingJobs.length;
- const setupsToday=jobs.filter(j=>j.setupDate===t&&ACTIVE.includes(j.status)).length;
+ const setupsToday=jobs.filter(j=>setupCovers(j,t)&&ACTIVE.includes(j.status)).length;
  const liveToday=jobs.filter(j=>liveTest(j,t)&&ACTIVE.includes(j.status)).length;
  const done=jobs.filter(j=>j.status==='Completed').length;
  const overdue=activeJobs.filter(j=>{const end=j.eventTo||j.eventFrom;return end&&end<t;}).length;
@@ -1308,7 +1394,7 @@ function renderDashboard(){
  const nextText=nextJob?`Next job: <b>${esc(nextJob.event)}</b> at ${esc(nameOf('venues',nextJob.venueId))} on ${fmtD(primaryDate(nextJob))}.`:'No upcoming active jobs are scheduled yet.';
  const runwayHtml=Array.from({length:14},(_,i)=>{
   const iso=addDaysISO(t,i),dt=new Date(iso+'T00:00:00');
-  const dayJobs=activeJobs.filter(j=>j.setupDate===iso||liveTest(j,iso));
+  const dayJobs=activeJobs.filter(j=>setupCovers(j,iso)||liveTest(j,iso));
   const h=Math.max(10,Math.min(100,dayJobs.length*34));
   const title=dayJobs.length?` title="${esc(dayJobs.map(j=>j.event).join(' | '))}"`:'';
   return `<i class="runway-tick${dayJobs.length?' hot':''}${i===0?' now':''}" style="--h:${h}%"${title}><span>${i===0?'NOW':dt.getDate()}</span></i>`;
@@ -1350,7 +1436,7 @@ function renderDashboard(){
  let calHtml=calDows.map(d=>`<div class="cal-mini-dow">${d}</div>`).join('')+Array(firstOffset).fill('<div class="cal-mini-day blank"><span class="cal-mini-n"></span></div>').join('');
  for(let d=1;d<=curDays;d++){
   const iso=isoFor(curY,curM,d);
-  const daySetups=jobs.filter(j=>j.setupDate===iso&&j.status!=='Cancelled');
+  const daySetups=jobs.filter(j=>setupCovers(j,iso)&&j.status!=='Cancelled');
   const dayEvents=jobs.filter(j=>liveTest(j,iso)&&j.status!=='Cancelled');
   const dayJobs=daySetups.concat(dayEvents.filter(e=>!daySetups.some(s=>s.id===e.id)));
   const dots=(daySetups.length?'<i class="cal-dot" style="--c:#d4af37"></i>':'')+(dayEvents.length?'<i class="cal-dot" style="--c:#5b9bff"></i>':'');
@@ -1398,7 +1484,7 @@ function renderDashboard(){
  for(let d=0;d<7;d++){
   const dt=new Date();dt.setDate(dt.getDate()+d);
   const iso=dt.toLocaleDateString('en-CA');
-  const su=jobs.filter(j=>j.setupDate===iso&&ACTIVE.includes(j.status));
+  const su=jobs.filter(j=>setupCovers(j,iso)&&ACTIVE.includes(j.status));
   const evs=jobs.filter(j=>liveTest(j,iso)&&ACTIVE.includes(j.status));
   if(!su.length&&!evs.length)continue;
   const lab=d===0?'Today':d===1?'Tomorrow':WEEKDAYS[dt.getDay()]+', '+fmtDateObj(dt);
@@ -1425,7 +1511,7 @@ function renderJobs(){
   if(q){const hay=(j.event+' '+j.no+' '+nameOf('clients',j.clientId)+' '+nameOf('venues',j.venueId)).toLowerCase();if(!hay.includes(q))return false;}
   return true;
  });
- const key=j=>j.eventFrom||j.setupDate||'';
+ const key=j=>j.eventFrom||setupStart(j)||'';
  if(sort==='ev_desc')list.sort((a,b)=>key(b).localeCompare(key(a)));
  else if(sort==='ev_asc')list.sort((a,b)=>key(a).localeCompare(key(b)));
  else list.sort((a,b)=>b.createdAt-a.createdAt);
@@ -1435,7 +1521,7 @@ function renderJobs(){
   <td><b>${esc(j.event)}</b></td>
   <td>${esc(nameOf('clients',j.clientId))}</td>
   <td>${esc(nameOf('venues',j.venueId))}</td>
-  <td>${fmtD(j.setupDate)}</td>
+  <td>${fmtSetupRange(j)}</td>
   <td>${fmtRange(j.eventFrom,j.eventTo)}</td>
   <td>${j.crew.length?'👷 '+j.crew.length:'—'}</td>
   <td>${statusPill(j.status)}</td>
@@ -1460,7 +1546,7 @@ function renderSchedule(){
  for(let i=0;i<offset;i++)h+='<div class="cal-cell blank"></div>';
  for(let d=1;d<=days;d++){
   const iso=`${calY}-${String(calM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-  const su=state.jobs.filter(j=>j.setupDate===iso&&j.status!=='Cancelled');
+  const su=state.jobs.filter(j=>setupCovers(j,iso)&&j.status!=='Cancelled');
   const evs=state.jobs.filter(j=>{const f=j.eventFrom,to=j.eventTo||j.eventFrom;return f&&f<=iso&&iso<=to&&j.status!=='Cancelled';});
   let chips=su.map(j=>`<div class="chip setup" onclick="openView('${j.id}')" title="Setup — ${esc(j.event)}">⚙ ${esc(j.event)}</div>`)
    .concat(evs.map(j=>`<div class="chip" style="border-color:${SMETA[j.status][0]};color:${SMETA[j.status][0]}" onclick="openView('${j.id}')" title="${esc(j.event)} (${j.status})">${esc(j.event)}</div>`));
@@ -1539,11 +1625,11 @@ function importJSON(inp){
  r.readAsText(f);
 }
 function exportCSV(){
- const head=['Job No','Event','Type','Client','Venue','Setup Date','Event From','Event To','Status','Priority','Equipment','Crew','Notes'];
+ const head=['Job No','Event','Type','Client','Venue','Setup From','Setup To','Event From','Event To','Status','Priority','Equipment','Crew','Notes'];
  const q=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';
  const rows=state.jobs.map(j=>[
   j.no,j.event,j.typeId?nameOf('eventTypes',j.typeId):'',j.clientId?nameOf('clients',j.clientId):'',j.venueId?nameOf('venues',j.venueId):'',
-  j.setupDate||'',j.eventFrom||'',j.eventTo||'',j.status,j.priority||'',
+  setupStart(j)||'',setupEnd(j)||'',j.eventFrom||'',j.eventTo||'',j.status,j.priority||'',
   j.equipment.map(e=>(e.spec?e.spec+' ':'')+e.name).join('; '),
   j.crew.map(c=>nameOf('technicians',c.techId)+(c.roleId?' ('+nameOf('roles',c.roleId)+')':'')).join('; '),
   j.notes||''
@@ -1562,7 +1648,7 @@ function notifList(){
  const t=todayISO();const list=[];
  for(const j of state.jobs){
   if(!ACTIVE.includes(j.status))continue;
-  if(j.setupDate===t)list.push({icon:'⚙️',text:'Setup today — '+j.event,id:j.id});
+  if(setupCovers(j,t))list.push({icon:'⚙️',text:'Setup today — '+j.event,id:j.id});
   const f=j.eventFrom,to=j.eventTo||j.eventFrom;
   if(f&&f<=t&&t<=to)list.push({icon:'🎬',text:'Event live today — '+j.event,id:j.id});
   else if(f&&to<t)list.push({icon:'⚠️',text:'Past event still open — '+j.event+' ('+j.status+')',id:j.id});
