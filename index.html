@@ -707,11 +707,12 @@ const SMETA={
 const KINDS={
  clients:{label:'Clients / Companies',sing:'Client',icon:'🏢',fields:[['name','Company / client name *'],['contact','Contact person'],['phone','Phone']]},
  venues:{label:'Venues',sing:'Venue',icon:'📍',fields:[['name','Venue name *'],['area','Area / City']]},
- technicians:{label:'Technicians / Crew',sing:'Technician',icon:'👷',fields:[['name','Full name *'],['role','__roleselect'],['phone','Phone']]},
+ technicians:{label:'Crew / Labour Register',sing:'Crew Member',icon:'👷',fields:[['name','Full name *'],['role','__roleselect'],['workerType','__labourtype'],['source','Source / supplier / site'],['phone','Phone'],['rateNote','Rate / allowance notes']]},
  roles:{label:'Crew Roles',sing:'Crew Role',icon:'🎚',fields:[['name','Role name *']]},
  equipment:{label:'Equipment Catalogue',sing:'Equipment Item',icon:'🎛',fields:[['name','Equipment name *']]},
  eventTypes:{label:'Event Types',sing:'Event Type',icon:'🎪',fields:[['name','Event type *']]}
 };
+const LABOUR_TYPES=['DVI Staff','Casual','Freelancer','Outsourced Labour'];
 const DEFAULT_COMPANY={
  name:'Digital Visual Interface',
  tagline:'The Event & Conference Company',
@@ -745,11 +746,22 @@ const fmtDateObj=d=>fmtDateParts(d.getFullYear(),d.getMonth()+1,d.getDate());
 const fmtDT=ts=>{const d=new Date(ts);return fmtDateObj(d)+' at '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});};
 const byId=(k,id)=>state[k].find(x=>x.id===id)||null;
 const nameOf=(k,id)=>{const x=byId(k,id);return x?x.name:'—';};
+function labourMeta(t){
+ if(!t)return '';
+ return [t.workerType||'DVI Staff',t.source||''].filter(Boolean).join(' Â· ');
+}
+function crewDisplayName(id){
+ const t=byId('technicians',id);
+ if(!t)return 'â€”';
+ const meta=labourMeta(t);
+ return t.name+(meta?' ('+meta+')':'');
+}
 function ensureStateShape(s){
  if(!s||typeof s!=='object')return null;
  if(!s.company)s.company={};
  for(const kind in KINDS){if(!Array.isArray(s[kind]))s[kind]=[];}
  if(!Array.isArray(s.jobs))s.jobs=[];
+ if(Array.isArray(s.technicians))s.technicians.forEach(t=>{if(!t.workerType)t.workerType='DVI Staff';});
  if(!s.meta)s.meta={};
  if(!s.seq){
   const maxNo=s.jobs.reduce((m,j)=>{const n=String(j.no||'').match(/(\d+)$/);return Math.max(m,n?Number(n[1]):0);},0);
@@ -974,7 +986,7 @@ function seed(){
  state={
   company:Object.assign({},DEFAULT_COMPANY),
   roles:R.map(r=>({id:r[0],name:r[1]})),
-  technicians:T.map((t,i)=>({id:'t'+(i+1),name:t[0],role:t[1],phone:''})),
+  technicians:T.map((t,i)=>({id:'t'+(i+1),name:t[0],role:t[1],workerType:'DVI Staff',source:'',phone:'',rateNote:''})),
   clients:C.map((c,i)=>({id:'c'+(i+1),name:c,contact:'',phone:''})),
   venues:V.map((v,i)=>({id:'v'+(i+1),name:v[0],area:v[1]})),
   equipment:E.map((e,i)=>({id:'e'+(i+1),name:e})),
@@ -999,6 +1011,12 @@ function fillSelect(sel,kind,ph,val,noAdd){
  for(const it of items){
   let lb=it.name;
   if(kind==='technicians'&&it.role){const r=byId('roles',it.role);if(r)lb+=' — '+r.name;}
+  if(kind==='technicians'){
+   const labourBits=[];
+   if(it.workerType)labourBits.push(it.workerType);
+   if(it.source)labourBits.push(it.source);
+   if(labourBits.length)lb+=' / '+labourBits.join(' / ');
+  }
   h+=`<option value="${it.id}">${esc(lb)}</option>`;
  }
  if(!noAdd)h+=`<option value="__add">＋ Add new…</option>`;
@@ -1023,10 +1041,12 @@ function openQuickAdd(kind,editId,trigger){
  let h='';
  for(const [key,lab] of K.fields){
   if(lab==='__roleselect')h+=`<label>Primary role</label><select id="qf_${key}"></select>`;
+  else if(lab==='__labourtype')h+=`<label>Labour type</label><select id="qf_${key}">${LABOUR_TYPES.map(x=>`<option>${esc(x)}</option>`).join('')}</select>`;
   else h+=`<label>${lab}</label><input id="qf_${key}" value="${esc(item[key]||'')}">`;
  }
  $('qmFields').innerHTML=h;
  if(kind==='technicians')fillSelect($('qf_role'),'roles','— Select role —',item.role||'',true);
+ if(kind==='technicians'&&$('qf_workerType'))$('qf_workerType').value=item.workerType||'DVI Staff';
  $('quickModal').classList.add('open');
  setTimeout(()=>{const f=$('qmFields').querySelector('input');if(f)f.focus();},60);
 }
@@ -1146,7 +1166,7 @@ function crewGrouped(j){
  for(const c of j.crew){
   const rn=c.roleId?nameOf('roles',c.roleId):'Crew';
   if(!m.has(rn))m.set(rn,[]);
-  m.get(rn).push(nameOf('technicians',c.techId));
+  m.get(rn).push(crewDisplayName(c.techId));
  }
  return m;
 }
@@ -1834,6 +1854,7 @@ function renderSettings(){
     if(kind==='technicians')meta=[it.role?nameOf('roles',it.role):'',it.phone||''].filter(Boolean).join(' · ');
     else if(kind==='clients')meta=[it.contact||'',it.phone||''].filter(Boolean).join(' · ');
     else if(kind==='venues')meta=it.area||'';
+    if(kind==='technicians')meta=[it.role?nameOf('roles',it.role):'',it.workerType||'DVI Staff',it.source||'',it.phone||'',it.rateNote||''].filter(Boolean).join(' Â· ');
     return `<div class="list-row"><div><b>${esc(it.name)}</b>${meta?`<div class="muted sm">${esc(meta)}</div>`:''}</div>
      <div class="row-acts"><button onclick="openQuickAdd('${kind}','${it.id}')" title="Edit">✎</button>
      <button onclick="removeItem('${kind}','${it.id}')" title="Delete">🗑</button></div></div>`;
@@ -1891,7 +1912,7 @@ function exportCSV(){
   j.no,j.event,j.typeId?nameOf('eventTypes',j.typeId):'',j.clientId?nameOf('clients',j.clientId):'',j.venueId?nameOf('venues',j.venueId):'',
   setupStart(j)||'',setupEnd(j)||'',j.eventFrom||'',j.eventTo||'',j.status,j.priority||'',j.updatedAt?fmtDT(j.updatedAt):'',jobDeviceLabel(j),j.updatedDeviceId||j.createdDeviceId||'',
   j.equipment.map(e=>(e.spec?e.spec+' ':'')+e.name).join('; '),
-  j.crew.map(c=>nameOf('technicians',c.techId)+(c.roleId?' ('+nameOf('roles',c.roleId)+')':'')).join('; '),
+  j.crew.map(c=>crewDisplayName(c.techId)+(c.roleId?' ['+nameOf('roles',c.roleId)+']':'')).join('; '),
   j.notes||''
  ].map(q).join(','));
  dl('DVI-jobcards-'+todayISO()+'.csv','﻿'+[head.map(q).join(',')].concat(rows).join('\r\n'),'text/csv');
