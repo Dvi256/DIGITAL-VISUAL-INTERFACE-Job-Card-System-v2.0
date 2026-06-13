@@ -296,6 +296,20 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
 .row-acts button:hover{color:var(--gold-l);background:rgba(212,175,55,.12)}
 .set-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px}
 .data-btns{display:flex;gap:10px;flex-wrap:wrap}
+.set-grid .full{grid-column:1/-1}
+.cloud-card{border-color:rgba(91,155,255,.16)}
+.cloud-top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:15px;flex-wrap:wrap}
+.cloud-status{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px;align-items:center;min-width:230px}
+.cloud-dot{grid-row:1/3;width:11px;height:11px;border-radius:50%;background:#7b8495;box-shadow:0 0 14px rgba(123,132,149,.45)}
+.cloud-dot.ok{background:#3ddc84;box-shadow:0 0 18px rgba(61,220,132,.45)}
+.cloud-dot.busy{background:#f0b429;box-shadow:0 0 18px rgba(240,180,41,.45)}
+.cloud-dot.err{background:#ff6b6b;box-shadow:0 0 18px rgba(255,107,107,.45)}
+.cloud-status b{font-family:var(--font-d);font-size:14px;color:#fff}
+.cloud-status em{font-style:normal;color:var(--mut);font-size:11.5px;line-height:1.35}
+.toggle-line{display:inline-flex;align-items:center;gap:9px;margin:0;color:#cdd3df;font-size:12.5px;text-transform:none;letter-spacing:0;font-weight:700}
+.toggle-line input{width:18px;height:18px;accent-color:var(--gold);padding:0}
+.cloud-note{margin:11px 0 0;color:var(--mut);font-size:12px;line-height:1.55}
+.cloud-note code{color:var(--gold-l);font-family:Consolas,'Courier New',monospace}
 
 /* modals */
 .modal{position:fixed;inset:0;display:none;align-items:flex-start;justify-content:center;background:rgba(3,4,8,.78);backdrop-filter:blur(8px);z-index:50;overflow:auto;padding:38px 18px}
@@ -560,6 +574,30 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
         </div>
       </div>
       <div id="listsWrap" class="lists-grid"></div>
+      <div class="card cloud-card" style="margin-top:20px">
+        <div class="cloud-top">
+          <div>
+            <h3>Cloud Sync <span class="muted sm">- shared office storage</span></h3>
+            <p class="muted sm" style="margin:0">Connect one shared Google Sheet cloud link so every device sees the same job cards.</p>
+          </div>
+          <div class="cloud-status" id="cloudStatus">
+            <span class="cloud-dot"></span><b>Local only</b><em>Cloud sync is not connected yet.</em>
+          </div>
+        </div>
+        <div class="set-grid">
+          <div class="full">
+            <label>Google Apps Script web app URL</label>
+            <input id="cloudEndpoint" placeholder="Paste the cloud sync web app URL here" onchange="saveCloudSettings()">
+          </div>
+          <label class="toggle-line"><input type="checkbox" id="cloudAuto" onchange="saveCloudSettings()"> Auto sync after changes</label>
+        </div>
+        <div class="data-btns" style="margin-top:14px">
+          <button class="gold-btn" onclick="cloudPull()">Download Cloud Data</button>
+          <button class="ghost-btn" onclick="cloudPushManual()">Upload This Device</button>
+          <button class="ghost-btn" onclick="cloudTest()">Test Cloud Link</button>
+        </div>
+        <p class="cloud-note">Until the cloud link is added, this app keeps using this browser as a local backup. Use <code>cloud-sync-apps-script.js</code> once to create the shared Google storage link.</p>
+      </div>
       <div class="card" style="margin-top:20px">
         <h3>💾 Data &amp; Backups</h3>
         <div class="data-btns">
@@ -568,7 +606,7 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
           <button class="ghost-btn" onclick="exportCSV()">📊 Export Jobs (CSV)</button>
           <button class="ghost-btn danger" onclick="clearAll()">🗑 Clear All Data</button>
         </div>
-        <p class="muted sm" style="margin-bottom:0;margin-top:13px">Everything is saved automatically in this browser. Export a JSON backup regularly to keep your records safe or move them to another computer.</p>
+        <p class="muted sm" style="margin-bottom:0;margin-top:13px">This device keeps a local backup. When Cloud Sync is connected, the shared office copy can keep all devices on the same job cards. Export JSON backups regularly for extra safety.</p>
       </div>
     </section>
   </main>
@@ -645,6 +683,8 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
 <script>
 /* ================= STATE ================= */
 const DB='dvi_jobcards_v1';
+const CLOUD_KEY='dvi_cloud_sync_v1';
+const CLOUD_CLIENT_KEY='dvi_cloud_client_v1';
 const DVI_GCAL={
  id:'dviugandaow@gmail.com',
  name:'Dvi-Uganda O/W',
@@ -681,12 +721,14 @@ const DEFAULT_COMPANY={
 let state=null, editingJobId=null;
 let quickKind=null, quickEditId=null, quickTrigger=null, confirmCb=null;
 let calY, calM;
+let cloudCfg=null, cloudBusy=false, cloudSaveTimer=null;
 
 /* ================= HELPERS ================= */
 const $=id=>document.getElementById(id);
 const uid=()=>'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const todayISO=()=>new Date().toLocaleDateString('en-CA');
+const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const WEEKDAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 function daySuffix(d){const n=d%100;if(n>=11&&n<=13)return 'th';return d%10===1?'st':d%10===2?'nd':d%10===3?'rd':'th';}
@@ -701,8 +743,35 @@ const fmtDateObj=d=>fmtDateParts(d.getFullYear(),d.getMonth()+1,d.getDate());
 const fmtDT=ts=>{const d=new Date(ts);return fmtDateObj(d)+' at '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});};
 const byId=(k,id)=>state[k].find(x=>x.id===id)||null;
 const nameOf=(k,id)=>{const x=byId(k,id);return x?x.name:'—';};
-function save(){localStorage.setItem(DB,JSON.stringify(state));}
-function load(){try{state=JSON.parse(localStorage.getItem(DB));}catch(e){state=null;} if(!state||!state.jobs)seed();syncCompanyBranding();save();}
+function ensureStateShape(s){
+ if(!s||typeof s!=='object')return null;
+ if(!s.company)s.company={};
+ for(const kind in KINDS){if(!Array.isArray(s[kind]))s[kind]=[];}
+ if(!Array.isArray(s.jobs))s.jobs=[];
+ if(!s.meta)s.meta={};
+ if(!s.seq){
+  const maxNo=s.jobs.reduce((m,j)=>{const n=String(j.no||'').match(/(\d+)$/);return Math.max(m,n?Number(n[1]):0);},0);
+  s.seq=Math.max(maxNo+1,1);
+ }
+ return s;
+}
+function touchState(){
+ if(!state)return;
+ state.meta=Object.assign({},state.meta,{updatedAt:Date.now(),appVersion:'2.1-cloud'});
+}
+function save(opts){
+ opts=opts||{};
+ if(!state)return;
+ ensureStateShape(state);
+ if(opts.touch!==false)touchState();
+ localStorage.setItem(DB,JSON.stringify(state));
+ if(opts.cloud!==false)scheduleCloudSave();
+}
+function load(){
+ try{state=JSON.parse(localStorage.getItem(DB));}catch(e){state=null;}
+ if(!state||!state.jobs)seed();
+ ensureStateShape(state);syncCompanyBranding();save({cloud:false,touch:false});
+}
 function syncCompanyBranding(){
  const c=state.company||{};
  state.company=Object.assign({},DEFAULT_COMPANY,c);
@@ -712,6 +781,162 @@ function syncCompanyBranding(){
  if(!c.email)state.company.email=DEFAULT_COMPANY.email;
  if(!c.website)state.company.website=DEFAULT_COMPANY.website;
  if(!c.address||c.address==='Suite 407, Diamond Trust Blg, Plot 18/19, Kampala Road')state.company.address=DEFAULT_COMPANY.address;
+}
+function loadCloudConfig(){
+ try{cloudCfg=JSON.parse(localStorage.getItem(CLOUD_KEY))||{};}catch(e){cloudCfg={};}
+ cloudCfg={endpoint:(cloudCfg.endpoint||'').trim(),auto:!!cloudCfg.auto,lastPull:cloudCfg.lastPull||0,lastPush:cloudCfg.lastPush||0,lastOk:cloudCfg.lastOk||0};
+ if(!localStorage.getItem(CLOUD_CLIENT_KEY))localStorage.setItem(CLOUD_CLIENT_KEY,uid());
+ return cloudCfg;
+}
+function saveCloudConfig(){localStorage.setItem(CLOUD_KEY,JSON.stringify(cloudCfg||{}));}
+function cloudClientId(){let id=localStorage.getItem(CLOUD_CLIENT_KEY);if(!id){id=uid();localStorage.setItem(CLOUD_CLIENT_KEY,id);}return id;}
+function cloudStateStamp(s){
+ if(!s)return 0;
+ const stamps=[s.meta&&s.meta.updatedAt,s.meta&&s.meta.cloudUpdatedAt];
+ if(Array.isArray(s.jobs))s.jobs.forEach(j=>stamps.push(j.updatedAt,j.createdAt));
+ return Math.max(0,...stamps.map(Number).filter(Boolean));
+}
+function renderCloudSettings(){
+ if(!cloudCfg)loadCloudConfig();
+ if($('cloudEndpoint'))$('cloudEndpoint').value=cloudCfg.endpoint||'';
+ if($('cloudAuto'))$('cloudAuto').checked=!!cloudCfg.auto;
+ renderCloudStatus();
+}
+function setCloudStatus(kind,title,detail){
+ const box=$('cloudStatus');if(!box)return;
+ const cls=kind==='ok'?'ok':kind==='busy'?'busy':kind==='err'?'err':'';
+ box.innerHTML=`<span class="cloud-dot ${cls}"></span><b>${esc(title)}</b><em>${esc(detail||'')}</em>`;
+}
+function renderCloudStatus(){
+ if(!cloudCfg)loadCloudConfig();
+ if(!cloudCfg.endpoint){setCloudStatus('', 'Local only', 'Cloud sync is not connected yet.');return;}
+ const last=Math.max(cloudCfg.lastPull||0,cloudCfg.lastPush||0,cloudCfg.lastOk||0);
+ const detail=(last?'Last cloud check: '+fmtDT(last):'Cloud link added. Test or download cloud data.');
+ setCloudStatus('ok','Cloud ready',detail);
+}
+function saveCloudSettings(){
+ if(!cloudCfg)loadCloudConfig();
+ cloudCfg.endpoint=($('cloudEndpoint').value||'').trim();
+ cloudCfg.auto=!!$('cloudAuto').checked;
+ saveCloudConfig();renderCloudStatus();
+ if(cloudCfg.endpoint&&cloudCfg.auto)cloudPull({auto:true});
+}
+function cloudUrl(action,extra){
+ if(!cloudCfg)loadCloudConfig();
+ if(!cloudCfg.endpoint)throw new Error('Missing cloud link');
+ const url=new URL(cloudCfg.endpoint);
+ url.searchParams.set('action',action);
+ url.searchParams.set('client',cloudClientId());
+ url.searchParams.set('t',String(Date.now()));
+ for(const k in (extra||{})){if(extra[k]!=null)url.searchParams.set(k,extra[k]);}
+ return url.toString();
+}
+function cloudJsonp(action,extra,timeoutMs){
+ timeoutMs=timeoutMs||16000;
+ return new Promise((resolve,reject)=>{
+  let script,timer;
+  const cb='dviCloudCb_'+uid().replace(/\W/g,'');
+  const cleanup=()=>{clearTimeout(timer);if(script)script.remove();try{delete window[cb];}catch(e){window[cb]=undefined;}};
+  window[cb]=data=>{cleanup();resolve(data||{});};
+  try{
+   script=document.createElement('script');
+   script.src=cloudUrl(action,Object.assign({},extra,{callback:cb}));
+   script.onerror=()=>{cleanup();reject(new Error('Could not reach cloud link'));};
+   timer=setTimeout(()=>{cleanup();reject(new Error('Cloud link timed out'));},timeoutMs);
+   document.head.appendChild(script);
+  }catch(e){cleanup();reject(e);}
+ });
+}
+async function cloudPost(payload){
+ if(!cloudCfg)loadCloudConfig();
+ if(!cloudCfg.endpoint)throw new Error('Missing cloud link');
+ await fetch(cloudCfg.endpoint,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
+}
+function scheduleCloudSave(){
+ if(!cloudCfg||!cloudCfg.auto||!cloudCfg.endpoint||cloudBusy)return;
+ clearTimeout(cloudSaveTimer);
+ cloudSaveTimer=setTimeout(()=>cloudPush({silent:true}),1800);
+}
+function applyCloudState(next,label){
+ state=ensureStateShape(next);
+ syncCompanyBranding();
+ save({cloud:false,touch:false});
+ renderAll();
+ if(label)toast(label);
+}
+async function cloudPull(opts){
+ opts=opts||{};
+ if(!cloudCfg)loadCloudConfig();
+ if(!cloudCfg.endpoint){toast('Add the cloud sync link first','err');renderCloudStatus();return;}
+ if(cloudBusy)return;
+ cloudBusy=true;setCloudStatus('busy','Syncing','Downloading shared job cards...');
+ try{
+  const res=await cloudJsonp('load');
+  if(!res.ok)throw new Error(res.error||'Cloud sync failed');
+  const next=ensureStateShape(res.state);
+  cloudCfg.lastPull=Date.now();cloudCfg.lastOk=cloudCfg.lastPull;saveCloudConfig();
+  if(!next||!Array.isArray(next.jobs)){
+   setCloudStatus('ok','Cloud empty','No shared data has been uploaded yet.');
+   if(!opts.auto)toast('Cloud is empty. Upload this device when ready.');
+   return;
+  }
+  const localStamp=cloudStateStamp(state),remoteStamp=cloudStateStamp(next);
+  const same=JSON.stringify(state)===JSON.stringify(next);
+  const doApply=()=>applyCloudState(next,'Cloud data downloaded');
+  if(opts.auto){
+   if(!state.jobs.length||remoteStamp>localStamp)doApply();
+   else renderCloudStatus();
+  }else if(same){
+   renderCloudStatus();toast('This device already matches the cloud');
+  }else if(state.jobs.length){
+   confirmBox('Replace this device with the shared cloud data ('+next.jobs.length+' job cards)?',doApply);
+  }else doApply();
+ }catch(e){
+  setCloudStatus('err','Cloud error',e.message||'Unable to sync');
+  if(!opts.auto)toast(e.message||'Cloud sync failed','err');
+ }finally{cloudBusy=false;}
+}
+async function cloudPush(opts){
+ opts=opts||{};
+ if(!cloudCfg)loadCloudConfig();
+ if(!cloudCfg.endpoint){if(!opts.silent)toast('Add the cloud sync link first','err');renderCloudStatus();return false;}
+ if(cloudBusy)return false;
+ cloudBusy=true;setCloudStatus('busy','Syncing','Uploading this device to cloud...');
+ try{
+  touchState();
+  state.meta.cloudUpdatedAt=Date.now();
+  localStorage.setItem(DB,JSON.stringify(state));
+  await cloudPost({action:'save',client:cloudClientId(),savedAt:Date.now(),state});
+  await wait(1200);
+  const meta=await cloudJsonp('meta',{},9000).catch(()=>({ok:true}));
+  if(meta&&!meta.ok)throw new Error(meta.error||'Cloud did not confirm the upload');
+  cloudCfg.lastPush=Date.now();cloudCfg.lastOk=cloudCfg.lastPush;saveCloudConfig();
+  renderCloudStatus();
+  if(!opts.silent)toast('Cloud updated');
+  return true;
+ }catch(e){
+  setCloudStatus('err','Cloud error',e.message||'Unable to upload');
+  if(!opts.silent)toast(e.message||'Cloud upload failed','err');
+  return false;
+ }finally{cloudBusy=false;}
+}
+function cloudPushManual(){
+ if(!cloudCfg)loadCloudConfig();
+ if(!cloudCfg.endpoint){toast('Add the cloud sync link first','err');renderCloudStatus();return;}
+ confirmBox('Upload this device and make it the shared cloud data for all devices?',()=>cloudPush({silent:false}));
+}
+async function cloudTest(){
+ if(!cloudCfg)loadCloudConfig();
+ if(!cloudCfg.endpoint){toast('Add the cloud sync link first','err');renderCloudStatus();return;}
+ if(cloudBusy)return;
+ cloudBusy=true;setCloudStatus('busy','Testing','Checking the cloud link...');
+ try{
+  const res=await cloudJsonp('ping');
+  if(!res.ok)throw new Error(res.error||'Cloud link test failed');
+  cloudCfg.lastOk=Date.now();saveCloudConfig();renderCloudStatus();toast('Cloud link is working');
+ }catch(e){
+  setCloudStatus('err','Cloud error',e.message||'Cloud link test failed');toast(e.message||'Cloud link test failed','err');
+ }finally{cloudBusy=false;}
 }
 function statusPill(s){const m=SMETA[s]||SMETA['Draft'];return `<span class="pill" style="color:${m[0]};background:${m[1]};border:1px solid ${m[0]}44">${s}</span>`;}
 function toast(msg,type){const t=document.createElement('div');t.className='toast'+(type==='err'?' err':'');t.textContent=msg;$('toasts').appendChild(t);setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),450);},3200);}
@@ -737,7 +962,7 @@ function seed(){
   eventTypes:Y.map((y,i)=>({id:'y'+(i+1),name:y})),
   jobs:[],seq:1
  };
- save();
+ save({cloud:false});
 }
 
 /* ================= NAV ================= */
@@ -1582,6 +1807,7 @@ function renderSettings(){
   `</div></div>`;
  }
  $('listsWrap').innerHTML=h;
+ renderCloudSettings();
 }
 function saveCompany(){
  state.company={name:$('sName').value.trim()||DEFAULT_COMPANY.name,tagline:$('sTag').value.trim(),phone:$('sPhone').value.trim(),email:$('sEmail').value.trim(),website:$('sWebsite').value.trim(),address:$('sAddress').value.trim()};
@@ -1667,6 +1893,7 @@ function toggleNotif(e){e.stopPropagation();$('notifPanel').classList.toggle('op
 /* ================= INIT ================= */
 function renderAll(){renderDashboard();renderJobs();renderSchedule();renderSettings();updateBell();}
 function init(){
+ loadCloudConfig();
  load();
  const hr=new Date().getHours();
  const greet=hr<12?'Good morning ☀':hr<17?'Good afternoon 🌤':'Good evening 🌙';
@@ -1676,6 +1903,7 @@ function init(){
  $('jStatus').innerHTML='<option value="">All statuses</option>'+STATUSES.map(s=>`<option>${s}</option>`).join('');
  const n=new Date();calY=n.getFullYear();calM=n.getMonth();
  renderAll();
+ if(cloudCfg&&cloudCfg.endpoint&&cloudCfg.auto)setTimeout(()=>cloudPull({auto:true}),900);
  const notifs=notifList();
  if(notifs.length)setTimeout(()=>toast('🔔 '+notifs.length+' item(s) need attention today'),700);
  document.addEventListener('keydown',e=>{
