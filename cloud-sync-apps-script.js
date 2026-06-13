@@ -40,7 +40,7 @@ function doPost(e) {
     const action = String(body.action || 'save').toLowerCase();
     if (action !== 'save') throw new Error('Unsupported action');
     if (!body.state || !Array.isArray(body.state.jobs)) throw new Error('Invalid DVI state payload');
-    writeState_(body.state, body.client || '', body.savedAt || Date.now());
+    writeState_(body.state, body.client || '', body.clientName || '', body.savedAt || Date.now());
     out = { ok: true, updatedAt: body.savedAt || Date.now() };
   } catch (err) {
     out = { ok: false, error: String((err && err.message) || err) };
@@ -71,7 +71,7 @@ function sheet_() {
   return sheet;
 }
 
-function writeState_(state, client, savedAt) {
+function writeState_(state, client, clientName, savedAt) {
   const lock = LockService.getScriptLock();
   lock.waitLock(15000);
   try {
@@ -83,6 +83,7 @@ function writeState_(state, client, savedAt) {
     }
     rows.push(['meta', 'updatedAt', String(savedAt)]);
     rows.push(['meta', 'client', String(client || '')]);
+    rows.push(['meta', 'clientName', String(clientName || '')]);
     rows.push(['meta', 'chunks', String(rows.length - 1)]);
     sheet.clearContents();
     sheet.getRange(1, 1, rows.length, 3).setValues(rows);

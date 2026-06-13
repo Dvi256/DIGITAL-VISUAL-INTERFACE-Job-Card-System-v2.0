@@ -522,7 +522,7 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
         </div>
         <div id="jobsCount" class="muted sm"></div>
         <table id="jobsTable">
-          <thead><tr><th>Job No</th><th>Event</th><th>Client</th><th>Venue</th><th>Set Up</th><th>Event Date</th><th>Crew</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>Job No</th><th>Event</th><th>Client</th><th>Venue</th><th>Set Up</th><th>Event Date</th><th>Crew</th><th>Status</th><th>Updated From</th><th></th></tr></thead>
           <tbody id="jobsTbody"></tbody>
         </table>
         <div id="jobsEmpty" class="empty"></div>
@@ -589,6 +589,8 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
             <label>Google Apps Script web app URL</label>
             <input id="cloudEndpoint" placeholder="Paste the cloud sync web app URL here" onchange="saveCloudSettings()">
           </div>
+          <div><label>This device name</label><input id="cloudDeviceName" placeholder="e.g. Reception Laptop, Godrick Phone" onchange="saveCloudSettings()"></div>
+          <div><label>Device ID</label><input id="cloudDeviceId" readonly class="mono"></div>
           <label class="toggle-line"><input type="checkbox" id="cloudAuto" onchange="saveCloudSettings()"> Auto sync after changes</label>
         </div>
         <div class="data-btns" style="margin-top:14px">
@@ -757,7 +759,7 @@ function ensureStateShape(s){
 }
 function touchState(){
  if(!state)return;
- state.meta=Object.assign({},state.meta,{updatedAt:Date.now(),appVersion:'2.1-cloud'});
+ state.meta=Object.assign({},state.meta,{updatedAt:Date.now(),appVersion:'2.1-cloud',updatedDeviceId:cloudClientId(),updatedDeviceName:currentDeviceName()});
 }
 function save(opts){
  opts=opts||{};
@@ -784,12 +786,26 @@ function syncCompanyBranding(){
 }
 function loadCloudConfig(){
  try{cloudCfg=JSON.parse(localStorage.getItem(CLOUD_KEY))||{};}catch(e){cloudCfg={};}
- cloudCfg={endpoint:(cloudCfg.endpoint||'').trim(),auto:!!cloudCfg.auto,lastPull:cloudCfg.lastPull||0,lastPush:cloudCfg.lastPush||0,lastOk:cloudCfg.lastOk||0};
  if(!localStorage.getItem(CLOUD_CLIENT_KEY))localStorage.setItem(CLOUD_CLIENT_KEY,uid());
+ cloudCfg={endpoint:(cloudCfg.endpoint||'').trim(),auto:!!cloudCfg.auto,deviceName:(cloudCfg.deviceName||defaultDeviceName()).trim(),lastPull:cloudCfg.lastPull||0,lastPush:cloudCfg.lastPush||0,lastOk:cloudCfg.lastOk||0};
  return cloudCfg;
 }
 function saveCloudConfig(){localStorage.setItem(CLOUD_KEY,JSON.stringify(cloudCfg||{}));}
 function cloudClientId(){let id=localStorage.getItem(CLOUD_CLIENT_KEY);if(!id){id=uid();localStorage.setItem(CLOUD_CLIENT_KEY,id);}return id;}
+function shortDeviceId(id){return String(id||cloudClientId()).slice(-8).toUpperCase();}
+function defaultDeviceName(){return 'DVI Device '+shortDeviceId();}
+function currentDeviceName(){if(!cloudCfg)loadCloudConfig();return (cloudCfg.deviceName||defaultDeviceName()).trim();}
+function currentDeviceLabel(){return deviceDisplay(currentDeviceName(),cloudClientId());}
+function deviceDisplay(name,id){
+ const n=String(name||'').trim(),sid=shortDeviceId(id);
+ return n?(n+' · ID '+sid):(id?('Device ID '+sid):'Not recorded');
+}
+function jobDeviceLabel(j){return deviceDisplay(j.updatedDeviceName||j.createdDeviceName,j.updatedDeviceId||j.createdDeviceId);}
+function markJobDevice(j){
+ j.updatedDeviceId=cloudClientId();
+ j.updatedDeviceName=currentDeviceName();
+ return j;
+}
 function cloudStateStamp(s){
  if(!s)return 0;
  const stamps=[s.meta&&s.meta.updatedAt,s.meta&&s.meta.cloudUpdatedAt];
@@ -799,6 +815,8 @@ function cloudStateStamp(s){
 function renderCloudSettings(){
  if(!cloudCfg)loadCloudConfig();
  if($('cloudEndpoint'))$('cloudEndpoint').value=cloudCfg.endpoint||'';
+ if($('cloudDeviceName'))$('cloudDeviceName').value=currentDeviceName();
+ if($('cloudDeviceId'))$('cloudDeviceId').value=cloudClientId();
  if($('cloudAuto'))$('cloudAuto').checked=!!cloudCfg.auto;
  renderCloudStatus();
 }
@@ -817,6 +835,7 @@ function renderCloudStatus(){
 function saveCloudSettings(){
  if(!cloudCfg)loadCloudConfig();
  cloudCfg.endpoint=($('cloudEndpoint').value||'').trim();
+ cloudCfg.deviceName=($('cloudDeviceName').value||defaultDeviceName()).trim();
  cloudCfg.auto=!!$('cloudAuto').checked;
  saveCloudConfig();renderCloudStatus();
  if(cloudCfg.endpoint&&cloudCfg.auto)cloudPull({auto:true});
@@ -906,7 +925,7 @@ async function cloudPush(opts){
   touchState();
   state.meta.cloudUpdatedAt=Date.now();
   localStorage.setItem(DB,JSON.stringify(state));
-  await cloudPost({action:'save',client:cloudClientId(),savedAt:Date.now(),state});
+  await cloudPost({action:'save',client:cloudClientId(),clientName:currentDeviceName(),savedAt:Date.now(),state});
   await wait(1200);
   const meta=await cloudJsonp('meta',{},9000).catch(()=>({ok:true}));
   if(meta&&!meta.ok)throw new Error(meta.error||'Cloud did not confirm the upload');
@@ -1103,6 +1122,7 @@ function saveJobForm(){
   setupFrom,setupTo,setupDate:setupFrom||setupTo,eventFrom:$('f_from').value||null,eventTo:$('f_to').value||null,
   status:$('f_status').value,priority:$('f_priority').value,notes:$('f_notes').value.trim(),
   equipment,crew,updatedAt:Date.now()};
+ markJobDevice(fields);
  if(fields.setupFrom&&fields.setupTo&&fields.setupTo<fields.setupFrom){toast('Setup end date is before the start date','err');return;}
  if(fields.eventFrom&&fields.eventTo&&fields.eventTo<fields.eventFrom){toast('Event end date is before the start date','err');return;}
  let j;
@@ -1110,8 +1130,11 @@ function saveJobForm(){
   j=state.jobs.find(x=>x.id===editingJobId);
   const old=j.status;Object.assign(j,fields);
   j.history.push({ts:Date.now(),text:old!==j.status?('Updated · status '+old+' → '+j.status):'Details updated'});
+  j.history[j.history.length-1].text+=' from '+currentDeviceLabel();
  }else{
   j=Object.assign({id:uid(),no:nextNoPreview(),createdAt:Date.now(),history:[{ts:Date.now(),text:'Job card created'}]},fields);
+  j.createdDeviceId=cloudClientId();j.createdDeviceName=currentDeviceName();
+  j.history[0].text+=' from '+currentDeviceLabel();
   state.seq++;state.jobs.push(j);
  }
  save();closeJobModal();renderAll();toast('Job card '+j.no+' saved ✓');openView(j.id);
@@ -1147,6 +1170,8 @@ function openView(id){
   <div class="vw-cell"><label>Venue</label><b>${esc(nameOf('venues',j.venueId))}</b></div>
   <div class="vw-cell"><label>Set Up Date</label><b>${fmtSetupRange(j)}</b></div>
   <div class="vw-cell"><label>Event Date</label><b>${fmtRange(j.eventFrom,j.eventTo)}</b></div>
+  <div class="vw-cell"><label>Last Updated</label><b>${j.updatedAt?fmtDT(j.updatedAt):'Not recorded'}</b></div>
+  <div class="vw-cell"><label>Updated From</label><b>${esc(jobDeviceLabel(j))}</b></div>
  </div>
  <div class="vw-2col">
   <div><h4>🎛 Equipment (${j.equipment.length})</h4>${j.equipment.length?'<ul class="vw-eq">'+j.equipment.map(e=>'<li>'+esc((e.spec?e.spec+' ':'')+e.name)+'</li>').join('')+'</ul>':'<div class="muted sm">None listed</div>'}</div>
@@ -1169,7 +1194,8 @@ function setJobStatus(id,s){
  const j=state.jobs.find(x=>x.id===id);
  if(!j||j.status===s)return;
  j.history.push({ts:Date.now(),text:'Status: '+j.status+' → '+s});
- j.status=s;j.updatedAt=Date.now();
+ j.history[j.history.length-1].text+=' from '+currentDeviceLabel();
+ j.status=s;j.updatedAt=Date.now();markJobDevice(j);
  save();renderAll();openView(id);toast(j.no+' → '+s+' ✓');
 }
 function duplicateJob(id){
@@ -1177,7 +1203,9 @@ function duplicateJob(id){
  const copy=JSON.parse(JSON.stringify(j));
  copy.id=uid();copy.no=nextNoPreview();state.seq++;
  copy.status='Draft';copy.createdAt=Date.now();copy.updatedAt=Date.now();
+ copy.createdDeviceId=cloudClientId();copy.createdDeviceName=currentDeviceName();markJobDevice(copy);
  copy.history=[{ts:Date.now(),text:'Duplicated from '+j.no}];
+ copy.history[0].text+=' on '+currentDeviceLabel();
  state.jobs.push(copy);save();closeView();renderAll();
  toast('Duplicated as '+copy.no+' ✓');openJobModal(copy.id);
 }
@@ -1296,6 +1324,7 @@ function buildPrintHTML(j){
   crewRows+=`<tr><td class="rolecell">${esc(role.toUpperCase())}</td><td>${names.map(n=>esc(n.toUpperCase())).join('<br>')}</td></tr>`;
  const eqRows=j.equipment.map((e,n)=>`<tr><td class="num">${n+1}</td><td>${esc(((e.spec?e.spec+' ':'')+e.name).toUpperCase())}</td></tr>`).join('');
  const clientTd=esc(nameOf('clients',j.clientId).toUpperCase())+(c&&(c.contact||c.phone)?`<br><span class="pc-sub">${esc([c.contact,c.phone].filter(Boolean).join(' · '))}</span>`:'');
+ const updatedFrom=jobDeviceLabel(j);
  return `<div class="pc">
  <div class="pc-band">
   <img src="DVI%20logos%20png/dvi%20logo.png" alt="" onerror="this.style.display='none'">
@@ -1320,6 +1349,10 @@ function buildPrintHTML(j){
    <td>${fmtSetupRange(j)}</td>
    <td>${fmtRange(j.eventFrom,j.eventTo)}</td>
   </tr></tbody>
+ </table>
+ <table class="pc-main pc-meta">
+  <thead><tr><th>LAST UPDATED</th><th>UPDATED FROM DEVICE</th><th>CREATED FROM DEVICE</th></tr></thead>
+  <tbody><tr><td>${j.updatedAt?fmtDT(j.updatedAt):'Not recorded'}</td><td>${esc(updatedFrom)}</td><td>${esc(deviceDisplay(j.createdDeviceName,j.createdDeviceId))}</td></tr></tbody>
  </table>
  <div class="pc-cols">
   <div><h4>EQUIPMENT</h4><table class="pc-list">${eqRows||'<tr><td class="num">—</td><td>—</td></tr>'}</table></div>
@@ -1733,7 +1766,7 @@ function renderJobs(){
  let list=state.jobs.filter(j=>{
   if(st&&j.status!==st)return false;
   if(cl&&j.clientId!==cl)return false;
-  if(q){const hay=(j.event+' '+j.no+' '+nameOf('clients',j.clientId)+' '+nameOf('venues',j.venueId)).toLowerCase();if(!hay.includes(q))return false;}
+  if(q){const hay=(j.event+' '+j.no+' '+nameOf('clients',j.clientId)+' '+nameOf('venues',j.venueId)+' '+jobDeviceLabel(j)).toLowerCase();if(!hay.includes(q))return false;}
   return true;
  });
  const key=j=>j.eventFrom||setupStart(j)||'';
@@ -1750,6 +1783,7 @@ function renderJobs(){
   <td>${fmtRange(j.eventFrom,j.eventTo)}</td>
   <td>${j.crew.length?'👷 '+j.crew.length:'—'}</td>
   <td>${statusPill(j.status)}</td>
+  <td class="sm">${esc(jobDeviceLabel(j))}</td>
   <td class="acts" onclick="event.stopPropagation()">
    <button title="Edit" onclick="openJobModal('${j.id}')">✎</button>
    <button title="Print" onclick="printJob('${j.id}')">🖨</button>
@@ -1851,11 +1885,11 @@ function importJSON(inp){
  r.readAsText(f);
 }
 function exportCSV(){
- const head=['Job No','Event','Type','Client','Venue','Setup From','Setup To','Event From','Event To','Status','Priority','Equipment','Crew','Notes'];
+ const head=['Job No','Event','Type','Client','Venue','Setup From','Setup To','Event From','Event To','Status','Priority','Last Updated','Updated From','Device ID','Equipment','Crew','Notes'];
  const q=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';
  const rows=state.jobs.map(j=>[
   j.no,j.event,j.typeId?nameOf('eventTypes',j.typeId):'',j.clientId?nameOf('clients',j.clientId):'',j.venueId?nameOf('venues',j.venueId):'',
-  setupStart(j)||'',setupEnd(j)||'',j.eventFrom||'',j.eventTo||'',j.status,j.priority||'',
+  setupStart(j)||'',setupEnd(j)||'',j.eventFrom||'',j.eventTo||'',j.status,j.priority||'',j.updatedAt?fmtDT(j.updatedAt):'',jobDeviceLabel(j),j.updatedDeviceId||j.createdDeviceId||'',
   j.equipment.map(e=>(e.spec?e.spec+' ':'')+e.name).join('; '),
   j.crew.map(c=>nameOf('technicians',c.techId)+(c.roleId?' ('+nameOf('roles',c.roleId)+')':'')).join('; '),
   j.notes||''
