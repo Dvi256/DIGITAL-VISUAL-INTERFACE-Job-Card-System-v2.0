@@ -747,6 +747,7 @@ const fmtDT=ts=>{const d=new Date(ts);return fmtDateObj(d)+' at '+d.toLocaleTime
 const byId=(k,id)=>state[k].find(x=>x.id===id)||null;
 const nameOf=(k,id)=>{const x=byId(k,id);return x?x.name:'—';};
 function labourMeta(t){
+ if(t&&(t.workerType||'DVI Staff')==='DVI Staff')return '';
  if(!t)return '';
  return [t.workerType||'DVI Staff',t.source||''].filter(Boolean).join(' Â· ');
 }
@@ -1013,8 +1014,9 @@ function fillSelect(sel,kind,ph,val,noAdd){
   if(kind==='technicians'&&it.role){const r=byId('roles',it.role);if(r)lb+=' — '+r.name;}
   if(kind==='technicians'){
    const labourBits=[];
-   if(it.workerType)labourBits.push(it.workerType);
-   if(it.source)labourBits.push(it.source);
+   const type=it.workerType||'DVI Staff';
+   if(type!=='DVI Staff')labourBits.push(type);
+   if(type!=='DVI Staff'&&it.source)labourBits.push(it.source);
    if(labourBits.length)lb+=' / '+labourBits.join(' / ');
   }
   h+=`<option value="${it.id}">${esc(lb)}</option>`;
