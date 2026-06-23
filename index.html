@@ -641,8 +641,8 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
     <div class="f-section">
       <div class="fs-head"><h3>Job Responsibility</h3></div>
       <div class="fgrid">
-        <div><label>Site Manager / Overall Overseer</label><select id="f_site_manager" data-kind="technicians" data-ph="— Site manager / overseer —" onchange="maybeQuickAdd(this)"></select></div>
-        <div><label>Job Card Creator</label><select id="f_creator" data-kind="technicians" data-ph="— Job card creator —" onchange="maybeQuickAdd(this)"></select></div>
+        <div><label>Site Manager / Overall Overseer</label><select id="f_site_manager" data-kind="technicians" data-admin-first="1" data-ph="— Site manager / overseer —" onchange="maybeQuickAdd(this)"></select></div>
+        <div><label>Job Card Creator</label><select id="f_creator" data-kind="technicians" data-admin-first="1" data-ph="— Job card creator —" onchange="maybeQuickAdd(this)"></select></div>
       </div>
     </div>
     <div class="f-section">
@@ -753,6 +753,7 @@ const fmtDateObj=d=>fmtDateParts(d.getFullYear(),d.getMonth()+1,d.getDate());
 const fmtDT=ts=>{const d=new Date(ts);return fmtDateObj(d)+' at '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});};
 const byId=(k,id)=>state[k].find(x=>x.id===id)||null;
 const nameOf=(k,id)=>{const x=byId(k,id);return x?x.name:'—';};
+const ADMIN_ROLE_RE=/admin|administrator|operations?|office|manager|coordinator|supervisor|overseer/i;
 const technicianName=id=>{const t=id?byId('technicians',id):null;return t?t.name:'';};
 const technicianIdByName=name=>{
  const n=String(name||'').trim().toLowerCase();
@@ -764,6 +765,21 @@ const jobSiteManager=j=>technicianName(j&&j.siteManagerId)||String((j&&(j.siteMa
 const jobCardCreator=j=>technicianName(j&&j.jobCardCreatorId)||String((j&&(j.jobCardCreator||j.creator))||'').trim();
 const jobSiteManagerValue=j=>(j&&j.siteManagerId)||technicianIdByName(jobSiteManager(j));
 const jobCardCreatorValue=j=>(j&&j.jobCardCreatorId)||technicianIdByName(jobCardCreator(j));
+function technicianRoleName(t){return t&&t.role?nameOf('roles',t.role):'';}
+function technicianSelectLabel(it){
+ let lb=it.name;
+ const role=technicianRoleName(it);
+ if(role&&role!=='—')lb+=' — '+role;
+ const labourBits=[];
+ const type=it.workerType||'DVI Staff';
+ if(type!=='DVI Staff')labourBits.push(type);
+ if(type!=='DVI Staff'&&it.source)labourBits.push(it.source);
+ if(labourBits.length)lb+=' / '+labourBits.join(' / ');
+ return lb;
+}
+function isAdminCrew(it){
+ return ADMIN_ROLE_RE.test([technicianRoleName(it),it.workerType||'',it.source||''].join(' '));
+}
 function labourMeta(t){
  if(t&&(t.workerType||'DVI Staff')==='DVI Staff')return '';
  if(!t)return '';
@@ -779,6 +795,7 @@ function ensureStateShape(s){
  if(!s||typeof s!=='object')return null;
  if(!s.company)s.company={};
  for(const kind in KINDS){if(!Array.isArray(s[kind]))s[kind]=[];}
+ if(!s.roles.some(r=>String(r.name||'').trim().toLowerCase()==='admin / operations'))s.roles.push({id:s.roles.some(r=>r.id==='r_admin')?uid():'r_admin',name:'Admin / Operations'});
  if(!Array.isArray(s.jobs))s.jobs=[];
  s.jobs.forEach(j=>{
   if(j.siteManagerId==null)j.siteManagerId='';
@@ -996,7 +1013,7 @@ function dl(name,content,mime){const a=document.createElement('a');a.href=URL.cr
 
 /* ================= SEED (DVI real-world data) ================= */
 function seed(){
- const R=[['r1','Riggers'],['r2','Screen'],['r3','Sound Technician'],['r4','Platform'],['r5','Lighting'],['r6','Plinths'],['r7','Power'],['r8','Driver'],['r9','Photography'],['r10','Videography']];
+ const R=[['r1','Riggers'],['r2','Screen'],['r3','Sound Technician'],['r4','Platform'],['r5','Lighting'],['r6','Plinths'],['r7','Power'],['r8','Driver'],['r9','Photography'],['r10','Videography'],['r_admin','Admin / Operations']];
  const T=[['Wagaba Eddy','r1'],['Valentine Masambaga','r1'],['Agaba Godrick','r2'],['Kibuuka Tonny','r3'],['Nsubuga Thomas','r4'],['Oloya Kennedy','r5'],['Derrick Ocaya','r5'],['Ssebufu Moses','r6'],['Aweko Ronald','r7'],['Saidi Hassani Mahine','r8']];
  const C=['Huawei Technologies','DFCU Bank','Bank of Baroda','Britam','Ministry of Finance','EPRC','Parliament of Uganda','Pan Dental','Makerere University'];
  const V=[['Four Points by Sheraton — Victoria Hall','Kampala'],['Kololo Airstrip','Kampala'],['Speke Resort Munyonyo','Munyonyo'],['Kampala Serena Hotel','Kampala'],['Sarovar Portico','Kampala'],['Macheda Palms',''],['Makerere University','Kampala'],['Parliament of Uganda','Kampala'],['Gayaza','Wakiso']];
@@ -1024,19 +1041,25 @@ function switchView(v){
 }
 
 /* ================= SELECT FILLERS ================= */
+function fillTechnicianSelect(sel,ph,val,noAdd){
+ const items=[...state.technicians].sort((a,b)=>a.name.localeCompare(b.name));
+ let h=`<option value="">${esc(ph)}</option>`;
+ if(sel&&sel.dataset.adminFirst==='1'){
+  const admin=items.filter(isAdminCrew),other=items.filter(it=>!isAdminCrew(it));
+  if(admin.length)h+=`<optgroup label="Admin crew">${admin.map(it=>`<option value="${it.id}">${esc(technicianSelectLabel(it))}</option>`).join('')}</optgroup>`;
+  if(other.length)h+=`<optgroup label="Other crew">${other.map(it=>`<option value="${it.id}">${esc(technicianSelectLabel(it))}</option>`).join('')}</optgroup>`;
+ }else{
+  for(const it of items)h+=`<option value="${it.id}">${esc(technicianSelectLabel(it))}</option>`;
+ }
+ if(!noAdd)h+=`<option value="__add">＋ Add new…</option>`;
+ sel.innerHTML=h;sel.value=val||'';sel.dataset.prev=sel.value;
+}
 function fillSelect(sel,kind,ph,val,noAdd){
+ if(kind==='technicians'){fillTechnicianSelect(sel,ph,val,noAdd);return;}
  const items=[...state[kind]].sort((a,b)=>a.name.localeCompare(b.name));
  let h=`<option value="">${esc(ph)}</option>`;
  for(const it of items){
   let lb=it.name;
-  if(kind==='technicians'&&it.role){const r=byId('roles',it.role);if(r)lb+=' — '+r.name;}
-  if(kind==='technicians'){
-   const labourBits=[];
-   const type=it.workerType||'DVI Staff';
-   if(type!=='DVI Staff')labourBits.push(type);
-   if(type!=='DVI Staff'&&it.source)labourBits.push(it.source);
-   if(labourBits.length)lb+=' / '+labourBits.join(' / ');
-  }
   h+=`<option value="${it.id}">${esc(lb)}</option>`;
  }
  if(!noAdd)h+=`<option value="__add">＋ Add new…</option>`;
