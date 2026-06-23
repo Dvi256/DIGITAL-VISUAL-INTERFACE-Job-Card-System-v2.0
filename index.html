@@ -1997,47 +1997,92 @@ function opsEquipmentDistribution(jobs){
  return [...m.values()].sort((a,b)=>a.name.localeCompare(b.name));
 }
 function opsTransportRows(days){
- const rows=[];
- const transportRe=/driver|transport|logistics|dispatch/i;
- const vehicleRe=/truck|vehicle|van|pickup|car|bus|fuel|transport/i;
+  const rows=[];
+  const transportRe=/driver|transport|logistics|dispatch/i;
+  const vehicleRe=/truck|vehicle|van|pickup|car|bus|fuel|transport/i;
  for(const iso of days){
   for(const j of opsJobsForDay(iso)){
    const drivers=(j.crew||[]).filter(c=>transportRe.test(c.roleId?nameOf('roles',c.roleId):'')).map(c=>crewDisplayName(c.techId));
    const vehicles=(j.equipment||[]).filter(e=>vehicleRe.test((e.name||'')+' '+(e.spec||''))).map(e=>(e.spec?e.spec+' ':'')+e.name);
    if(drivers.length||vehicles.length)rows.push({iso,job:j,drivers,vehicles});
   }
+  }
+  return rows;
+}
+function opsUniqueList(list){return [...new Set((list||[]).map(x=>String(x||'').trim()).filter(Boolean))];}
+function opsBriefList(list,limit){
+ const clean=opsUniqueList(list);
+ if(!clean.length)return '-';
+ const shown=clean.slice(0,limit);
+ const more=clean.length>limit?`<span class="ops-more">+${clean.length-limit} more</span>`:'';
+ return esc(shown.join('\n')).replace(/\n/g,'<br>')+more;
+}
+function opsRoleDistribution(team){
+ const m=new Map();
+ for(const t of team){
+  const roles=t.roles&&t.roles.size?[...t.roles]:[(t.role||'Crew')];
+  for(const role of roles){
+   const key=(role||'Crew').trim()||'Crew';
+   if(!m.has(key))m.set(key,{role:key,people:new Set(),days:0,jobs:0});
+   const row=m.get(key);
+   row.people.add(t.name);
+   row.days+=t.days.size;
+   row.jobs+=t.jobs.size;
+  }
+ }
+ return [...m.values()].sort((a,b)=>b.days-a.days||a.role.localeCompare(b.role));
+}
+function opsMissingTransport(days,transport){
+ const routed=new Set(transport.map(r=>r.iso+'|'+r.job.id));
+ const rows=[];
+ for(const iso of days){
+  for(const j of opsJobsForDay(iso)){
+   if(!routed.has(iso+'|'+j.id))rows.push({iso,job:j});
+  }
  }
  return rows;
 }
 function opsSummaryCSS(){
- return `@page{size:A4 landscape;margin:6mm}*{box-sizing:border-box}body{margin:0;background:#f2efe8;color:#171717;font-family:'Segoe UI',Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}.print-tools{position:sticky;top:0;z-index:5;display:flex;justify-content:flex-end;gap:10px;padding:10px 12px;background:#15161a;border-bottom:2px solid #d4af37}.print-tools button{min-height:38px;padding:9px 15px;border-radius:8px;border:1px solid #d4af37;background:#d4af37;color:#181203;font:700 13px 'Segoe UI',Arial,sans-serif;cursor:pointer}.ops-sheet{padding:6mm}.ops-page{break-after:page;margin-bottom:9px}.ops-page:last-child{break-after:auto}.ops-top{display:grid;grid-template-columns:1.5fr .5fr;gap:8px;align-items:stretch}.ops-brand{background:#11151d;color:#fff;padding:11px 14px;border-left:6px solid #d4af37}.ops-brand h1{margin:0;font-size:21px;letter-spacing:.35px}.ops-brand p{margin:4px 0 0;color:#c9cfda;font-size:10.5px}.ops-window{background:#fff;border:1px solid #222;padding:9px 10px}.ops-window span,.ops-k{display:block;font-size:7.8px;text-transform:uppercase;letter-spacing:.85px;color:#666;font-weight:800}.ops-window b{display:block;margin-top:4px;font-size:13.5px}.ops-stats{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-top:7px}.ops-stat{background:#fff;border:1px solid #222;padding:6px 7px}.ops-stat b{display:block;font-size:17px;color:#1d4f91;line-height:1}.ops-stat span{font-size:7.5px;text-transform:uppercase;letter-spacing:.65px;color:#555;font-weight:800}.ops-timeline{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:7px 0}.ops-tick{min-height:38px;background:#fff;border:1px solid #222;padding:4px 5px}.ops-tick.hot{background:#fff8df;border-color:#b88900}.ops-tick b{display:block;font-size:8.3px}.ops-tick span{display:inline-block;margin-top:2px;font-size:13px;font-weight:900;color:#1d4f91}.ops-tick small{float:right;margin-top:5px;font-size:7.8px;color:#555}.ops-board{display:grid;grid-template-columns:1.18fr .82fr;gap:8px;align-items:start}.ops-dist{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:start}.ops-section{margin-top:8px}.ops-section h2{margin:0 0 5px;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;border-bottom:2px solid #d4af37;padding-bottom:4px}.ops-table{width:100%;border-collapse:collapse;background:#fff}.ops-table th{background:#f3e3b3;border:1px solid #222;padding:4.5px 5px;font-size:7.8px;text-align:left;text-transform:uppercase;letter-spacing:.55px}.ops-table td{border:1px solid #222;padding:4.5px 5px;font-size:8.2px;vertical-align:top;line-height:1.25}.ops-table b{font-size:8.8px}.ops-note{color:#555;font-size:7.8px}.ops-empty{padding:9px;background:#fff;border:1px dashed #888;color:#555}@media(max-width:700px){.ops-top,.ops-board,.ops-dist,.ops-stats{grid-template-columns:1fr}.ops-timeline{grid-template-columns:1fr 1fr}}@media print{.print-tools{display:none}.ops-sheet{padding:0}}`;
+ return `@page{size:A4 landscape;margin:6mm}*{box-sizing:border-box}body{margin:0;background:#eceff3;color:#14161a;font-family:'Segoe UI',Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}.print-tools{position:sticky;top:0;z-index:5;display:flex;justify-content:flex-end;gap:10px;padding:10px 12px;background:#121722;border-bottom:2px solid #d7b45a}.print-tools button{min-height:38px;padding:9px 15px;border-radius:8px;border:1px solid #d7b45a;background:#d7b45a;color:#151105;font:700 13px 'Segoe UI',Arial,sans-serif;cursor:pointer}.ops-sheet{padding:6mm}.ops-page{break-after:page;min-height:185mm;background:#fff;border:1px solid #c8ced8;padding:7mm;margin-bottom:9px;position:relative;overflow:hidden}.ops-page:last-child{break-after:auto}.ops-page:before{content:"";position:absolute;inset:0 0 auto;height:5px;background:linear-gradient(90deg,#111827 0 42%,#d7b45a 42% 67%,#2f7d68 67% 100%)}.ops-top,.ops-page-head{display:grid;grid-template-columns:1.55fr .45fr;gap:8px;align-items:stretch}.ops-brand,.ops-headline{background:#111827;color:#fff;padding:10px 13px;border-left:6px solid #d7b45a}.ops-brand h1,.ops-headline h1{margin:0;font-size:20px;letter-spacing:.25px}.ops-brand p,.ops-headline p{margin:4px 0 0;color:#d3d8e2;font-size:10.2px}.ops-window,.ops-period{background:#f8fafc;border:1px solid #20242c;padding:9px 10px}.ops-window span,.ops-k,.ops-period span{display:block;font-size:7.5px;text-transform:uppercase;letter-spacing:.75px;color:#5a6170;font-weight:800}.ops-window b,.ops-period b{display:block;margin-top:4px;font-size:13.5px}.ops-stats{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-top:7px}.ops-stat{background:#f8fafc;border:1px solid #20242c;padding:6px 7px}.ops-stat b{display:block;font-size:17px;color:#1f5a92;line-height:1}.ops-stat span{font-size:7.2px;text-transform:uppercase;letter-spacing:.55px;color:#545b66;font-weight:800}.ops-timeline{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:7px 0}.ops-tick{min-height:33px;background:#f9fafb;border:1px solid #c9d0da;padding:4px 5px}.ops-tick.hot{background:#fff7df;border-color:#b88900}.ops-tick b{display:block;font-size:8px}.ops-tick span{display:inline-block;margin-top:1px;font-size:12.5px;font-weight:900;color:#1f5a92}.ops-tick small{float:right;margin-top:5px;font-size:7.4px;color:#555}.ops-board{display:grid;grid-template-columns:1.18fr .82fr;gap:8px;align-items:start}.ops-section{margin-top:8px}.ops-section h2,.ops-block-title{margin:0 0 5px;font-size:10.3px;letter-spacing:.8px;text-transform:uppercase;border-bottom:2px solid #d7b45a;padding-bottom:4px}.ops-table{width:100%;border-collapse:collapse;background:#fff}.ops-table th{background:#edf1f7;border:1px solid #20242c;padding:4.3px 5px;font-size:7.4px;text-align:left;text-transform:uppercase;letter-spacing:.45px}.ops-table td{border:1px solid #20242c;padding:4.2px 5px;font-size:8px;vertical-align:top;line-height:1.23}.ops-table b{font-size:8.6px}.ops-note{color:#5f6672;font-size:7.6px}.ops-more{display:block;margin-top:2px;color:#1f5a92;font-weight:800;font-size:7.5px}.ops-empty{padding:9px;background:#f8fafc;border:1px dashed #8b95a7;color:#555}.ops-resource-hero{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px}.ops-resource-card{border:1px solid #20242c;background:#f8fafc;padding:7px 8px;min-height:58px}.ops-resource-card span{display:block;font-size:7.1px;text-transform:uppercase;letter-spacing:.7px;color:#687081;font-weight:800}.ops-resource-card b{display:block;margin:3px 0;font-size:12px;color:#111827}.ops-resource-card small{display:block;color:#1f5a92;font-weight:800;font-size:8px}.ops-resource-card p{margin:4px 0 0;font-size:7.7px;line-height:1.25;color:#525965}.ops-wide-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:8px;align-items:start}.ops-meter{height:6px;background:#e2e8f0;border:1px solid #a8b1bf;margin-top:3px}.ops-meter i{display:block;height:100%;background:#2f7d68}.ops-split{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start}.ops-role-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:7px 0}.ops-role{background:#111827;color:#fff;border-left:4px solid #d7b45a;padding:6px 7px;min-height:42px}.ops-role b{display:block;font-size:13px}.ops-role span{display:block;font-size:7.2px;text-transform:uppercase;letter-spacing:.55px;color:#dce3ef}.ops-route-list{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:7px}.ops-route{border:1px solid #20242c;background:#fbfcfe;padding:7px 8px;min-height:68px}.ops-route b{display:block;font-size:10px;color:#111827}.ops-route span{display:block;margin-top:3px;font-size:7.7px;color:#596170;line-height:1.25}.ops-route strong{display:block;margin-top:5px;font-size:8px;color:#2f7d68}.ops-route.pending strong{color:#a15c00}.ops-footer-note{position:absolute;left:7mm;right:7mm;bottom:4mm;border-top:1px solid #d6dce5;padding-top:3px;font-size:7.2px;color:#6a7280;text-align:right}@media(max-width:700px){.ops-top,.ops-page-head,.ops-board,.ops-wide-grid,.ops-split,.ops-stats,.ops-resource-hero,.ops-role-strip,.ops-route-list{grid-template-columns:1fr}.ops-timeline{grid-template-columns:1fr 1fr}}@media print{body{background:#fff}.print-tools{display:none}.ops-sheet{padding:0}.ops-page{margin:0;border:0;min-height:auto}}`;
 }
 function buildOpsSummaryHTML(mode,start,end){
- const days=opsDateList(start,end);
- const jobs=opsSummaryJobs(days);
- const setupCount=days.reduce((n,iso)=>n+opsJobsForDay(iso).filter(j=>setupCovers(j,iso)).length,0);
- const eventCount=days.reduce((n,iso)=>n+opsJobsForDay(iso).filter(j=>jobEventCovers(j,iso)).length,0);
- const crewCount=new Set(jobs.flatMap(j=>(j.crew||[]).map(c=>c.techId).filter(Boolean))).size;
- const equipment=opsEquipmentDistribution(jobs);
- const transport=opsTransportRows(days);
- const timeline=days.map(iso=>{const n=opsJobsForDay(iso).length;const d=new Date(iso+'T00:00:00');return `<div class="ops-tick${n?' hot':''}"><b>${WEEKDAYS[d.getDay()].slice(0,3)}</b><span>${d.getDate()}</span><small>${n} job${n===1?'':'s'}</small></div>`;}).join('');
- const jobRows=jobs.map(j=>`<tr><td><b>${esc(j.no)}</b><br>${esc(j.event)}</td><td>${esc(nameOf('clients',j.clientId))}<br><span class="ops-note">${esc(nameOf('venues',j.venueId))}</span></td><td>${opsJobPeriodText(j,days)}</td><td>${esc(jobSiteManager(j)||'-')}<br><span class="ops-note">${esc(jobCardCreator(j)||'-')}</span></td><td>${(j.crew||[]).length}</td><td>${(j.equipment||[]).length}</td><td>${esc(j.status)}</td></tr>`).join('')||'<tr><td colspan="7">No jobs scheduled in this period.</td></tr>';
- const dayRows=days.map(iso=>{
-  const rows=opsJobsForDay(iso);
-  const d=new Date(iso+'T00:00:00');
-  const setup=rows.filter(j=>setupCovers(j,iso)).map(j=>j.no+' '+j.event);
-  const events=rows.filter(j=>jobEventCovers(j,iso)).map(j=>j.no+' '+j.event);
-  const leads=[...new Set(rows.map(jobSiteManager).filter(Boolean))];
-  return `<tr><td><b>${WEEKDAYS[d.getDay()].slice(0,3)}</b><br>${fmtD(iso)}</td><td>${esc(setup.join('\n')||'-').replace(/\n/g,'<br>')}</td><td>${esc(events.join('\n')||'-').replace(/\n/g,'<br>')}</td><td>${esc(leads.join(', ')||'-')}</td></tr>`;
- }).join('');
- const team=opsTeamAllocations(days);
- const teamRows=team.map(t=>`<tr><td><b>${esc(t.name)}</b><br><span class="ops-note">${esc(t.role)}</span></td><td>${t.days.size}</td><td>${t.jobs.size}</td><td>${esc(t.items.join('\n')).replace(/\n/g,'<br>')}</td></tr>`).join('')||'<tr><td colspan="4">No labour allocation yet.</td></tr>';
- const eqRows=equipment.map(e=>`<tr><td><b>${esc(e.name)}</b><br><span class="ops-note">${esc([...e.specs].join(', ')||'-')}</span></td><td>${e.count}</td><td>${esc([...new Set(e.jobs)].join('\n')).replace(/\n/g,'<br>')}</td></tr>`).join('')||'<tr><td colspan="3">No equipment distribution yet.</td></tr>';
- const transportRows=transport.map(r=>`<tr><td>${fmtD(r.iso)}<br><b>${esc(r.job.no)}</b></td><td>${esc(r.job.event)}<br><span class="ops-note">${esc(nameOf('venues',r.job.venueId))}</span></td><td>${esc(r.drivers.join(', ')||'Not assigned')}</td><td>${esc(r.vehicles.join('; ')||'Not listed')}</td></tr>`).join('')||'<tr><td colspan="4">No dedicated transport or driver allocation found in this period.</td></tr>';
- const co=state.company||DEFAULT_COMPANY;
- const label=mode==='month'?'Monthly Operations Brief':mode==='week'?'Weekly Operations Brief':'Daily Operations Brief';
- const range=start===end?fmtD(start):fmtD(start)+' - '+fmtD(end);
- return `<div class="ops-sheet">
+  const days=opsDateList(start,end);
+  const jobs=opsSummaryJobs(days);
+  const setupCount=days.reduce((n,iso)=>n+opsJobsForDay(iso).filter(j=>setupCovers(j,iso)).length,0);
+  const eventCount=days.reduce((n,iso)=>n+opsJobsForDay(iso).filter(j=>jobEventCovers(j,iso)).length,0);
+  const crewCount=new Set(jobs.flatMap(j=>(j.crew||[]).map(c=>c.techId).filter(Boolean))).size;
+  const equipment=opsEquipmentDistribution(jobs);
+  const transport=opsTransportRows(days);
+  const missingTransport=opsMissingTransport(days,transport);
+  const activeDays=days.filter(iso=>opsJobsForDay(iso).length);
+  const movementDays=mode==='month'&&activeDays.length?activeDays:days;
+  const timeline=days.map(iso=>{const n=opsJobsForDay(iso).length;const d=new Date(iso+'T00:00:00');return `<div class="ops-tick${n?' hot':''}"><b>${WEEKDAYS[d.getDay()].slice(0,3)}</b><span>${d.getDate()}</span><small>${n} job${n===1?'':'s'}</small></div>`;}).join('');
+  const jobLimit=mode==='month'?20:16;
+  const jobRows=jobs.slice(0,jobLimit).map(j=>`<tr><td><b>${esc(j.no)}</b><br>${esc(j.event)}</td><td>${esc(nameOf('clients',j.clientId))}<br><span class="ops-note">${esc(nameOf('venues',j.venueId))}</span></td><td>${opsJobPeriodText(j,days)}</td><td>${esc(jobSiteManager(j)||'-')}<br><span class="ops-note">${esc(jobCardCreator(j)||'-')}</span></td><td>${(j.crew||[]).length}</td><td>${(j.equipment||[]).length}</td><td>${esc(j.status)}</td></tr>`).join('')+(jobs.length>jobLimit?`<tr><td colspan="7"><b>${jobs.length-jobLimit} additional job card${jobs.length-jobLimit===1?'':'s'} summarized in totals and distribution boards.</b></td></tr>`:'')||'<tr><td colspan="7">No jobs scheduled in this period.</td></tr>';
+  const dayRows=movementDays.map(iso=>{
+   const rows=opsJobsForDay(iso);
+   const d=new Date(iso+'T00:00:00');
+   const setup=rows.filter(j=>setupCovers(j,iso)).map(j=>j.no+' '+j.event);
+   const events=rows.filter(j=>jobEventCovers(j,iso)).map(j=>j.no+' '+j.event);
+   const leads=[...new Set(rows.map(jobSiteManager).filter(Boolean))];
+   return `<tr><td><b>${WEEKDAYS[d.getDay()].slice(0,3)}</b><br>${fmtD(iso)}</td><td>${esc(setup.join('\n')||'-').replace(/\n/g,'<br>')}</td><td>${esc(events.join('\n')||'-').replace(/\n/g,'<br>')}</td><td>${esc(leads.join(', ')||'-')}</td></tr>`;
+  }).join('')||'<tr><td colspan="4">No movement scheduled in this period.</td></tr>';
+  const team=opsTeamAllocations(days);
+  const roleDistribution=opsRoleDistribution(team);
+  const roleCards=roleDistribution.slice(0,4).map(r=>`<div class="ops-role"><b>${r.people.size}</b><span>${esc(r.role)} / ${r.days} day line${r.days===1?'':'s'}</span></div>`).join('')||'<div class="ops-empty">No labour roles allocated yet.</div>';
+  const teamRows=team.sort((a,b)=>b.days.size-a.days.size||b.jobs.size-a.jobs.size||a.name.localeCompare(b.name)).slice(0,18).map(t=>`<tr><td><b>${esc(t.name)}</b><br><span class="ops-note">${esc(t.role)}</span></td><td>${t.days.size}</td><td>${t.jobs.size}</td><td>${opsBriefList(t.items,5)}</td></tr>`).join('')+(team.length>18?`<tr><td colspan="4"><b>${team.length-18} additional crew member${team.length-18===1?'':'s'} included in totals.</b></td></tr>`:'')||'<tr><td colspan="4">No labour allocation yet.</td></tr>';
+  const maxEq=Math.max(1,...equipment.map(e=>e.count));
+  const totalEqLines=equipment.reduce((n,e)=>n+e.count,0);
+  const jobsWithEquipment=new Set(equipment.flatMap(e=>e.jobs)).size;
+  const eqCards=equipment.slice().sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name)).slice(0,6).map((e,i)=>`<div class="ops-resource-card"><span>Equipment priority ${i+1}</span><b>${esc(e.name)}</b><small>${e.count} line${e.count===1?'':'s'} across ${opsUniqueList(e.jobs).length} job${opsUniqueList(e.jobs).length===1?'':'s'}</small><p>${opsBriefList([...e.specs],3)}</p></div>`).join('')||'<div class="ops-empty">No equipment distribution yet.</div>';
+  const eqRows=equipment.slice().sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name)).slice(0,22).map(e=>`<tr><td><b>${esc(e.name)}</b><div class="ops-meter"><i style="width:${Math.max(8,Math.round(e.count/maxEq*100))}%"></i></div></td><td>${e.count}</td><td>${opsBriefList([...e.specs],4)}</td><td>${opsBriefList(e.jobs,7)}</td></tr>`).join('')+(equipment.length>22?`<tr><td colspan="4"><b>${equipment.length-22} additional equipment type${equipment.length-22===1?'':'s'} included in totals.</b></td></tr>`:'')||'<tr><td colspan="4">No equipment distribution yet.</td></tr>';
+  const routeCards=transport.slice(0,8).map(r=>`<div class="ops-route"><b>${fmtD(r.iso)} / ${esc(r.job.no)}</b><span>${esc(r.job.event)}<br>${esc(nameOf('venues',r.job.venueId))}</span><strong>${esc(r.drivers.join(', ')||'Driver not assigned')} / ${esc(r.vehicles.join('; ')||'Vehicle not listed')}</strong></div>`).join('')+(transport.length>8?`<div class="ops-route pending"><b>More dispatch lines</b><span>${transport.length-8} additional transport line${transport.length-8===1?'':'s'} are included in the matrix.</span><strong>See dispatch table</strong></div>`:'')||'<div class="ops-empty">No dedicated transport or driver allocation found in this period.</div>';
+  const pendingCards=missingTransport.slice(0,4).map(r=>`<div class="ops-route pending"><b>${fmtD(r.iso)} / ${esc(r.job.no)}</b><span>${esc(r.job.event)}<br>${esc(nameOf('venues',r.job.venueId))}</span><strong>Transport detail not listed</strong></div>`).join('');
+  const transportRows=transport.slice(0,16).map(r=>`<tr><td>${fmtD(r.iso)}<br><b>${esc(r.job.no)}</b></td><td>${esc(r.job.event)}<br><span class="ops-note">${esc(nameOf('venues',r.job.venueId))}</span></td><td>${esc(r.drivers.join(', ')||'Not assigned')}</td><td>${esc(r.vehicles.join('; ')||'Not listed')}</td></tr>`).join('')+(transport.length>16?`<tr><td colspan="4"><b>${transport.length-16} additional dispatch line${transport.length-16===1?'':'s'} included in route cards and totals.</b></td></tr>`:'')||'<tr><td colspan="4">No dedicated transport or driver allocation found in this period.</td></tr>';
+  const co=state.company||DEFAULT_COMPANY;
+  const label=mode==='month'?'Monthly Operations Brief':mode==='week'?'Weekly Operations Brief':'Daily Operations Brief';
+  const range=start===end?fmtD(start):fmtD(start)+' - '+fmtD(end);
+  return `<div class="ops-sheet">
   <section class="ops-page"><div class="ops-top">
    <div class="ops-brand"><h1>${esc(label)}</h1><p>${esc(co.name||'Digital Visual Interface')} operations planning sheet</p></div>
    <div class="ops-window"><span>Schedule window</span><b>${range}</b><span style="margin-top:8px">Generated ${fmtDT(Date.now())}</span></div>
@@ -2049,11 +2094,12 @@ function buildOpsSummaryHTML(mode,start,end){
    <div class="ops-stat"><b>${crewCount}</b><span>Crew named</span></div>
    <div class="ops-stat"><b>${equipment.length}</b><span>Equipment types</span></div>
    <div class="ops-stat"><b>${transport.length}</b><span>Transport lines</span></div>
-  </div>
-  ${days.length>1?`<div class="ops-timeline">${timeline}</div>`:''}
-  <div class="ops-board"><section class="ops-section"><h2>Executive job matrix</h2><table class="ops-table"><thead><tr><th>Job</th><th>Client / Venue</th><th>Dates</th><th>Lead / Created by</th><th>Crew</th><th>Eq.</th><th>Status</th></tr></thead><tbody>${jobRows}</tbody></table></section><section class="ops-section"><h2>Daily movement board</h2><table class="ops-table"><thead><tr><th>Day</th><th>Setup</th><th>Event</th><th>Lead</th></tr></thead><tbody>${dayRows}</tbody></table></section></div></section>
- <section class="ops-page"><div class="ops-dist"><section class="ops-section"><h2>Equipment distribution</h2><table class="ops-table"><thead><tr><th>Equipment</th><th>Lines</th><th>Jobs using it</th></tr></thead><tbody>${eqRows}</tbody></table></section><section class="ops-section"><h2>Labour distribution</h2><table class="ops-table"><thead><tr><th>Person</th><th>Days</th><th>Jobs</th><th>Assignments</th></tr></thead><tbody>${teamRows}</tbody></table></section><section class="ops-section"><h2>Transport and dispatch</h2><table class="ops-table"><thead><tr><th>Date / Job</th><th>Event / Venue</th><th>Driver</th><th>Vehicle / items</th></tr></thead><tbody>${transportRows}</tbody></table></section></div></section>
- </div>`;
+   </div>
+   ${days.length>1?`<div class="ops-timeline">${timeline}</div>`:''}
+   <div class="ops-board"><section class="ops-section"><h2>Executive job matrix</h2><table class="ops-table"><thead><tr><th>Job</th><th>Client / Venue</th><th>Dates</th><th>Lead / Created by</th><th>Crew</th><th>Eq.</th><th>Status</th></tr></thead><tbody>${jobRows}</tbody></table></section><section class="ops-section"><h2>Daily movement board</h2><table class="ops-table"><thead><tr><th>Day</th><th>Setup</th><th>Event</th><th>Lead</th></tr></thead><tbody>${dayRows}</tbody></table></section></div><div class="ops-footer-note">Page 1 / Jobs and daily movement</div></section>
+ <section class="ops-page"><div class="ops-page-head"><div class="ops-headline"><h1>Equipment Distribution Board</h1><p>Asset load, specification lines, and job allocation summary.</p></div><div class="ops-period"><span>Equipment coverage</span><b>${totalEqLines} lines / ${jobsWithEquipment} jobs</b><span style="margin-top:8px">${range}</span></div></div><div class="ops-resource-hero">${eqCards}</div><section class="ops-section"><h2>Equipment allocation matrix</h2><table class="ops-table"><thead><tr><th>Equipment</th><th>Lines</th><th>Specification / Notes</th><th>Assigned jobs</th></tr></thead><tbody>${eqRows}</tbody></table></section><div class="ops-footer-note">Page 2 / Equipment distribution</div></section>
+ <section class="ops-page"><div class="ops-page-head"><div class="ops-headline"><h1>Labour and Transport Command Board</h1><p>Crew deployment, role density, transport routes, and dispatch gaps.</p></div><div class="ops-period"><span>People and movement</span><b>${team.length} crew / ${transport.length} dispatch</b><span style="margin-top:8px">${range}</span></div></div><div class="ops-role-strip">${roleCards}</div><div class="ops-split"><section class="ops-section"><h2>Labour distribution</h2><table class="ops-table"><thead><tr><th>Person</th><th>Days</th><th>Jobs</th><th>Assignments</th></tr></thead><tbody>${teamRows}</tbody></table></section><section class="ops-section"><h2>Transport and dispatch</h2><div class="ops-route-list">${routeCards}${pendingCards}</div><table class="ops-table" style="margin-top:7px"><thead><tr><th>Date / Job</th><th>Event / Venue</th><th>Driver</th><th>Vehicle / Items</th></tr></thead><tbody>${transportRows}</tbody></table></section></div><div class="ops-footer-note">Page 3 / Labour distribution and transport dispatch</div></section>
+  </div>`;
 }
 function downloadOpsSummary(mode){
  const picked=opsBriefDate();
