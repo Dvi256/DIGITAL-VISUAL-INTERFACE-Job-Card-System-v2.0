@@ -716,6 +716,7 @@ const DB='dvi_jobcards_v1';
 const CLOUD_KEY='dvi_cloud_sync_v1';
 const CLOUD_CLIENT_KEY='dvi_cloud_client_v1';
 const DVI_CLOUD_OWNER='dviugandaow@gmail.com';
+const DVI_CLOUD_PROJECT_URL='https://script.google.com/home/projects/1JcCnOQxiZ6PklFEl08RMrtKXyjadBWqmgTlwGf_Q1Atn98YWuFCPND3o/edit';
 const DVI_GCAL={
  id:'dviugandaow@gmail.com',
  name:'Dvi-Uganda O/W',
@@ -939,7 +940,7 @@ function cloudProjectEditUrl(value){
   const m=path.match(/\/project\/([^/?#]+)/);
   if(host==='drive.google.com'&&m)return 'https://script.google.com/home/projects/'+encodeURIComponent(m[1])+'/edit';
  }catch(e){}
- return 'https://script.google.com/home/projects/create';
+ return DVI_CLOUD_PROJECT_URL;
 }
 function cloudMissingLink(){
  if(!cloudCfg)loadCloudConfig();
