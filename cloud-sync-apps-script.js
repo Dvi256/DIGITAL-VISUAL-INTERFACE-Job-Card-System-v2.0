@@ -9,10 +9,16 @@
   5. Execute as: Me.
   6. Who has access: Anyone with the link.
   7. Copy the Web app URL and paste it into Cloud Sync settings in the job card system.
+
+  The script stores the live database in the Sheet and also keeps a JSON backup
+  file in the same Google Drive account that deploys the script.
 */
 
 const SHEET_NAME = 'DVI_CLOUD_DATA';
 const CHUNK_SIZE = 45000;
+const DRIVE_FOLDER_NAME = 'DVI Job Card Cloud Backups';
+const DRIVE_FILE_NAME = 'DVI Job Card System Cloud Data.json';
+const DRIVE_FILE_MIME = 'application/json';
 
 function doGet(e) {
   const action = String((e.parameter && e.parameter.action) || 'ping').toLowerCase();
@@ -20,12 +26,14 @@ function doGet(e) {
   try {
     if (action === 'load') {
       const state = readState_();
-      out = { ok: true, state, updatedAt: getMeta_().updatedAt || 0 };
+      const meta = getMeta_();
+      out = { ok: true, state, meta, updatedAt: meta.updatedAt || 0, driveFileUrl: meta.driveFileUrl || '' };
     } else if (action === 'meta') {
       const meta = getMeta_();
-      out = { ok: true, hasState: !!readStateText_(), updatedAt: meta.updatedAt || 0, client: meta.client || '' };
+      out = { ok: true, hasState: !!readStateText_(), updatedAt: meta.updatedAt || 0, client: meta.client || '', clientName: meta.clientName || '', account: meta.account || '', driveFileId: meta.driveFileId || '', driveFileUrl: meta.driveFileUrl || '' };
     } else {
-      out = { ok: true, message: 'DVI cloud sync ready', updatedAt: getMeta_().updatedAt || 0 };
+      const meta = getMeta_();
+      out = { ok: true, message: 'DVI Google Drive cloud sync ready', updatedAt: meta.updatedAt || 0, account: meta.account || effectiveEmail_(), driveFileUrl: meta.driveFileUrl || '' };
     }
   } catch (err) {
     out = { ok: false, error: String((err && err.message) || err) };
@@ -77,14 +85,20 @@ function writeState_(state, client, clientName, savedAt) {
   try {
     const sheet = sheet_();
     const text = JSON.stringify(state);
+    const drive = writeDriveBackup_(state, client, clientName, savedAt);
     const rows = [['type', 'part', 'value']];
+    let chunks = 0;
     for (let i = 0; i < text.length; i += CHUNK_SIZE) {
-      rows.push(['state', String(i / CHUNK_SIZE), text.slice(i, i + CHUNK_SIZE)]);
+      rows.push(['state', String(chunks++), text.slice(i, i + CHUNK_SIZE)]);
     }
     rows.push(['meta', 'updatedAt', String(savedAt)]);
     rows.push(['meta', 'client', String(client || '')]);
     rows.push(['meta', 'clientName', String(clientName || '')]);
-    rows.push(['meta', 'chunks', String(rows.length - 1)]);
+    rows.push(['meta', 'account', String(effectiveEmail_() || '')]);
+    rows.push(['meta', 'driveFileId', drive.id || '']);
+    rows.push(['meta', 'driveFileUrl', drive.url || '']);
+    rows.push(['meta', 'driveUpdatedAt', String(savedAt)]);
+    rows.push(['meta', 'chunks', String(chunks)]);
     sheet.clearContents();
     sheet.getRange(1, 1, rows.length, 3).setValues(rows);
   } finally {
@@ -94,7 +108,8 @@ function writeState_(state, client, clientName, savedAt) {
 
 function readState_() {
   const text = readStateText_();
-  return text ? JSON.parse(text) : null;
+  if (text) return JSON.parse(text);
+  return readDriveState_();
 }
 
 function readStateText_() {
@@ -113,10 +128,72 @@ function getMeta_() {
   const sheet = sheet_();
   const last = sheet.getLastRow();
   const meta = {};
-  if (last < 2) return meta;
-  const rows = sheet.getRange(2, 1, last - 1, 3).getValues();
-  rows.forEach(row => {
-    if (row[0] === 'meta') meta[row[1]] = row[2];
-  });
+  if (last >= 2) {
+    const rows = sheet.getRange(2, 1, last - 1, 3).getValues();
+    rows.forEach(row => {
+      if (row[0] === 'meta') meta[row[1]] = row[2];
+    });
+  }
+  if (!meta.account) meta.account = effectiveEmail_();
+  if (!meta.driveFileUrl) {
+    const file = findDriveBackup_();
+    if (file) {
+      meta.driveFileId = file.getId();
+      meta.driveFileUrl = file.getUrl();
+    }
+  }
   return meta;
+}
+
+function effectiveEmail_() {
+  try {
+    return Session.getEffectiveUser().getEmail() || '';
+  } catch (err) {
+    return '';
+  }
+}
+
+function driveFolder_(createIfMissing) {
+  const folders = DriveApp.getFoldersByName(DRIVE_FOLDER_NAME);
+  if (folders.hasNext()) return folders.next();
+  return createIfMissing ? DriveApp.createFolder(DRIVE_FOLDER_NAME) : null;
+}
+
+function findDriveBackup_() {
+  const folder = driveFolder_(false);
+  if (!folder) return null;
+  const files = folder.getFilesByName(DRIVE_FILE_NAME);
+  return files.hasNext() ? files.next() : null;
+}
+
+function writeDriveBackup_(state, client, clientName, savedAt) {
+  const folder = driveFolder_(true);
+  let file = findDriveBackup_();
+  const payload = {
+    app: 'DVI Job Card System',
+    savedAt,
+    client: String(client || ''),
+    clientName: String(clientName || ''),
+    account: effectiveEmail_(),
+    state
+  };
+  const text = JSON.stringify(payload, null, 2);
+  if (file) {
+    file.setContent(text);
+  } else {
+    file = folder.createFile(DRIVE_FILE_NAME, text, DRIVE_FILE_MIME);
+  }
+  file.setDescription('DVI Job Card System cloud backup. Last saved: ' + new Date(savedAt).toISOString());
+  return { id: file.getId(), url: file.getUrl() };
+}
+
+function readDriveState_() {
+  const file = findDriveBackup_();
+  if (!file) return null;
+  const text = file.getBlob().getDataAsString();
+  if (!text) return null;
+  const payload = JSON.parse(text);
+  if (payload && payload.state && Array.isArray(payload.state.jobs)) return payload.state;
+  if (payload && Array.isArray(payload.jobs)) return payload;
+  return null;
 }

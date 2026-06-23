@@ -310,6 +310,7 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
 .cloud-dot.err{background:#ff6b6b;box-shadow:0 0 18px rgba(255,107,107,.45)}
 .cloud-status b{font-family:var(--font-d);font-size:14px;color:#fff}
 .cloud-status em{font-style:normal;color:var(--mut);font-size:11.5px;line-height:1.35}
+.cloud-owner{font-family:Consolas,'Courier New',monospace;color:var(--gold-l)}
 .toggle-line{display:inline-flex;align-items:center;gap:9px;margin:0;color:#cdd3df;font-size:12.5px;text-transform:none;letter-spacing:0;font-weight:700}
 .toggle-line input{width:18px;height:18px;accent-color:var(--gold);padding:0}
 .cloud-note{margin:11px 0 0;color:var(--mut);font-size:12px;line-height:1.55}
@@ -590,8 +591,8 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
       <div class="card cloud-card" style="margin-top:20px">
         <div class="cloud-top">
           <div>
-            <h3>Cloud Sync <span class="muted sm">- shared office storage</span></h3>
-            <p class="muted sm" style="margin:0">Connect one shared Google Sheet cloud link so every device sees the same job cards.</p>
+            <h3>Google Drive Cloud Sync <span class="muted sm">- local plus shared backup</span></h3>
+            <p class="muted sm" style="margin:0">This device saves locally first, then saves the shared cloud copy to the DVI Google Drive.</p>
           </div>
           <div class="cloud-status" id="cloudStatus">
             <span class="cloud-dot"></span><b>Local only</b><em>Cloud sync is not connected yet.</em>
@@ -602,26 +603,30 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
             <label>Google Apps Script web app URL</label>
             <input id="cloudEndpoint" placeholder="Paste the cloud sync web app URL here" onchange="saveCloudSettings()">
           </div>
+          <div><label>Google Drive account</label><input id="cloudOwner" readonly class="cloud-owner" value="dviugandaow@gmail.com"></div>
           <div><label>This device name</label><input id="cloudDeviceName" placeholder="e.g. Reception Laptop, Godrick Phone" onchange="saveCloudSettings()"></div>
           <div><label>Device ID</label><input id="cloudDeviceId" readonly class="mono"></div>
-          <label class="toggle-line"><input type="checkbox" id="cloudAuto" onchange="saveCloudSettings()"> Auto sync after changes</label>
+          <label class="toggle-line"><input type="checkbox" id="cloudAuto" onchange="saveCloudSettings()"> Auto save every change to Google Drive</label>
         </div>
         <div class="data-btns" style="margin-top:14px">
-          <button class="gold-btn" onclick="cloudPull()">Download Cloud Data</button>
-          <button class="ghost-btn" onclick="cloudPushManual()">Upload This Device</button>
+          <button class="gold-btn" onclick="cloudPushManual()">Save to Google Drive</button>
+          <button class="ghost-btn" onclick="cloudPull()">Load from Google Drive</button>
+          <button class="ghost-btn" onclick="cloudOpenDriveBackup()">Open Drive Backup</button>
           <button class="ghost-btn" onclick="cloudTest()">Test Cloud Link</button>
         </div>
-        <p class="cloud-note">Until the cloud link is added, this app keeps using this browser as a local backup. Use <code>cloud-sync-apps-script.js</code> once to create the shared Google storage link.</p>
+        <p class="cloud-note">Until the cloud link is added, this app keeps using this browser as a local backup. Use <code>cloud-sync-apps-script.js</code> once from <span class="cloud-owner">dviugandaow@gmail.com</span> to create the Google Drive cloud link.</p>
       </div>
       <div class="card" style="margin-top:20px">
         <h3>💾 Data &amp; Backups</h3>
         <div class="data-btns">
+          <button class="gold-btn" onclick="cloudPushManual()">Save Data to Google Drive</button>
+          <button class="ghost-btn" onclick="cloudPull()">Load Google Drive Data</button>
           <button class="gold-btn" onclick="exportJSON()">⬇ Export Backup (JSON)</button>
           <button class="ghost-btn" onclick="document.getElementById('importFile').click()">⬆ Import Backup</button>
           <button class="ghost-btn" onclick="exportCSV()">📊 Export Jobs (CSV)</button>
           <button class="ghost-btn danger" onclick="clearAll()">🗑 Clear All Data</button>
         </div>
-        <p class="muted sm" style="margin-bottom:0;margin-top:13px">This device keeps a local backup. When Cloud Sync is connected, the shared office copy can keep all devices on the same job cards. Export JSON backups regularly for extra safety.</p>
+        <p class="muted sm" style="margin-bottom:0;margin-top:13px">This device keeps a local backup. When Google Drive Cloud Sync is connected, every change can auto-save to the shared DVI Drive backup and every device can load the same job cards.</p>
       </div>
     </section>
   </main>
@@ -707,6 +712,7 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
 const DB='dvi_jobcards_v1';
 const CLOUD_KEY='dvi_cloud_sync_v1';
 const CLOUD_CLIENT_KEY='dvi_cloud_client_v1';
+const DVI_CLOUD_OWNER='dviugandaow@gmail.com';
 const DVI_GCAL={
  id:'dviugandaow@gmail.com',
  name:'Dvi-Uganda O/W',
@@ -744,7 +750,7 @@ const DEFAULT_COMPANY={
 let state=null, editingJobId=null;
 let quickKind=null, quickEditId=null, quickTrigger=null, confirmCb=null;
 let calY, calM;
-let cloudCfg=null, cloudBusy=false, cloudSaveTimer=null;
+let cloudCfg=null, cloudBusy=false, cloudSaveTimer=null, cloudPendingSave=false;
 
 /* ================= HELPERS ================= */
 const $=id=>document.getElementById(id);
@@ -854,7 +860,7 @@ function syncCompanyBranding(){
 function loadCloudConfig(){
  try{cloudCfg=JSON.parse(localStorage.getItem(CLOUD_KEY))||{};}catch(e){cloudCfg={};}
  if(!localStorage.getItem(CLOUD_CLIENT_KEY))localStorage.setItem(CLOUD_CLIENT_KEY,uid());
- cloudCfg={endpoint:(cloudCfg.endpoint||'').trim(),auto:!!cloudCfg.auto,deviceName:(cloudCfg.deviceName||defaultDeviceName()).trim(),lastPull:cloudCfg.lastPull||0,lastPush:cloudCfg.lastPush||0,lastOk:cloudCfg.lastOk||0};
+ cloudCfg={endpoint:(cloudCfg.endpoint||'').trim(),auto:cloudCfg.auto!==false,deviceName:(cloudCfg.deviceName||defaultDeviceName()).trim(),owner:cloudCfg.owner||DVI_CLOUD_OWNER,driveUrl:cloudCfg.driveUrl||'',lastPull:cloudCfg.lastPull||0,lastPush:cloudCfg.lastPush||0,lastOk:cloudCfg.lastOk||0};
  return cloudCfg;
 }
 function saveCloudConfig(){localStorage.setItem(CLOUD_KEY,JSON.stringify(cloudCfg||{}));}
@@ -876,6 +882,7 @@ function cloudStateStamp(s){
 function renderCloudSettings(){
  if(!cloudCfg)loadCloudConfig();
  if($('cloudEndpoint'))$('cloudEndpoint').value=cloudCfg.endpoint||'';
+ if($('cloudOwner'))$('cloudOwner').value=cloudCfg.owner||DVI_CLOUD_OWNER;
  if($('cloudDeviceName'))$('cloudDeviceName').value=currentDeviceName();
  if($('cloudDeviceId'))$('cloudDeviceId').value=cloudClientId();
  if($('cloudAuto'))$('cloudAuto').checked=!!cloudCfg.auto;
@@ -888,18 +895,29 @@ function setCloudStatus(kind,title,detail){
 }
 function renderCloudStatus(){
  if(!cloudCfg)loadCloudConfig();
- if(!cloudCfg.endpoint){setCloudStatus('', 'Local only', 'Cloud sync is not connected yet.');return;}
+ if(!cloudCfg.endpoint){setCloudStatus('', 'Local only', 'Local backup is active. Add the Google Drive cloud link to sync dviugandaow@gmail.com.');return;}
  const last=Math.max(cloudCfg.lastPull||0,cloudCfg.lastPush||0,cloudCfg.lastOk||0);
- const detail=(last?'Last cloud check: '+fmtDT(last):'Cloud link added. Test or download cloud data.');
- setCloudStatus('ok','Cloud ready',detail);
+ const mode=cloudCfg.auto?'Auto-saving to Google Drive':'Manual Google Drive save';
+ const drive=cloudCfg.driveUrl?' Drive backup file is ready.':'';
+ const detail=(last?'Last cloud check: '+fmtDT(last)+'. ':'Cloud link added. ')+mode+'.'+drive;
+ setCloudStatus('ok','Google Drive ready',detail);
 }
 function saveCloudSettings(){
  if(!cloudCfg)loadCloudConfig();
  cloudCfg.endpoint=($('cloudEndpoint').value||'').trim();
+ cloudCfg.owner=DVI_CLOUD_OWNER;
  cloudCfg.deviceName=($('cloudDeviceName').value||defaultDeviceName()).trim();
  cloudCfg.auto=!!$('cloudAuto').checked;
  saveCloudConfig();renderCloudStatus();
  if(cloudCfg.endpoint&&cloudCfg.auto)cloudPull({auto:true});
+}
+function rememberCloudMeta(meta){
+ if(!meta||meta.ok===false)return;
+ if(!cloudCfg)loadCloudConfig();
+ const url=meta.driveFileUrl||meta.fileUrl||meta.driveUrl;
+ if(url)cloudCfg.driveUrl=url;
+ if(meta.account)cloudCfg.owner=meta.account||DVI_CLOUD_OWNER;
+ saveCloudConfig();
 }
 function cloudUrl(action,extra){
  if(!cloudCfg)loadCloudConfig();
@@ -933,9 +951,10 @@ async function cloudPost(payload){
  await fetch(cloudCfg.endpoint,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
 }
 function scheduleCloudSave(){
- if(!cloudCfg||!cloudCfg.auto||!cloudCfg.endpoint||cloudBusy)return;
+ if(!cloudCfg||!cloudCfg.auto||!cloudCfg.endpoint)return;
+ if(cloudBusy){cloudPendingSave=true;return;}
  clearTimeout(cloudSaveTimer);
- cloudSaveTimer=setTimeout(()=>cloudPush({silent:true}),1800);
+ cloudSaveTimer=setTimeout(()=>cloudPush({silent:true}),1000);
 }
 function applyCloudState(next,label){
  state=ensureStateShape(next);
@@ -945,43 +964,46 @@ function applyCloudState(next,label){
  if(label)toast(label);
 }
 async function cloudPull(opts){
- opts=opts||{};
- if(!cloudCfg)loadCloudConfig();
- if(!cloudCfg.endpoint){toast('Add the cloud sync link first','err');renderCloudStatus();return;}
- if(cloudBusy)return;
- cloudBusy=true;setCloudStatus('busy','Syncing','Downloading shared job cards...');
- try{
-  const res=await cloudJsonp('load');
-  if(!res.ok)throw new Error(res.error||'Cloud sync failed');
-  const next=ensureStateShape(res.state);
-  cloudCfg.lastPull=Date.now();cloudCfg.lastOk=cloudCfg.lastPull;saveCloudConfig();
-  if(!next||!Array.isArray(next.jobs)){
-   setCloudStatus('ok','Cloud empty','No shared data has been uploaded yet.');
-   if(!opts.auto)toast('Cloud is empty. Upload this device when ready.');
-   return;
-  }
+  opts=opts||{};
+  if(!cloudCfg)loadCloudConfig();
+  if(!cloudCfg.endpoint){toast('Add the cloud sync link first','err');renderCloudStatus();return;}
+  if(cloudBusy)return;
+  let pushAfterPull=false;
+  cloudBusy=true;setCloudStatus('busy','Syncing','Loading Google Drive job cards...');
+  try{
+   const res=await cloudJsonp('load');
+   if(!res.ok)throw new Error(res.error||'Cloud sync failed');
+   rememberCloudMeta(res.meta||res);
+   const next=ensureStateShape(res.state);
+   cloudCfg.lastPull=Date.now();cloudCfg.lastOk=cloudCfg.lastPull;saveCloudConfig();
+   if(!next||!Array.isArray(next.jobs)){
+    setCloudStatus('ok','Google Drive empty','No shared data has been uploaded yet.');
+    if(!opts.auto)toast('Google Drive is empty. Save this device when ready.');
+    return;
+   }
   const localStamp=cloudStateStamp(state),remoteStamp=cloudStateStamp(next);
   const same=JSON.stringify(state)===JSON.stringify(next);
-  const doApply=()=>applyCloudState(next,'Cloud data downloaded');
-  if(opts.auto){
-   if(!state.jobs.length||remoteStamp>localStamp)doApply();
-   else renderCloudStatus();
-  }else if(same){
-   renderCloudStatus();toast('This device already matches the cloud');
+   const doApply=()=>applyCloudState(next,'Cloud data downloaded');
+   if(opts.auto){
+    if(!state.jobs.length||remoteStamp>localStamp)doApply();
+    else if(localStamp>remoteStamp&&!same){pushAfterPull=true;setCloudStatus('busy','Syncing','Local changes found. Saving this device to Google Drive...');}
+    else renderCloudStatus();
+   }else if(same){
+    renderCloudStatus();toast('This device already matches the cloud');
   }else if(state.jobs.length){
    confirmBox('Replace this device with the shared cloud data ('+next.jobs.length+' job cards)?',doApply);
   }else doApply();
  }catch(e){
   setCloudStatus('err','Cloud error',e.message||'Unable to sync');
   if(!opts.auto)toast(e.message||'Cloud sync failed','err');
- }finally{cloudBusy=false;}
+ }finally{cloudBusy=false;if(pushAfterPull)setTimeout(()=>cloudPush({silent:true}),120);}
 }
 async function cloudPush(opts){
  opts=opts||{};
  if(!cloudCfg)loadCloudConfig();
  if(!cloudCfg.endpoint){if(!opts.silent)toast('Add the cloud sync link first','err');renderCloudStatus();return false;}
- if(cloudBusy)return false;
- cloudBusy=true;setCloudStatus('busy','Syncing','Uploading this device to cloud...');
+ if(cloudBusy){cloudPendingSave=true;return false;}
+ cloudBusy=true;setCloudStatus('busy','Syncing','Saving this device to Google Drive...');
  try{
   touchState();
   state.meta.cloudUpdatedAt=Date.now();
@@ -990,20 +1012,40 @@ async function cloudPush(opts){
   await wait(1200);
   const meta=await cloudJsonp('meta',{},9000).catch(()=>({ok:true}));
   if(meta&&!meta.ok)throw new Error(meta.error||'Cloud did not confirm the upload');
+  rememberCloudMeta(meta);
   cloudCfg.lastPush=Date.now();cloudCfg.lastOk=cloudCfg.lastPush;saveCloudConfig();
   renderCloudStatus();
-  if(!opts.silent)toast('Cloud updated');
+  if(!opts.silent)toast('Google Drive updated');
   return true;
  }catch(e){
   setCloudStatus('err','Cloud error',e.message||'Unable to upload');
   if(!opts.silent)toast(e.message||'Cloud upload failed','err');
   return false;
- }finally{cloudBusy=false;}
+ }finally{cloudBusy=false;if(cloudPendingSave&&cloudCfg&&cloudCfg.auto&&cloudCfg.endpoint){cloudPendingSave=false;scheduleCloudSave();}}
 }
 function cloudPushManual(){
  if(!cloudCfg)loadCloudConfig();
  if(!cloudCfg.endpoint){toast('Add the cloud sync link first','err');renderCloudStatus();return;}
- confirmBox('Upload this device and make it the shared cloud data for all devices?',()=>cloudPush({silent:false}));
+ confirmBox('Save this device to Google Drive and make it the shared data for all devices?',()=>cloudPush({silent:false}));
+}
+async function cloudOpenDriveBackup(){
+ if(!cloudCfg)loadCloudConfig();
+ if(cloudCfg.driveUrl){window.open(cloudCfg.driveUrl,'_blank');return;}
+ if(!cloudCfg.endpoint){toast('Add the cloud sync link first','err');renderCloudStatus();return;}
+ if(cloudBusy)return;
+ const tab=window.open('','_blank');
+ cloudBusy=true;setCloudStatus('busy','Checking','Finding the Google Drive backup file...');
+ try{
+  const meta=await cloudJsonp('meta',{},9000);
+  if(!meta.ok)throw new Error(meta.error||'Drive backup not ready');
+  rememberCloudMeta(meta);
+  if(cloudCfg.driveUrl){if(tab)tab.location=cloudCfg.driveUrl;else window.open(cloudCfg.driveUrl,'_blank');renderCloudStatus();}
+  else{if(tab)tab.close();toast('Save to Google Drive once, then open the backup file.');renderCloudStatus();}
+ }catch(e){
+  if(tab)tab.close();
+  setCloudStatus('err','Cloud error',e.message||'Could not open Drive backup');
+  toast(e.message||'Could not open Drive backup','err');
+ }finally{cloudBusy=false;}
 }
 async function cloudTest(){
  if(!cloudCfg)loadCloudConfig();
@@ -1013,7 +1055,8 @@ async function cloudTest(){
  try{
   const res=await cloudJsonp('ping');
   if(!res.ok)throw new Error(res.error||'Cloud link test failed');
-  cloudCfg.lastOk=Date.now();saveCloudConfig();renderCloudStatus();toast('Cloud link is working');
+  rememberCloudMeta(res);
+  cloudCfg.lastOk=Date.now();saveCloudConfig();renderCloudStatus();toast('Google Drive cloud link is working');
  }catch(e){
   setCloudStatus('err','Cloud error',e.message||'Cloud link test failed');toast(e.message||'Cloud link test failed','err');
  }finally{cloudBusy=false;}
