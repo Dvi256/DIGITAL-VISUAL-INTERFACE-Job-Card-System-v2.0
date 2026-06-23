@@ -601,7 +601,8 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
         <div class="set-grid">
           <div class="full">
             <label>Google Apps Script web app URL</label>
-            <input id="cloudEndpoint" placeholder="Paste the cloud sync web app URL here" onchange="saveCloudSettings()">
+            <input id="cloudEndpoint" placeholder="https://script.google.com/macros/s/.../exec" onchange="saveCloudSettings()">
+            <p class="cloud-note" style="margin-top:7px">Use the deployed Web App URL ending in <code>/exec</code>. A Google Drive home or project link will not sync data.</p>
           </div>
           <div><label>Google Drive account</label><input id="cloudOwner" readonly class="cloud-owner" value="dviugandaow@gmail.com"></div>
           <div><label>This device name</label><input id="cloudDeviceName" placeholder="e.g. Reception Laptop, Godrick Phone" onchange="saveCloudSettings()"></div>
@@ -897,7 +898,10 @@ function setCloudStatus(kind,title,detail){
 }
 function renderCloudStatus(){
  if(!cloudCfg)loadCloudConfig();
- if(!cloudCfg.endpoint){setCloudStatus('', 'Local only', 'Local backup is active. Add the Google Drive cloud link to sync dviugandaow@gmail.com.');return;}
+ const kind=cloudEndpointKind(cloudCfg.endpoint);
+ if(kind==='missing'){setCloudStatus('', 'Local only', 'Local backup is active. Add the Google Drive cloud link to sync dviugandaow@gmail.com.');return;}
+ if(kind==='project'){setCloudStatus('err','Project link pasted','This is the Apps Script project link. Open it, deploy it as a Web App, then paste the /exec URL here.');return;}
+ if(kind!=='webapp'){setCloudStatus('err','Wrong cloud link','Use the deployed Apps Script Web App URL ending in /exec.');return;}
  const last=Math.max(cloudCfg.lastPull||0,cloudCfg.lastPush||0,cloudCfg.lastOk||0);
  const mode=cloudCfg.auto?'Auto-saving to Google Drive':'Manual Google Drive save';
  const drive=cloudCfg.driveUrl?' Drive backup file is ready.':'';
@@ -911,16 +915,49 @@ function saveCloudSettings(){
  cloudCfg.deviceName=($('cloudDeviceName').value||defaultDeviceName()).trim();
  cloudCfg.auto=!!$('cloudAuto').checked;
  saveCloudConfig();renderCloudStatus();
- if(cloudCfg.endpoint&&cloudCfg.auto)cloudPull({auto:true});
+ if(cloudEndpointReady()&&cloudCfg.auto)cloudPull({auto:true});
+}
+function cloudEndpointKind(value){
+ const s=String(value||'').trim();
+ if(!s)return 'missing';
+ let url;
+ try{url=new URL(s);}catch(e){return 'invalid';}
+ const host=url.hostname.toLowerCase();
+ const path=url.pathname;
+ if(host==='script.google.com'&&/^\/macros\/s\/[^/]+\/exec\/?$/.test(path))return 'webapp';
+ if((host==='script.google.com'&&path.includes('/home/projects/'))||(host==='drive.google.com'&&(path.includes('/project/')||path.includes('/home'))))return 'project';
+ return 'other';
+}
+function cloudEndpointReady(){return cloudEndpointKind(cloudCfg&&cloudCfg.endpoint)==='webapp';}
+function cloudProjectEditUrl(value){
+ const s=String(value||'').trim();
+ try{
+  const url=new URL(s);
+  const host=url.hostname.toLowerCase();
+  const path=url.pathname;
+  if(host==='script.google.com'&&path.includes('/home/projects/'))return s;
+  const m=path.match(/\/project\/([^/?#]+)/);
+  if(host==='drive.google.com'&&m)return 'https://script.google.com/home/projects/'+encodeURIComponent(m[1])+'/edit';
+ }catch(e){}
+ return 'https://script.google.com/home/projects/create';
 }
 function cloudMissingLink(){
  if(!cloudCfg)loadCloudConfig();
- setCloudStatus('err','Google Drive link needed','Create the Apps Script web app, then paste its URL in the Google Apps Script web app URL field.');
- toast('Paste the Google Apps Script web app URL first','err');
+ const kind=cloudEndpointKind(($('cloudEndpoint')&&$('cloudEndpoint').value)||cloudCfg.endpoint);
+ if(kind==='project'){
+  setCloudStatus('err','Project link pasted','That Drive project link is not the sync link. Deploy it as a Web App and paste the URL ending in /exec.');
+  toast('That is the project link. Paste the deployed /exec web app URL.','err');
+ }else{
+  setCloudStatus('err','Google Drive link needed','Create the Apps Script web app, then paste its URL ending in /exec.');
+  toast('Paste the Google Apps Script /exec web app URL first','err');
+ }
  try{switchView('settings');}catch(e){}
  setTimeout(()=>{const el=$('cloudEndpoint');if(el){el.focus();el.scrollIntoView({behavior:'smooth',block:'center'});}},80);
 }
-function openAppsScriptSetup(){window.open('https://script.google.com/home/projects/create','_blank');}
+function openAppsScriptSetup(){
+ const raw=($('cloudEndpoint')&&$('cloudEndpoint').value)||(cloudCfg&&cloudCfg.endpoint)||'';
+ window.open(cloudProjectEditUrl(raw),'_blank');
+}
 async function copyCloudScript(){
  try{
   const res=await fetch('cloud-sync-apps-script.js?v='+Date.now());
@@ -942,7 +979,7 @@ function rememberCloudMeta(meta){
 }
 function cloudUrl(action,extra){
  if(!cloudCfg)loadCloudConfig();
- if(!cloudCfg.endpoint)throw new Error('Missing cloud link');
+ if(!cloudEndpointReady())throw new Error('Missing cloud web app link');
  const url=new URL(cloudCfg.endpoint);
  url.searchParams.set('action',action);
  url.searchParams.set('client',cloudClientId());
@@ -968,11 +1005,11 @@ function cloudJsonp(action,extra,timeoutMs){
 }
 async function cloudPost(payload){
  if(!cloudCfg)loadCloudConfig();
- if(!cloudCfg.endpoint)throw new Error('Missing cloud link');
+ if(!cloudEndpointReady())throw new Error('Missing cloud web app link');
  await fetch(cloudCfg.endpoint,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
 }
 function scheduleCloudSave(){
- if(!cloudCfg||!cloudCfg.auto||!cloudCfg.endpoint)return;
+ if(!cloudCfg||!cloudCfg.auto||!cloudEndpointReady())return;
  if(cloudBusy){cloudPendingSave=true;return;}
  clearTimeout(cloudSaveTimer);
  cloudSaveTimer=setTimeout(()=>cloudPush({silent:true}),1000);
@@ -987,7 +1024,7 @@ function applyCloudState(next,label){
 async function cloudPull(opts){
   opts=opts||{};
   if(!cloudCfg)loadCloudConfig();
-  if(!cloudCfg.endpoint){cloudMissingLink();return;}
+  if(!cloudEndpointReady()){cloudMissingLink();return;}
   if(cloudBusy)return;
   let pushAfterPull=false;
   cloudBusy=true;setCloudStatus('busy','Syncing','Loading Google Drive job cards...');
@@ -1022,7 +1059,7 @@ async function cloudPull(opts){
 async function cloudPush(opts){
  opts=opts||{};
  if(!cloudCfg)loadCloudConfig();
- if(!cloudCfg.endpoint){if(!opts.silent)cloudMissingLink();else renderCloudStatus();return false;}
+ if(!cloudEndpointReady()){if(!opts.silent)cloudMissingLink();else renderCloudStatus();return false;}
  if(cloudBusy){cloudPendingSave=true;return false;}
  cloudBusy=true;setCloudStatus('busy','Syncing','Saving this device to Google Drive...');
  try{
@@ -1042,17 +1079,17 @@ async function cloudPush(opts){
   setCloudStatus('err','Cloud error',e.message||'Unable to upload');
   if(!opts.silent)toast(e.message||'Cloud upload failed','err');
   return false;
- }finally{cloudBusy=false;if(cloudPendingSave&&cloudCfg&&cloudCfg.auto&&cloudCfg.endpoint){cloudPendingSave=false;scheduleCloudSave();}}
+ }finally{cloudBusy=false;if(cloudPendingSave&&cloudCfg&&cloudCfg.auto&&cloudEndpointReady()){cloudPendingSave=false;scheduleCloudSave();}}
 }
 function cloudPushManual(){
  if(!cloudCfg)loadCloudConfig();
- if(!cloudCfg.endpoint){cloudMissingLink();return;}
+ if(!cloudEndpointReady()){cloudMissingLink();return;}
  confirmBox('Save this device to Google Drive and make it the shared data for all devices?',()=>cloudPush({silent:false}));
 }
 async function cloudOpenDriveBackup(){
  if(!cloudCfg)loadCloudConfig();
  if(cloudCfg.driveUrl){window.open(cloudCfg.driveUrl,'_blank');return;}
- if(!cloudCfg.endpoint){cloudMissingLink();return;}
+ if(!cloudEndpointReady()){cloudMissingLink();return;}
  if(cloudBusy)return;
  const tab=window.open('','_blank');
  cloudBusy=true;setCloudStatus('busy','Checking','Finding the Google Drive backup file...');
@@ -1070,7 +1107,7 @@ async function cloudOpenDriveBackup(){
 }
 async function cloudTest(){
  if(!cloudCfg)loadCloudConfig();
- if(!cloudCfg.endpoint){cloudMissingLink();return;}
+ if(!cloudEndpointReady()){cloudMissingLink();return;}
  if(cloudBusy)return;
  cloudBusy=true;setCloudStatus('busy','Testing','Checking the cloud link...');
  try{
@@ -2298,7 +2335,7 @@ function init(){
  $('jStatus').innerHTML='<option value="">All statuses</option>'+STATUSES.map(s=>`<option>${s}</option>`).join('');
  const n=new Date();calY=n.getFullYear();calM=n.getMonth();
  renderAll();
- if(cloudCfg&&cloudCfg.endpoint&&cloudCfg.auto)setTimeout(()=>cloudPull({auto:true}),900);
+ if(cloudCfg&&cloudCfg.auto&&cloudEndpointReady())setTimeout(()=>cloudPull({auto:true}),900);
  const notifs=notifList();
  if(notifs.length)setTimeout(()=>toast('🔔 '+notifs.length+' item(s) need attention today'),700);
  document.addEventListener('keydown',e=>{
