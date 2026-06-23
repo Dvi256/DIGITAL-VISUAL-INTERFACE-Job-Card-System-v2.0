@@ -624,6 +624,7 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
         <div class="data-btns">
           <button class="gold-btn" onclick="cloudPushManual()">Save Data to Google Drive</button>
           <button class="ghost-btn" onclick="cloudPull()">Load Google Drive Data</button>
+          <button class="ghost-btn" onclick="document.getElementById('importFile').click()">Import Google Drive Backup</button>
           <button class="gold-btn" onclick="exportJSON()">⬇ Export Backup (JSON)</button>
           <button class="ghost-btn" onclick="document.getElementById('importFile').click()">⬆ Import Backup</button>
           <button class="ghost-btn" onclick="exportCSV()">📊 Export Jobs (CSV)</button>
@@ -2273,14 +2274,23 @@ function removeItem(kind,id){
 
 /* ================= DATA ================= */
 function exportJSON(){dl('DVI-jobcards-backup-'+todayISO()+'.json',JSON.stringify(state,null,2),'application/json');toast('Backup downloaded ✓');}
+function normalizeImportedState(raw){
+ if(!raw||typeof raw!=='object')return null;
+ if(raw.state&&raw.state.jobs&&raw.state.clients)return raw.state;
+ if(raw.app==='DVI Job Card System'&&raw.state&&Array.isArray(raw.state.jobs))return raw.state;
+ if(raw.jobs&&raw.clients)return raw;
+ return null;
+}
 function importJSON(inp){
  const f=inp.files[0];if(!f)return;
  const r=new FileReader();
  r.onload=()=>{
   try{
-   const d=JSON.parse(r.result);
-   if(!d.jobs||!d.clients)throw 0;
-   confirmBox('Replace ALL current data with this backup ('+d.jobs.length+' job cards)?',()=>{state=d;save();renderAll();toast('Backup restored ✓');});
+   const raw=JSON.parse(r.result);
+   const d=normalizeImportedState(raw);
+   if(!d||!Array.isArray(d.jobs))throw 0;
+   const label=raw&&raw.state?'Google Drive backup':'backup';
+   confirmBox('Replace ALL current data with this '+label+' ('+d.jobs.length+' job cards)?',()=>{state=ensureStateShape(d);syncCompanyBranding();save();renderAll();toast('Backup restored ✓');});
   }catch(e){toast('Invalid backup file','err');}
   inp.value='';
  };
