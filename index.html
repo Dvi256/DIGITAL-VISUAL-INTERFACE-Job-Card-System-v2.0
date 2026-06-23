@@ -631,14 +631,19 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
       <div><label>Priority</label><select id="f_priority"><option>Normal</option><option>High</option><option>Urgent</option></select></div>
       <div><label>Client / Company</label><select id="f_client" data-kind="clients" data-ph="— Client / Company —" onchange="maybeQuickAdd(this)"></select></div>
       <div><label>Venue</label><select id="f_venue" data-kind="venues" data-ph="— Venue —" onchange="maybeQuickAdd(this)"></select></div>
-      <div><label>Site Manager / Overall Overseer</label><input id="f_site_manager" placeholder="Name of person in charge on site"></div>
-      <div><label>Job Card Creator</label><input id="f_creator" placeholder="Name of person preparing this card"></div>
       <div><label>Set Up Date (from — to)</label><div class="dates"><input type="date" id="f_setup_from" oninput="updateDatePreview()" onchange="updateDatePreview()"><input type="date" id="f_setup_to" oninput="updateDatePreview()" onchange="updateDatePreview()"></div><div id="f_setup_fmt" class="date-preview"></div></div>
       <div><label>Event Date (from — to)</label><div class="dates"><input type="date" id="f_from" oninput="updateDatePreview()" onchange="updateDatePreview()"><input type="date" id="f_to" oninput="updateDatePreview()" onchange="updateDatePreview()"></div><div id="f_event_fmt" class="date-preview"></div></div>
     </div>
     <div class="f-section">
       <div class="fs-head"><h3>🎛 Equipment</h3><button type="button" class="ghost-btn sm" onclick="addEquipRow()">＋ Add equipment</button></div>
       <div id="equipRows"></div>
+    </div>
+    <div class="f-section">
+      <div class="fs-head"><h3>Job Responsibility</h3></div>
+      <div class="fgrid">
+        <div><label>Site Manager / Overall Overseer</label><input id="f_site_manager" placeholder="Name of person in charge on site"></div>
+        <div><label>Job Card Creator</label><input id="f_creator" placeholder="Name of person preparing this card"></div>
+      </div>
     </div>
     <div class="f-section">
       <div class="fs-head"><h3>👷 Crew Assignment</h3><button type="button" class="ghost-btn sm" onclick="addCrewRow()">＋ Add crew member</button></div>
