@@ -511,7 +511,7 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
     <section id="view-jobs" class="view">
       <div class="card">
         <div class="filters">
-          <input id="jq" placeholder="🔍 Search event, client, venue, job no…" oninput="renderJobs()">
+          <input id="jq" placeholder="🔍 Search event, client, venue, manager, job no…" oninput="renderJobs()">
           <select id="jStatus" onchange="renderJobs()"></select>
           <select id="jClient" onchange="renderJobs()"></select>
           <select id="jSort" onchange="renderJobs()">
@@ -522,7 +522,7 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
         </div>
         <div id="jobsCount" class="muted sm"></div>
         <table id="jobsTable">
-          <thead><tr><th>Job No</th><th>Event</th><th>Client</th><th>Venue</th><th>Set Up</th><th>Event Date</th><th>Crew</th><th>Status</th><th>Updated From</th><th></th></tr></thead>
+          <thead><tr><th>Job No</th><th>Event</th><th>Client</th><th>Venue</th><th>Set Up</th><th>Event Date</th><th>Site Manager</th><th>Crew</th><th>Status</th><th></th></tr></thead>
           <tbody id="jobsTbody"></tbody>
         </table>
         <div id="jobsEmpty" class="empty"></div>
@@ -631,6 +631,8 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
       <div><label>Priority</label><select id="f_priority"><option>Normal</option><option>High</option><option>Urgent</option></select></div>
       <div><label>Client / Company</label><select id="f_client" data-kind="clients" data-ph="— Client / Company —" onchange="maybeQuickAdd(this)"></select></div>
       <div><label>Venue</label><select id="f_venue" data-kind="venues" data-ph="— Venue —" onchange="maybeQuickAdd(this)"></select></div>
+      <div><label>Site Manager / Overall Overseer</label><input id="f_site_manager" placeholder="Name of person in charge on site"></div>
+      <div><label>Job Card Creator</label><input id="f_creator" placeholder="Name of person preparing this card"></div>
       <div><label>Set Up Date (from — to)</label><div class="dates"><input type="date" id="f_setup_from" oninput="updateDatePreview()" onchange="updateDatePreview()"><input type="date" id="f_setup_to" oninput="updateDatePreview()" onchange="updateDatePreview()"></div><div id="f_setup_fmt" class="date-preview"></div></div>
       <div><label>Event Date (from — to)</label><div class="dates"><input type="date" id="f_from" oninput="updateDatePreview()" onchange="updateDatePreview()"><input type="date" id="f_to" oninput="updateDatePreview()" onchange="updateDatePreview()"></div><div id="f_event_fmt" class="date-preview"></div></div>
     </div>
@@ -746,6 +748,8 @@ const fmtDateObj=d=>fmtDateParts(d.getFullYear(),d.getMonth()+1,d.getDate());
 const fmtDT=ts=>{const d=new Date(ts);return fmtDateObj(d)+' at '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});};
 const byId=(k,id)=>state[k].find(x=>x.id===id)||null;
 const nameOf=(k,id)=>{const x=byId(k,id);return x?x.name:'—';};
+const jobSiteManager=j=>String((j&&(j.siteManager||j.overallOverseer||j.overseer))||'').trim();
+const jobCardCreator=j=>String((j&&(j.jobCardCreator||j.creator))||'').trim();
 function labourMeta(t){
  if(t&&(t.workerType||'DVI Staff')==='DVI Staff')return '';
  if(!t)return '';
@@ -762,6 +766,10 @@ function ensureStateShape(s){
  if(!s.company)s.company={};
  for(const kind in KINDS){if(!Array.isArray(s[kind]))s[kind]=[];}
  if(!Array.isArray(s.jobs))s.jobs=[];
+ s.jobs.forEach(j=>{
+  if(j.siteManager==null)j.siteManager='';
+  if(j.jobCardCreator==null)j.jobCardCreator='';
+ });
  if(Array.isArray(s.technicians))s.technicians.forEach(t=>{if(!t.workerType)t.workerType='DVI Staff';});
  if(!s.meta)s.meta={};
  if(!s.seq){
@@ -808,12 +816,6 @@ function cloudClientId(){let id=localStorage.getItem(CLOUD_CLIENT_KEY);if(!id){i
 function shortDeviceId(id){return String(id||cloudClientId()).slice(-8).toUpperCase();}
 function defaultDeviceName(){return 'DVI Device '+shortDeviceId();}
 function currentDeviceName(){if(!cloudCfg)loadCloudConfig();return (cloudCfg.deviceName||defaultDeviceName()).trim();}
-function currentDeviceLabel(){return deviceDisplay(currentDeviceName(),cloudClientId());}
-function deviceDisplay(name,id){
- const n=String(name||'').trim(),sid=shortDeviceId(id);
- return n?(n+' · ID '+sid):(id?('Device ID '+sid):'Not recorded');
-}
-function jobDeviceLabel(j){return deviceDisplay(j.updatedDeviceName||j.createdDeviceName,j.updatedDeviceId||j.createdDeviceId);}
 function markJobDevice(j){
  j.updatedDeviceId=cloudClientId();
  j.updatedDeviceName=currentDeviceName();
@@ -1085,6 +1087,8 @@ function openJobModal(id){
  $('f_setup_to').value=j&&j.setupTo?j.setupTo:'';
  $('f_from').value=j&&j.eventFrom?j.eventFrom:'';
  $('f_to').value=j&&j.eventTo?j.eventTo:'';
+ $('f_site_manager').value=j?jobSiteManager(j):'';
+ $('f_creator').value=j?jobCardCreator(j):'';
  updateDatePreview();
  $('f_status').value=j?j.status:'Scheduled';
  $('f_priority').value=j?(j.priority||'Normal'):'Normal';
@@ -1142,6 +1146,7 @@ function saveJobForm(){
  const setupFrom=$('f_setup_from').value||null,setupTo=$('f_setup_to').value||null;
  const fields={event:ev,typeId:$('f_type').value||null,clientId:$('f_client').value||null,venueId:$('f_venue').value||null,
   setupFrom,setupTo,setupDate:setupFrom||setupTo,eventFrom:$('f_from').value||null,eventTo:$('f_to').value||null,
+  siteManager:$('f_site_manager').value.trim(),jobCardCreator:$('f_creator').value.trim(),
   status:$('f_status').value,priority:$('f_priority').value,notes:$('f_notes').value.trim(),
   equipment,crew,updatedAt:Date.now()};
  markJobDevice(fields);
@@ -1152,11 +1157,9 @@ function saveJobForm(){
   j=state.jobs.find(x=>x.id===editingJobId);
   const old=j.status;Object.assign(j,fields);
   j.history.push({ts:Date.now(),text:old!==j.status?('Updated · status '+old+' → '+j.status):'Details updated'});
-  j.history[j.history.length-1].text+=' from '+currentDeviceLabel();
  }else{
   j=Object.assign({id:uid(),no:nextNoPreview(),createdAt:Date.now(),history:[{ts:Date.now(),text:'Job card created'}]},fields);
   j.createdDeviceId=cloudClientId();j.createdDeviceName=currentDeviceName();
-  j.history[0].text+=' from '+currentDeviceLabel();
   state.seq++;state.jobs.push(j);
  }
  save();closeJobModal();renderAll();toast('Job card '+j.no+' saved ✓');openView(j.id);
@@ -1171,6 +1174,15 @@ function crewGrouped(j){
   m.get(rn).push(crewDisplayName(c.techId));
  }
  return m;
+}
+function visibleHistoryText(text){
+ const t=String(text||'');
+ return t
+  .replace(/^(Job card created) from .+$/,'$1')
+  .replace(/^(Details updated) from .+$/,'$1')
+  .replace(/^(Updated .+) from .+$/,'$1')
+  .replace(/^(Status: .+) from .+$/,'$1')
+  .replace(/^(Duplicated from .+?) on .+$/,'$1');
 }
 function openView(id){
  const j=state.jobs.find(x=>x.id===id);if(!j)return;
@@ -1190,11 +1202,11 @@ function openView(id){
  <div class="vw-grid">
   <div class="vw-cell"><label>Client / Company</label><b>${esc(nameOf('clients',j.clientId))}</b>${c&&(c.contact||c.phone)?`<div class="muted sm">${esc([c.contact,c.phone].filter(Boolean).join(' · '))}</div>`:''}</div>
   <div class="vw-cell"><label>Venue</label><b>${esc(nameOf('venues',j.venueId))}</b></div>
+  <div class="vw-cell"><label>Site Manager / Overall Overseer</label><b>${esc(jobSiteManager(j)||'—')}</b></div>
+  <div class="vw-cell"><label>Job Card Creator</label><b>${esc(jobCardCreator(j)||'—')}</b></div>
   <div class="vw-cell"><label>Set Up Date</label><b>${fmtSetupRange(j)}</b></div>
   <div class="vw-cell"><label>Event Date</label><b>${fmtRange(j.eventFrom,j.eventTo)}</b></div>
-  <div class="vw-cell"><label>Last Updated</label><b>${j.updatedAt?fmtDT(j.updatedAt):'Not recorded'}</b></div>
-  <div class="vw-cell"><label>Updated From</label><b>${esc(jobDeviceLabel(j))}</b></div>
- </div>
+  </div>
  <div class="vw-2col">
   <div><h4>🎛 Equipment (${j.equipment.length})</h4>${j.equipment.length?'<ul class="vw-eq">'+j.equipment.map(e=>'<li>'+esc((e.spec?e.spec+' ':'')+e.name)+'</li>').join('')+'</ul>':'<div class="muted sm">None listed</div>'}</div>
   <div><h4>👷 Crew (${j.crew.length})</h4>${crewH||'<div class="muted sm">No crew assigned</div>'}</div>
@@ -1208,7 +1220,7 @@ function openView(id){
    <button class="ghost-btn" onclick="duplicateJob('${j.id}')">⧉ Duplicate</button>
    <button class="ghost-btn danger" onclick="askDeleteJob('${j.id}')">🗑 Delete</button>
  </div>
- <details class="vw-hist"><summary>Activity log (${j.history.length})</summary>${[...j.history].reverse().map(h=>`<div class="hist-row"><span class="muted">${fmtDT(h.ts)}</span> — ${esc(h.text)}</div>`).join('')}</details>`;
+ <details class="vw-hist"><summary>Activity log (${j.history.length})</summary>${[...j.history].reverse().map(h=>`<div class="hist-row"><span class="muted">${fmtDT(h.ts)}</span> — ${esc(visibleHistoryText(h.text))}</div>`).join('')}</details>`;
  $('viewModal').classList.add('open');
 }
 function closeView(){$('viewModal').classList.remove('open');}
@@ -1216,7 +1228,6 @@ function setJobStatus(id,s){
  const j=state.jobs.find(x=>x.id===id);
  if(!j||j.status===s)return;
  j.history.push({ts:Date.now(),text:'Status: '+j.status+' → '+s});
- j.history[j.history.length-1].text+=' from '+currentDeviceLabel();
  j.status=s;j.updatedAt=Date.now();markJobDevice(j);
  save();renderAll();openView(id);toast(j.no+' → '+s+' ✓');
 }
@@ -1227,7 +1238,6 @@ function duplicateJob(id){
  copy.status='Draft';copy.createdAt=Date.now();copy.updatedAt=Date.now();
  copy.createdDeviceId=cloudClientId();copy.createdDeviceName=currentDeviceName();markJobDevice(copy);
  copy.history=[{ts:Date.now(),text:'Duplicated from '+j.no}];
- copy.history[0].text+=' on '+currentDeviceLabel();
  state.jobs.push(copy);save();closeView();renderAll();
  toast('Duplicated as '+copy.no+' ✓');openJobModal(copy.id);
 }
@@ -1301,12 +1311,16 @@ function calendarDateRange(j){
 function jobCalendarDetails(j){
  const crew=[...crewGrouped(j)].map(([role,names])=>role+': '+names.join(', ')).join('\n');
  const equipment=j.equipment.map((e,i)=>(i+1)+'. '+((e.spec?e.spec+' ':'')+e.name)).join('\n');
+ const siteManager=jobSiteManager(j);
+ const creator=jobCardCreator(j);
  return [
   'Job Card: '+j.no,
   'Client: '+nameOf('clients',j.clientId),
   'Venue: '+nameOf('venues',j.venueId),
   'Setup Date: '+fmtSetupRange(j),
   'Event Date: '+fmtRange(j.eventFrom,j.eventTo),
+  siteManager?'Site Manager / Overall Overseer: '+siteManager:'',
+  creator?'Job Card Creator: '+creator:'',
   '',
   'Equipment:',
   equipment||'-',
@@ -1346,7 +1360,8 @@ function buildPrintHTML(j){
   crewRows+=`<tr><td class="rolecell">${esc(role.toUpperCase())}</td><td>${names.map(n=>esc(n.toUpperCase())).join('<br>')}</td></tr>`;
  const eqRows=j.equipment.map((e,n)=>`<tr><td class="num">${n+1}</td><td>${esc(((e.spec?e.spec+' ':'')+e.name).toUpperCase())}</td></tr>`).join('');
  const clientTd=esc(nameOf('clients',j.clientId).toUpperCase())+(c&&(c.contact||c.phone)?`<br><span class="pc-sub">${esc([c.contact,c.phone].filter(Boolean).join(' · '))}</span>`:'');
- const updatedFrom=jobDeviceLabel(j);
+ const siteManager=jobSiteManager(j);
+ const creator=jobCardCreator(j);
  return `<div class="pc">
  <div class="pc-band">
   <img src="DVI%20logos%20png/dvi%20logo.png" alt="" onerror="this.style.display='none'">
@@ -1372,9 +1387,9 @@ function buildPrintHTML(j){
    <td>${fmtRange(j.eventFrom,j.eventTo)}</td>
   </tr></tbody>
  </table>
- <table class="pc-main pc-meta">
-  <thead><tr><th>LAST UPDATED</th><th>UPDATED FROM DEVICE</th><th>CREATED FROM DEVICE</th></tr></thead>
-  <tbody><tr><td>${j.updatedAt?fmtDT(j.updatedAt):'Not recorded'}</td><td>${esc(updatedFrom)}</td><td>${esc(deviceDisplay(j.createdDeviceName,j.createdDeviceId))}</td></tr></tbody>
+ <table class="pc-main">
+  <thead><tr><th>SITE MANAGER / OVERALL OVERSEER</th><th>JOB CARD CREATOR</th></tr></thead>
+  <tbody><tr><td>${esc(siteManager||'—')}</td><td>${esc(creator||'—')}</td></tr></tbody>
  </table>
  <div class="pc-cols">
   <div><h4>EQUIPMENT</h4><table class="pc-list">${eqRows||'<tr><td class="num">—</td><td>—</td></tr>'}</table></div>
@@ -1788,7 +1803,7 @@ function renderJobs(){
  let list=state.jobs.filter(j=>{
   if(st&&j.status!==st)return false;
   if(cl&&j.clientId!==cl)return false;
-  if(q){const hay=(j.event+' '+j.no+' '+nameOf('clients',j.clientId)+' '+nameOf('venues',j.venueId)+' '+jobDeviceLabel(j)).toLowerCase();if(!hay.includes(q))return false;}
+  if(q){const hay=(j.event+' '+j.no+' '+nameOf('clients',j.clientId)+' '+nameOf('venues',j.venueId)+' '+jobSiteManager(j)+' '+jobCardCreator(j)).toLowerCase();if(!hay.includes(q))return false;}
   return true;
  });
  const key=j=>j.eventFrom||setupStart(j)||'';
@@ -1803,9 +1818,9 @@ function renderJobs(){
   <td>${esc(nameOf('venues',j.venueId))}</td>
   <td>${fmtSetupRange(j)}</td>
   <td>${fmtRange(j.eventFrom,j.eventTo)}</td>
+  <td>${esc(jobSiteManager(j)||'—')}</td>
   <td>${j.crew.length?'👷 '+j.crew.length:'—'}</td>
   <td>${statusPill(j.status)}</td>
-  <td class="sm">${esc(jobDeviceLabel(j))}</td>
   <td class="acts" onclick="event.stopPropagation()">
    <button title="Edit" onclick="openJobModal('${j.id}')">✎</button>
    <button title="Print" onclick="printJob('${j.id}')">🖨</button>
@@ -1908,11 +1923,11 @@ function importJSON(inp){
  r.readAsText(f);
 }
 function exportCSV(){
- const head=['Job No','Event','Type','Client','Venue','Setup From','Setup To','Event From','Event To','Status','Priority','Last Updated','Updated From','Device ID','Equipment','Crew','Notes'];
+ const head=['Job No','Event','Type','Client','Venue','Site Manager / Overall Overseer','Job Card Creator','Setup From','Setup To','Event From','Event To','Status','Priority','Equipment','Crew','Notes'];
  const q=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';
  const rows=state.jobs.map(j=>[
   j.no,j.event,j.typeId?nameOf('eventTypes',j.typeId):'',j.clientId?nameOf('clients',j.clientId):'',j.venueId?nameOf('venues',j.venueId):'',
-  setupStart(j)||'',setupEnd(j)||'',j.eventFrom||'',j.eventTo||'',j.status,j.priority||'',j.updatedAt?fmtDT(j.updatedAt):'',jobDeviceLabel(j),j.updatedDeviceId||j.createdDeviceId||'',
+  jobSiteManager(j),jobCardCreator(j),setupStart(j)||'',setupEnd(j)||'',j.eventFrom||'',j.eventTo||'',j.status,j.priority||'',
   j.equipment.map(e=>(e.spec?e.spec+' ':'')+e.name).join('; '),
   j.crew.map(c=>crewDisplayName(c.techId)+(c.roleId?' ['+nameOf('roles',c.roleId)+']':'')).join('; '),
   j.notes||''
