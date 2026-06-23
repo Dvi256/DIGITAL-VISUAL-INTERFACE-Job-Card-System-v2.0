@@ -641,8 +641,8 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
     <div class="f-section">
       <div class="fs-head"><h3>Job Responsibility</h3></div>
       <div class="fgrid">
-        <div><label>Site Manager / Overall Overseer</label><select id="f_site_manager" data-kind="technicians" data-admin-first="1" data-ph="— Site manager / overseer —" onchange="maybeQuickAdd(this)"></select></div>
-        <div><label>Job Card Creator</label><select id="f_creator" data-kind="technicians" data-admin-first="1" data-ph="— Job card creator —" onchange="maybeQuickAdd(this)"></select></div>
+        <div><label>The Site Manager</label><select id="f_site_manager" data-kind="technicians" data-admin-first="1" data-ph="— The site manager —" onchange="maybeQuickAdd(this)"></select></div>
+        <div><label>Job Card Created by</label><select id="f_creator" data-kind="technicians" data-admin-first="1" data-ph="— Job card created by —" onchange="maybeQuickAdd(this)"></select></div>
       </div>
     </div>
     <div class="f-section">
@@ -1244,8 +1244,8 @@ function openView(id){
  <div class="vw-grid">
   <div class="vw-cell"><label>Client / Company</label><b>${esc(nameOf('clients',j.clientId))}</b>${c&&(c.contact||c.phone)?`<div class="muted sm">${esc([c.contact,c.phone].filter(Boolean).join(' · '))}</div>`:''}</div>
   <div class="vw-cell"><label>Venue</label><b>${esc(nameOf('venues',j.venueId))}</b></div>
-  <div class="vw-cell"><label>Site Manager / Overall Overseer</label><b>${esc(jobSiteManager(j)||'—')}</b></div>
-  <div class="vw-cell"><label>Job Card Creator</label><b>${esc(jobCardCreator(j)||'—')}</b></div>
+ <div class="vw-cell"><label>The Site Manager</label><b>${esc(jobSiteManager(j)||'—')}</b></div>
+ <div class="vw-cell"><label>Job Card Created by</label><b>${esc(jobCardCreator(j)||'—')}</b></div>
   <div class="vw-cell"><label>Set Up Date</label><b>${fmtSetupRange(j)}</b></div>
   <div class="vw-cell"><label>Event Date</label><b>${fmtRange(j.eventFrom,j.eventTo)}</b></div>
   </div>
@@ -1361,8 +1361,8 @@ function jobCalendarDetails(j){
   'Venue: '+nameOf('venues',j.venueId),
   'Setup Date: '+fmtSetupRange(j),
   'Event Date: '+fmtRange(j.eventFrom,j.eventTo),
-  siteManager?'Site Manager / Overall Overseer: '+siteManager:'',
-  creator?'Job Card Creator: '+creator:'',
+  siteManager?'The Site Manager: '+siteManager:'',
+  creator?'Job Card Created by: '+creator:'',
   '',
   'Equipment:',
   equipment||'-',
@@ -1430,7 +1430,7 @@ function buildPrintHTML(j){
   </tr></tbody>
  </table>
  <table class="pc-main">
-  <thead><tr><th>SITE MANAGER / OVERALL OVERSEER</th><th>JOB CARD CREATOR</th></tr></thead>
+  <thead><tr><th>THE SITE MANAGER</th><th>JOB CARD CREATED BY</th></tr></thead>
   <tbody><tr><td>${esc(siteManager||'—')}</td><td>${esc(creator||'—')}</td></tr></tbody>
  </table>
  <div class="pc-cols">
@@ -1965,7 +1965,7 @@ function importJSON(inp){
  r.readAsText(f);
 }
 function exportCSV(){
- const head=['Job No','Event','Type','Client','Venue','Site Manager / Overall Overseer','Job Card Creator','Setup From','Setup To','Event From','Event To','Status','Priority','Equipment','Crew','Notes'];
+ const head=['Job No','Event','Type','Client','Venue','The Site Manager','Job Card Created by','Setup From','Setup To','Event From','Event To','Status','Priority','Equipment','Crew','Notes'];
  const q=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';
  const rows=state.jobs.map(j=>[
   j.no,j.event,j.typeId?nameOf('eventTypes',j.typeId):'',j.clientId?nameOf('clients',j.clientId):'',j.venueId?nameOf('venues',j.venueId):'',
