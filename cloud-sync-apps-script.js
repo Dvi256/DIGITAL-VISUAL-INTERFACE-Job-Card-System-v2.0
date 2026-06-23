@@ -2,18 +2,20 @@
   DVI Job Card System - Google Apps Script cloud sync
 
   One-time setup:
-  1. Create a Google Sheet named "DVI Job Card Cloud Database".
-  2. In the Sheet, open Extensions > Apps Script.
-  3. Paste this whole file into Code.gs and save.
-  4. Deploy > New deployment > Web app.
-  5. Execute as: Me.
-  6. Who has access: Anyone with the link.
-  7. Copy the Web app URL and paste it into Cloud Sync settings in the job card system.
+  1. Open the DVI Apps Script project.
+  2. Replace everything in Code.gs with this whole file and save.
+  3. Deploy > New deployment > Web app.
+  4. Execute as: Me.
+  5. Who has access: Anyone.
+  6. Authorize the permissions when Google asks.
+  7. Copy the Web app URL ending in /exec and paste it into Cloud Sync settings.
 
-  The script stores the live database in the Sheet and also keeps a JSON backup
-  file in the same Google Drive account that deploys the script.
+  The script creates or reuses a Sheet named "DVI Job Card Cloud Database"
+  and also keeps a JSON backup file in the same Google Drive account.
 */
 
+const SPREADSHEET_NAME = 'DVI Job Card Cloud Database';
+const SPREADSHEET_ID_KEY = 'DVI_CLOUD_SPREADSHEET_ID';
 const SHEET_NAME = 'DVI_CLOUD_DATA';
 const CHUNK_SIZE = 45000;
 const DRIVE_FOLDER_NAME = 'DVI Job Card Cloud Backups';
@@ -67,9 +69,44 @@ function respond_(e, obj) {
   return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
 }
 
+function spreadsheet_() {
+  try {
+    const active = SpreadsheetApp.getActiveSpreadsheet();
+    if (active) return active;
+  } catch (err) {}
+
+  const props = PropertiesService.getScriptProperties();
+  const savedId = props.getProperty(SPREADSHEET_ID_KEY);
+  if (savedId) {
+    try {
+      return SpreadsheetApp.openById(savedId);
+    } catch (err) {
+      props.deleteProperty(SPREADSHEET_ID_KEY);
+    }
+  }
+
+  const files = DriveApp.getFilesByName(SPREADSHEET_NAME);
+  while (files.hasNext()) {
+    const file = files.next();
+    if (file.getMimeType && file.getMimeType() === MimeType.GOOGLE_SHEETS) {
+      props.setProperty(SPREADSHEET_ID_KEY, file.getId());
+      return SpreadsheetApp.openById(file.getId());
+    }
+  }
+
+  const ss = SpreadsheetApp.create(SPREADSHEET_NAME);
+  props.setProperty(SPREADSHEET_ID_KEY, ss.getId());
+  try {
+    const folder = driveFolder_(true);
+    const file = DriveApp.getFileById(ss.getId());
+    folder.addFile(file);
+    DriveApp.getRootFolder().removeFile(file);
+  } catch (err) {}
+  return ss;
+}
+
 function sheet_() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  if (!ss) throw new Error('Open this script from inside the Google Sheet that will store DVI data.');
+  const ss = spreadsheet_();
   let sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);

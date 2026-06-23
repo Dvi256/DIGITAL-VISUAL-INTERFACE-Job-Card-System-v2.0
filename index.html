@@ -717,6 +717,7 @@ const CLOUD_KEY='dvi_cloud_sync_v1';
 const CLOUD_CLIENT_KEY='dvi_cloud_client_v1';
 const DVI_CLOUD_OWNER='dviugandaow@gmail.com';
 const DVI_CLOUD_PROJECT_URL='https://script.google.com/home/projects/1JcCnOQxiZ6PklFEl08RMrtKXyjadBWqmgTlwGf_Q1Atn98YWuFCPND3o/edit';
+const DVI_CLOUD_ENDPOINT='https://script.google.com/macros/s/AKfycbx5ckvFIKHAFpT-D9XNs-jPIi7ug_rz85JXytxFp8KdIeARcO_K1Hurvue-obAMizNh/exec';
 const DVI_GCAL={
  id:'dviugandaow@gmail.com',
  name:'Dvi-Uganda O/W',
@@ -864,7 +865,9 @@ function syncCompanyBranding(){
 function loadCloudConfig(){
  try{cloudCfg=JSON.parse(localStorage.getItem(CLOUD_KEY))||{};}catch(e){cloudCfg={};}
  if(!localStorage.getItem(CLOUD_CLIENT_KEY))localStorage.setItem(CLOUD_CLIENT_KEY,uid());
- cloudCfg={endpoint:(cloudCfg.endpoint||'').trim(),auto:cloudCfg.auto!==false,deviceName:(cloudCfg.deviceName||defaultDeviceName()).trim(),owner:cloudCfg.owner||DVI_CLOUD_OWNER,driveUrl:cloudCfg.driveUrl||'',lastPull:cloudCfg.lastPull||0,lastPush:cloudCfg.lastPush||0,lastOk:cloudCfg.lastOk||0};
+ let endpoint=(cloudCfg.endpoint||'').trim();
+ if(!endpoint||cloudEndpointKind(endpoint)!=='webapp')endpoint=DVI_CLOUD_ENDPOINT;
+ cloudCfg={endpoint,auto:cloudCfg.auto!==false,deviceName:(cloudCfg.deviceName||defaultDeviceName()).trim(),owner:cloudCfg.owner||DVI_CLOUD_OWNER,driveUrl:cloudCfg.driveUrl||'',lastPull:cloudCfg.lastPull||0,lastPush:cloudCfg.lastPush||0,lastOk:cloudCfg.lastOk||0};
  return cloudCfg;
 }
 function saveCloudConfig(){localStorage.setItem(CLOUD_KEY,JSON.stringify(cloudCfg||{}));}
@@ -998,8 +1001,8 @@ function cloudJsonp(action,extra,timeoutMs){
   try{
    script=document.createElement('script');
    script.src=cloudUrl(action,Object.assign({},extra,{callback:cb}));
-   script.onerror=()=>{cleanup();reject(new Error('Could not reach cloud link'));};
-   timer=setTimeout(()=>{cleanup();reject(new Error('Cloud link timed out'));},timeoutMs);
+   script.onerror=()=>{cleanup();reject(new Error('Could not reach the Google cloud link. Check that the Web app access is set to Anyone.'));};
+   timer=setTimeout(()=>{cleanup();reject(new Error('Cloud link did not answer. Paste the DVI cloud script into Code.gs, redeploy, and set access to Anyone.'));},timeoutMs);
    document.head.appendChild(script);
   }catch(e){cleanup();reject(e);}
  });
