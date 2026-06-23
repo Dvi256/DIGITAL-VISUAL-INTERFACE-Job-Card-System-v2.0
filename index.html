@@ -641,8 +641,8 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
     <div class="f-section">
       <div class="fs-head"><h3>Job Responsibility</h3></div>
       <div class="fgrid">
-        <div><label>Site Manager / Overall Overseer</label><input id="f_site_manager" placeholder="Name of person in charge on site"></div>
-        <div><label>Job Card Creator</label><input id="f_creator" placeholder="Name of person preparing this card"></div>
+        <div><label>Site Manager / Overall Overseer</label><select id="f_site_manager" data-kind="technicians" data-ph="— Site manager / overseer —" onchange="maybeQuickAdd(this)"></select></div>
+        <div><label>Job Card Creator</label><select id="f_creator" data-kind="technicians" data-ph="— Job card creator —" onchange="maybeQuickAdd(this)"></select></div>
       </div>
     </div>
     <div class="f-section">
@@ -753,8 +753,17 @@ const fmtDateObj=d=>fmtDateParts(d.getFullYear(),d.getMonth()+1,d.getDate());
 const fmtDT=ts=>{const d=new Date(ts);return fmtDateObj(d)+' at '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});};
 const byId=(k,id)=>state[k].find(x=>x.id===id)||null;
 const nameOf=(k,id)=>{const x=byId(k,id);return x?x.name:'—';};
-const jobSiteManager=j=>String((j&&(j.siteManager||j.overallOverseer||j.overseer))||'').trim();
-const jobCardCreator=j=>String((j&&(j.jobCardCreator||j.creator))||'').trim();
+const technicianName=id=>{const t=id?byId('technicians',id):null;return t?t.name:'';};
+const technicianIdByName=name=>{
+ const n=String(name||'').trim().toLowerCase();
+ if(!n)return '';
+ const t=state.technicians.find(x=>String(x.name||'').trim().toLowerCase()===n);
+ return t?t.id:'';
+};
+const jobSiteManager=j=>technicianName(j&&j.siteManagerId)||String((j&&(j.siteManager||j.overallOverseer||j.overseer))||'').trim();
+const jobCardCreator=j=>technicianName(j&&j.jobCardCreatorId)||String((j&&(j.jobCardCreator||j.creator))||'').trim();
+const jobSiteManagerValue=j=>(j&&j.siteManagerId)||technicianIdByName(jobSiteManager(j));
+const jobCardCreatorValue=j=>(j&&j.jobCardCreatorId)||technicianIdByName(jobCardCreator(j));
 function labourMeta(t){
  if(t&&(t.workerType||'DVI Staff')==='DVI Staff')return '';
  if(!t)return '';
@@ -772,6 +781,8 @@ function ensureStateShape(s){
  for(const kind in KINDS){if(!Array.isArray(s[kind]))s[kind]=[];}
  if(!Array.isArray(s.jobs))s.jobs=[];
  s.jobs.forEach(j=>{
+  if(j.siteManagerId==null)j.siteManagerId='';
+  if(j.jobCardCreatorId==null)j.jobCardCreatorId='';
   if(j.siteManager==null)j.siteManager='';
   if(j.jobCardCreator==null)j.jobCardCreator='';
  });
@@ -1092,8 +1103,8 @@ function openJobModal(id){
  $('f_setup_to').value=j&&j.setupTo?j.setupTo:'';
  $('f_from').value=j&&j.eventFrom?j.eventFrom:'';
  $('f_to').value=j&&j.eventTo?j.eventTo:'';
- $('f_site_manager').value=j?jobSiteManager(j):'';
- $('f_creator').value=j?jobCardCreator(j):'';
+ fillSelect($('f_site_manager'),'technicians','— Site manager / overseer —',j?jobSiteManagerValue(j):'');
+ fillSelect($('f_creator'),'technicians','— Job card creator —',j?jobCardCreatorValue(j):'');
  updateDatePreview();
  $('f_status').value=j?j.status:'Scheduled';
  $('f_priority').value=j?(j.priority||'Normal'):'Normal';
@@ -1149,9 +1160,12 @@ function saveJobForm(){
   techId:r.querySelector('.cr-tech').value||null
  })).filter(c=>c.techId);
  const setupFrom=$('f_setup_from').value||null,setupTo=$('f_setup_to').value||null;
+ const siteManagerId=$('f_site_manager').value||null,siteManagerTech=byId('technicians',siteManagerId);
+ const jobCardCreatorId=$('f_creator').value||null,jobCardCreatorTech=byId('technicians',jobCardCreatorId);
  const fields={event:ev,typeId:$('f_type').value||null,clientId:$('f_client').value||null,venueId:$('f_venue').value||null,
   setupFrom,setupTo,setupDate:setupFrom||setupTo,eventFrom:$('f_from').value||null,eventTo:$('f_to').value||null,
-  siteManager:$('f_site_manager').value.trim(),jobCardCreator:$('f_creator').value.trim(),
+  siteManagerId,siteManager:siteManagerTech?siteManagerTech.name:'',
+  jobCardCreatorId,jobCardCreator:jobCardCreatorTech?jobCardCreatorTech.name:'',
   status:$('f_status').value,priority:$('f_priority').value,notes:$('f_notes').value.trim(),
   equipment,crew,updatedAt:Date.now()};
  markJobDevice(fields);
@@ -1897,7 +1911,7 @@ function usageCount(kind,id){
   else if(kind==='venues'&&j.venueId===id)n++;
   else if(kind==='eventTypes'&&j.typeId===id)n++;
   else if(kind==='equipment'&&j.equipment.some(e=>e.itemId===id))n++;
-  else if(kind==='technicians'&&j.crew.some(c=>c.techId===id))n++;
+  else if(kind==='technicians'&&(j.crew.some(c=>c.techId===id)||j.siteManagerId===id||j.jobCardCreatorId===id))n++;
   else if(kind==='roles'&&j.crew.some(c=>c.roleId===id))n++;
  }
  if(kind==='roles')n+=state.technicians.filter(t=>t.role===id).length;
