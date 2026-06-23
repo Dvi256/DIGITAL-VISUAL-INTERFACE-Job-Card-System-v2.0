@@ -550,6 +550,7 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
             <input type="date" id="opsBriefDate">
             <button class="panel-action" onclick="downloadOpsSummary('day')">Download Day</button>
             <button class="panel-action" onclick="downloadOpsSummary('week')">Download Week</button>
+            <button class="panel-action" onclick="downloadOpsSummary('month')">Download Month</button>
           </div>
         </div>
 	        <div class="cal-dow"><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div></div>
@@ -1916,6 +1917,14 @@ function weekStartISO(iso){
  d.setDate(d.getDate()-back);
  return d.toLocaleDateString('en-CA');
 }
+function monthStartISO(iso){
+ const d=new Date(iso+'T00:00:00');
+ return new Date(d.getFullYear(),d.getMonth(),1).toLocaleDateString('en-CA');
+}
+function monthEndISO(iso){
+ const d=new Date(iso+'T00:00:00');
+ return new Date(d.getFullYear(),d.getMonth()+1,0).toLocaleDateString('en-CA');
+}
 function jobEventCovers(j,iso){
  const f=j.eventFrom,to=j.eventTo||j.eventFrom;
  return !!(f&&f<=iso&&iso<=to);
@@ -1930,6 +1939,15 @@ function opsJobsForDay(iso){
  return state.jobs.filter(j=>j.status!=='Cancelled'&&(setupCovers(j,iso)||jobEventCovers(j,iso)))
   .sort((a,b)=>(setupStart(a)||a.eventFrom||'').localeCompare(setupStart(b)||b.eventFrom||'')||a.event.localeCompare(b.event));
 }
+function opsDateList(start,end){
+ const days=[];
+ for(let iso=start;iso<=end;iso=addDaysISO(iso,1))days.push(iso);
+ return days;
+}
+function opsJobDates(j,days,kind){
+ return days.filter(iso=>kind==='setup'?setupCovers(j,iso):kind==='event'?jobEventCovers(j,iso):(setupCovers(j,iso)||jobEventCovers(j,iso)));
+}
+function opsDateListText(list){return list.length?list.map(fmtD).join(', '):'-';}
 function opsCrewHtml(j){
  const rows=[...crewGrouped(j)].map(([role,names])=>`<div><b>${esc(role)}</b><span>${names.map(esc).join(', ')}</span></div>`).join('');
  return rows||'<em>No crew assigned</em>';
@@ -1942,33 +1960,75 @@ function opsSummaryJobs(days){
  for(const iso of days)for(const j of opsJobsForDay(iso))if(!seen.has(j.id)){seen.add(j.id);jobs.push(j);}
  return jobs;
 }
+function opsJobPeriodText(j,days){
+ const setup=opsJobDates(j,days,'setup'),event=opsJobDates(j,days,'event');
+ return [
+  setup.length?'Setup: '+opsDateListText(setup):'',
+  event.length?'Event: '+opsDateListText(event):''
+ ].filter(Boolean).join('<br>')||'-';
+}
 function opsTeamAllocations(days){
  const m=new Map();
- const add=(name,role,iso,event)=>{
+ const add=(name,role,iso,event,kind)=>{
   if(!name)return;
   const k=name.toLowerCase();
-  if(!m.has(k))m.set(k,{name,role,items:[]});
-  m.get(k).items.push(fmtD(iso)+' - '+role+' - '+event);
+  if(!m.has(k))m.set(k,{name,roles:new Set(),items:[],days:new Set(),jobs:new Set(),kind:kind||'Crew'});
+  const row=m.get(k);
+  row.roles.add(role);
+  row.days.add(iso);
+  row.jobs.add(event);
+  row.items.push(fmtD(iso)+' - '+role+' - '+event);
  };
  for(const iso of days){
   for(const j of opsJobsForDay(iso)){
-   add(jobSiteManager(j),'The Site Manager',iso,j.event);
-   add(jobCardCreator(j),'Created by',iso,j.event);
-   for(const c of (j.crew||[]))add(crewDisplayName(c.techId),c.roleId?nameOf('roles',c.roleId):'Crew',iso,j.event);
+   add(jobSiteManager(j),'The Site Manager',iso,j.event,'Admin');
+   add(jobCardCreator(j),'Created by',iso,j.event,'Admin');
+   for(const c of (j.crew||[]))add(crewDisplayName(c.techId),c.roleId?nameOf('roles',c.roleId):'Crew',iso,j.event,'Labour');
+  }
+ }
+ return [...m.values()].map(x=>Object.assign(x,{role:[...x.roles].join(', ')})).sort((a,b)=>a.name.localeCompare(b.name));
+}
+function opsEquipmentDistribution(jobs){
+ const m=new Map();
+ for(const j of jobs){
+  for(const e of (j.equipment||[])){
+   const name=(e.name||'Equipment').trim();
+   const k=name.toLowerCase();
+   if(!m.has(k))m.set(k,{name,count:0,specs:new Set(),jobs:[]});
+   const row=m.get(k);
+   row.count++;
+   if(e.spec)row.specs.add(e.spec);
+   row.jobs.push(j.no+' - '+j.event);
   }
  }
  return [...m.values()].sort((a,b)=>a.name.localeCompare(b.name));
 }
+function opsTransportRows(days){
+ const rows=[];
+ const transportRe=/driver|transport|logistics|dispatch/i;
+ const vehicleRe=/truck|vehicle|van|pickup|car|bus|fuel|transport/i;
+ for(const iso of days){
+  for(const j of opsJobsForDay(iso)){
+   const drivers=(j.crew||[]).filter(c=>transportRe.test(c.roleId?nameOf('roles',c.roleId):'')).map(c=>crewDisplayName(c.techId));
+   const vehicles=(j.equipment||[]).filter(e=>vehicleRe.test((e.name||'')+' '+(e.spec||''))).map(e=>(e.spec?e.spec+' ':'')+e.name);
+   if(drivers.length||vehicles.length)rows.push({iso,job:j,drivers,vehicles});
+  }
+ }
+ return rows;
+}
 function opsSummaryCSS(){
- return `@page{size:A4;margin:9mm}*{box-sizing:border-box}body{margin:0;background:#f4f1e9;color:#171717;font-family:'Segoe UI',Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}.print-tools{position:sticky;top:0;z-index:5;display:flex;justify-content:flex-end;gap:10px;padding:10px 12px;background:#15161a;border-bottom:2px solid #d4af37}.print-tools button{min-height:38px;padding:9px 15px;border-radius:8px;border:1px solid #d4af37;background:#d4af37;color:#181203;font:700 13px 'Segoe UI',Arial,sans-serif;cursor:pointer}.ops-sheet{padding:9mm}.ops-top{display:grid;grid-template-columns:1.35fr .65fr;gap:12px;align-items:stretch}.ops-brand{background:#12151d;color:#fff;padding:16px 18px;border-left:7px solid #d4af37}.ops-brand h1{margin:0;font-size:25px;letter-spacing:.5px}.ops-brand p{margin:6px 0 0;color:#c9cfda;font-size:12px}.ops-window{background:#fff;border:1px solid #222;padding:14px}.ops-window span,.ops-k{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:1px;color:#666;font-weight:800}.ops-window b{display:block;margin-top:5px;font-size:18px}.ops-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.ops-stat{background:#fff;border:1px solid #222;padding:10px}.ops-stat b{display:block;font-size:20px;color:#1d4f91}.ops-stat span{font-size:9.5px;text-transform:uppercase;letter-spacing:.8px;color:#555;font-weight:800}.ops-timeline{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:12px 0}.ops-tick{min-height:64px;background:#fff;border:1px solid #222;padding:7px}.ops-tick.hot{background:#fff8df;border-color:#b88900}.ops-tick b{display:block;font-size:11px}.ops-tick span{display:block;margin-top:6px;font-size:17px;font-weight:900;color:#1d4f91}.ops-section{margin-top:12px}.ops-section h2{margin:0 0 7px;font-size:13px;letter-spacing:1.2px;text-transform:uppercase;border-bottom:3px solid #d4af37;padding-bottom:5px}.ops-day{break-inside:avoid;background:#fff;border:1px solid #222;margin-bottom:9px}.ops-day-head{display:flex;justify-content:space-between;gap:10px;background:#15161a;color:#fff;padding:8px 10px}.ops-day-head b{font-size:13px}.ops-day-head span{font-size:11px;color:#d4af37;font-weight:800}.ops-job{padding:9px 10px;border-top:1px solid #ddd}.ops-job:first-child{border-top:0}.ops-job-title{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.ops-job-title b{font-size:13px}.ops-badge{white-space:nowrap;border:1px solid #1d4f91;color:#1d4f91;border-radius:20px;padding:2px 8px;font-size:9.5px;font-weight:900;text-transform:uppercase}.ops-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:7px}.ops-meta div,.ops-crew,.ops-eq{border:1px solid #ddd;background:#fafafa;padding:6px;font-size:10.5px;line-height:1.45}.ops-crew div{display:grid;grid-template-columns:82px 1fr;gap:6px;border-bottom:1px dashed #ddd;padding:3px 0}.ops-crew div:last-child{border-bottom:0}.ops-crew b{font-size:9px;text-transform:uppercase;color:#8a6500}.ops-empty{padding:15px;background:#fff;border:1px dashed #888;color:#555}.ops-table{width:100%;border-collapse:collapse;background:#fff}.ops-table th{background:#f3e3b3;border:1px solid #222;padding:7px;font-size:10px;text-align:left;text-transform:uppercase;letter-spacing:.7px}.ops-table td{border:1px solid #222;padding:7px;font-size:10.5px;vertical-align:top;line-height:1.45}.ops-sign{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}.ops-line{background:#fff;border:1px solid #222;padding:18px 10px 8px;min-height:62px}.ops-line span{display:block;border-top:1px solid #111;padding-top:6px;font-size:9.5px;text-transform:uppercase;letter-spacing:.8px;color:#555}@media(max-width:700px){.ops-top,.ops-stats,.ops-meta,.ops-sign{grid-template-columns:1fr}.ops-timeline{grid-template-columns:1fr 1fr}}@media print{.print-tools{display:none}.ops-sheet{padding:0}}`;
+ return `@page{size:A4 landscape;margin:8mm}*{box-sizing:border-box}body{margin:0;background:#f4f1e9;color:#171717;font-family:'Segoe UI',Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}.print-tools{position:sticky;top:0;z-index:5;display:flex;justify-content:flex-end;gap:10px;padding:10px 12px;background:#15161a;border-bottom:2px solid #d4af37}.print-tools button{min-height:38px;padding:9px 15px;border-radius:8px;border:1px solid #d4af37;background:#d4af37;color:#181203;font:700 13px 'Segoe UI',Arial,sans-serif;cursor:pointer}.ops-sheet{padding:8mm}.ops-page{break-after:page;margin-bottom:12px}.ops-page:last-child{break-after:auto}.ops-top{display:grid;grid-template-columns:1.45fr .55fr;gap:12px;align-items:stretch}.ops-brand{background:#12151d;color:#fff;padding:15px 18px;border-left:7px solid #d4af37}.ops-brand h1{margin:0;font-size:24px;letter-spacing:.4px}.ops-brand p{margin:6px 0 0;color:#c9cfda;font-size:12px}.ops-window{background:#fff;border:1px solid #222;padding:13px}.ops-window span,.ops-k{display:block;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#666;font-weight:800}.ops-window b{display:block;margin-top:5px;font-size:17px}.ops-stats{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-top:10px}.ops-stat{background:#fff;border:1px solid #222;padding:9px}.ops-stat b{display:block;font-size:20px;color:#1d4f91}.ops-stat span{font-size:8.8px;text-transform:uppercase;letter-spacing:.75px;color:#555;font-weight:800}.ops-timeline{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:10px 0}.ops-tick{min-height:49px;background:#fff;border:1px solid #222;padding:6px}.ops-tick.hot{background:#fff8df;border-color:#b88900}.ops-tick b{display:block;font-size:10px}.ops-tick span{display:inline-block;margin-top:4px;font-size:16px;font-weight:900;color:#1d4f91}.ops-tick small{float:right;margin-top:7px;font-size:9px;color:#555}.ops-section{margin-top:11px}.ops-section h2{margin:0 0 7px;font-size:12px;letter-spacing:1.2px;text-transform:uppercase;border-bottom:3px solid #d4af37;padding-bottom:5px}.ops-grid2{display:grid;grid-template-columns:1.1fr .9fr;gap:10px}.ops-day{break-inside:avoid;background:#fff;border:1px solid #222;margin-bottom:8px}.ops-day-head{display:flex;justify-content:space-between;gap:10px;background:#15161a;color:#fff;padding:7px 9px}.ops-day-head b{font-size:12px}.ops-day-head span{font-size:10px;color:#d4af37;font-weight:800}.ops-job{padding:8px 9px;border-top:1px solid #ddd}.ops-job:first-child{border-top:0}.ops-job-title{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.ops-job-title b{font-size:12px}.ops-badge{white-space:nowrap;border:1px solid #1d4f91;color:#1d4f91;border-radius:20px;padding:2px 8px;font-size:9px;font-weight:900;text-transform:uppercase}.ops-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px}.ops-meta div,.ops-crew,.ops-eq{border:1px solid #ddd;background:#fafafa;padding:5px;font-size:9.8px;line-height:1.4}.ops-crew div{display:grid;grid-template-columns:76px 1fr;gap:5px;border-bottom:1px dashed #ddd;padding:3px 0}.ops-crew div:last-child{border-bottom:0}.ops-crew b{font-size:8.5px;text-transform:uppercase;color:#8a6500}.ops-empty{padding:12px;background:#fff;border:1px dashed #888;color:#555}.ops-table{width:100%;border-collapse:collapse;background:#fff}.ops-table th{background:#f3e3b3;border:1px solid #222;padding:6px;font-size:9px;text-align:left;text-transform:uppercase;letter-spacing:.65px}.ops-table td{border:1px solid #222;padding:6px;font-size:9.5px;vertical-align:top;line-height:1.38}.ops-table b{font-size:10px}.ops-note{color:#555;font-size:9px}.ops-sign{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-top:12px}.ops-line{background:#fff;border:1px solid #222;padding:17px 9px 7px;min-height:58px}.ops-line span{display:block;border-top:1px solid #111;padding-top:6px;font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:#555}@media(max-width:700px){.ops-top,.ops-stats,.ops-meta,.ops-sign,.ops-grid2{grid-template-columns:1fr}.ops-timeline{grid-template-columns:1fr 1fr}}@media print{.print-tools{display:none}.ops-sheet{padding:0}}`;
 }
 function buildOpsSummaryHTML(mode,start,end){
- const days=[];for(let iso=start;iso<=end;iso=addDaysISO(iso,1))days.push(iso);
+ const days=opsDateList(start,end);
  const jobs=opsSummaryJobs(days);
  const setupCount=days.reduce((n,iso)=>n+opsJobsForDay(iso).filter(j=>setupCovers(j,iso)).length,0);
  const eventCount=days.reduce((n,iso)=>n+opsJobsForDay(iso).filter(j=>jobEventCovers(j,iso)).length,0);
  const crewCount=new Set(jobs.flatMap(j=>(j.crew||[]).map(c=>c.techId).filter(Boolean))).size;
+ const equipment=opsEquipmentDistribution(jobs);
+ const transport=opsTransportRows(days);
  const timeline=days.map(iso=>{const n=opsJobsForDay(iso).length;const d=new Date(iso+'T00:00:00');return `<div class="ops-tick${n?' hot':''}"><b>${WEEKDAYS[d.getDay()].slice(0,3)}</b><span>${d.getDate()}</span><small>${n} job${n===1?'':'s'}</small></div>`;}).join('');
+ const jobRows=jobs.map(j=>`<tr><td><b>${esc(j.no)}</b><br>${esc(j.event)}</td><td>${esc(nameOf('clients',j.clientId))}</td><td>${esc(nameOf('venues',j.venueId))}</td><td>${opsJobPeriodText(j,days)}</td><td>${esc(jobSiteManager(j)||'-')}<br><span class="ops-note">Created by: ${esc(jobCardCreator(j)||'-')}</span></td><td>${esc(j.status)}</td></tr>`).join('')||'<tr><td colspan="6">No jobs scheduled in this period.</td></tr>';
  const dayHtml=days.map(iso=>{
   const d=new Date(iso+'T00:00:00'),rows=opsJobsForDay(iso);
   const jobsHtml=rows.map(j=>`<article class="ops-job">
@@ -1987,13 +2047,14 @@ function buildOpsSummaryHTML(mode,start,end){
   return `<section class="ops-day"><div class="ops-day-head"><b>${WEEKDAYS[d.getDay()]}, ${fmtD(iso)}</b><span>${rows.length} assignment${rows.length===1?'':'s'}</span></div>${jobsHtml||'<div class="ops-empty">No job-card activity scheduled.</div>'}</section>`;
  }).join('');
  const team=opsTeamAllocations(days);
- const teamRows=team.map(t=>`<tr><td><b>${esc(t.name)}</b><br><span>${esc(t.role)}</span></td><td>${esc(t.items.join('\n')).replace(/\n/g,'<br>')}</td></tr>`).join('')||'<tr><td colspan="2">No team allocation yet.</td></tr>';
- const eqRows=jobs.map(j=>`<tr><td><b>${esc(j.no)}</b><br>${esc(j.event)}</td><td>${esc(nameOf('venues',j.venueId))}</td><td>${esc(opsEquipmentText(j))}</td></tr>`).join('')||'<tr><td colspan="3">No equipment checklist yet.</td></tr>';
+ const teamRows=team.map(t=>`<tr><td><b>${esc(t.name)}</b><br><span>${esc(t.role)}</span></td><td>${t.days.size}</td><td>${t.jobs.size}</td><td>${esc(t.items.join('\n')).replace(/\n/g,'<br>')}</td></tr>`).join('')||'<tr><td colspan="4">No labour allocation yet.</td></tr>';
+ const eqRows=equipment.map(e=>`<tr><td><b>${esc(e.name)}</b></td><td>${e.count}</td><td>${esc([...e.specs].join(', ')||'-')}</td><td>${esc([...new Set(e.jobs)].join('\n')).replace(/\n/g,'<br>')}</td></tr>`).join('')||'<tr><td colspan="4">No equipment distribution yet.</td></tr>';
+ const transportRows=transport.map(r=>`<tr><td>${fmtD(r.iso)}</td><td><b>${esc(r.job.no)}</b><br>${esc(r.job.event)}</td><td>${esc(nameOf('venues',r.job.venueId))}</td><td>${esc(r.drivers.join(', ')||'Not assigned')}</td><td>${esc(r.vehicles.join('; ')||'Not listed')}</td></tr>`).join('')||'<tr><td colspan="5">No dedicated transport or driver allocation found in this period.</td></tr>';
  const co=state.company||DEFAULT_COMPANY;
- const label=mode==='week'?'Weekly Operations Brief':'Daily Operations Brief';
+ const label=mode==='month'?'Monthly Operations Brief':mode==='week'?'Weekly Operations Brief':'Daily Operations Brief';
  const range=start===end?fmtD(start):fmtD(start)+' - '+fmtD(end);
  return `<div class="ops-sheet">
-  <div class="ops-top">
+  <section class="ops-page"><div class="ops-top">
    <div class="ops-brand"><h1>${esc(label)}</h1><p>${esc(co.name||'Digital Visual Interface')} operations planning sheet</p></div>
    <div class="ops-window"><span>Schedule window</span><b>${range}</b><span style="margin-top:8px">Generated ${fmtDT(Date.now())}</span></div>
   </div>
@@ -2002,19 +2063,21 @@ function buildOpsSummaryHTML(mode,start,end){
    <div class="ops-stat"><b>${setupCount}</b><span>Setup calls</span></div>
    <div class="ops-stat"><b>${eventCount}</b><span>Event calls</span></div>
    <div class="ops-stat"><b>${crewCount}</b><span>Crew named</span></div>
+   <div class="ops-stat"><b>${equipment.length}</b><span>Equipment types</span></div>
+   <div class="ops-stat"><b>${transport.length}</b><span>Transport lines</span></div>
   </div>
-  ${mode==='week'?`<div class="ops-timeline">${timeline}</div>`:''}
-  <section class="ops-section"><h2>Day-by-day operations</h2>${dayHtml}</section>
-  <section class="ops-section"><h2>Team allocation board</h2><table class="ops-table"><thead><tr><th>Person</th><th>Assignments</th></tr></thead><tbody>${teamRows}</tbody></table></section>
-  <section class="ops-section"><h2>Equipment checklist</h2><table class="ops-table"><thead><tr><th>Job</th><th>Venue</th><th>Items</th></tr></thead><tbody>${eqRows}</tbody></table></section>
-  <div class="ops-sign"><div class="ops-line"><span>Prepared by</span></div><div class="ops-line"><span>Operations approved</span></div><div class="ops-line"><span>Dispatch checked</span></div></div>
+  ${days.length>1?`<div class="ops-timeline">${timeline}</div>`:''}
+  <section class="ops-section"><h2>Executive job matrix</h2><table class="ops-table"><thead><tr><th>Job</th><th>Client</th><th>Venue</th><th>Dates</th><th>Responsibility</th><th>Status</th></tr></thead><tbody>${jobRows}</tbody></table></section></section>
+  <section class="ops-page"><div class="ops-grid2"><section class="ops-section"><h2>Day-by-day operations</h2>${dayHtml}</section><section class="ops-section"><h2>Transport and dispatch</h2><table class="ops-table"><thead><tr><th>Date</th><th>Job</th><th>Venue</th><th>Driver / transport crew</th><th>Vehicle / transport items</th></tr></thead><tbody>${transportRows}</tbody></table></section></div></section>
+  <section class="ops-page"><div class="ops-grid2"><section class="ops-section"><h2>Equipment distribution</h2><table class="ops-table"><thead><tr><th>Equipment</th><th>Lines</th><th>Specs / quantities</th><th>Jobs using it</th></tr></thead><tbody>${eqRows}</tbody></table></section><section class="ops-section"><h2>Labour distribution</h2><table class="ops-table"><thead><tr><th>Person</th><th>Days</th><th>Jobs</th><th>Assignments</th></tr></thead><tbody>${teamRows}</tbody></table></section></div>
+  <div class="ops-sign"><div class="ops-line"><span>Prepared by</span></div><div class="ops-line"><span>Operations approved</span></div><div class="ops-line"><span>Transport checked</span></div><div class="ops-line"><span>Equipment released</span></div></div></section>
  </div>`;
 }
 function downloadOpsSummary(mode){
  const picked=opsBriefDate();
- const start=mode==='week'?weekStartISO(picked):picked;
- const end=mode==='week'?addDaysISO(start,6):picked;
- const title=(mode==='week'?'DVI Weekly Operations Brief ':'DVI Daily Operations Brief ')+(start===end?fmtD(start):fmtD(start)+' - '+fmtD(end));
+ const start=mode==='month'?monthStartISO(picked):mode==='week'?weekStartISO(picked):picked;
+ const end=mode==='month'?monthEndISO(picked):mode==='week'?addDaysISO(start,6):picked;
+ const title=(mode==='month'?'DVI Monthly Operations Brief ':mode==='week'?'DVI Weekly Operations Brief ':'DVI Daily Operations Brief ')+(start===end?fmtD(start):fmtD(start)+' - '+fmtD(end));
  const win=window.open('','_blank');
  if(!win){toast('Allow pop-ups to open the operations summary','err');return;}
  win.document.open();
