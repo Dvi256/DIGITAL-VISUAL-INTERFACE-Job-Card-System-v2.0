@@ -613,6 +613,8 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
           <button class="ghost-btn" onclick="cloudPull()">Load from Google Drive</button>
           <button class="ghost-btn" onclick="cloudOpenDriveBackup()">Open Drive Backup</button>
           <button class="ghost-btn" onclick="cloudTest()">Test Cloud Link</button>
+          <button class="ghost-btn" onclick="copyCloudScript()">Copy Cloud Script</button>
+          <button class="ghost-btn" onclick="openAppsScriptSetup()">Open Apps Script</button>
         </div>
         <p class="cloud-note">Until the cloud link is added, this app keeps using this browser as a local backup. Use <code>cloud-sync-apps-script.js</code> once from <span class="cloud-owner">dviugandaow@gmail.com</span> to create the Google Drive cloud link.</p>
       </div>
@@ -911,6 +913,25 @@ function saveCloudSettings(){
  saveCloudConfig();renderCloudStatus();
  if(cloudCfg.endpoint&&cloudCfg.auto)cloudPull({auto:true});
 }
+function cloudMissingLink(){
+ if(!cloudCfg)loadCloudConfig();
+ setCloudStatus('err','Google Drive link needed','Create the Apps Script web app, then paste its URL in the Google Apps Script web app URL field.');
+ toast('Paste the Google Apps Script web app URL first','err');
+ try{switchView('settings');}catch(e){}
+ setTimeout(()=>{const el=$('cloudEndpoint');if(el){el.focus();el.scrollIntoView({behavior:'smooth',block:'center'});}},80);
+}
+function openAppsScriptSetup(){window.open('https://script.google.com/home/projects/create','_blank');}
+async function copyCloudScript(){
+ try{
+  const res=await fetch('cloud-sync-apps-script.js?v='+Date.now());
+  if(!res.ok)throw new Error('Could not read the cloud script');
+  const text=await res.text();
+  await navigator.clipboard.writeText(text);
+  toast('Cloud script copied. Paste it into Google Apps Script.');
+ }catch(e){
+  toast(e.message||'Could not copy the cloud script','err');
+ }
+}
 function rememberCloudMeta(meta){
  if(!meta||meta.ok===false)return;
  if(!cloudCfg)loadCloudConfig();
@@ -966,7 +987,7 @@ function applyCloudState(next,label){
 async function cloudPull(opts){
   opts=opts||{};
   if(!cloudCfg)loadCloudConfig();
-  if(!cloudCfg.endpoint){toast('Add the cloud sync link first','err');renderCloudStatus();return;}
+  if(!cloudCfg.endpoint){cloudMissingLink();return;}
   if(cloudBusy)return;
   let pushAfterPull=false;
   cloudBusy=true;setCloudStatus('busy','Syncing','Loading Google Drive job cards...');
@@ -1001,7 +1022,7 @@ async function cloudPull(opts){
 async function cloudPush(opts){
  opts=opts||{};
  if(!cloudCfg)loadCloudConfig();
- if(!cloudCfg.endpoint){if(!opts.silent)toast('Add the cloud sync link first','err');renderCloudStatus();return false;}
+ if(!cloudCfg.endpoint){if(!opts.silent)cloudMissingLink();else renderCloudStatus();return false;}
  if(cloudBusy){cloudPendingSave=true;return false;}
  cloudBusy=true;setCloudStatus('busy','Syncing','Saving this device to Google Drive...');
  try{
@@ -1025,13 +1046,13 @@ async function cloudPush(opts){
 }
 function cloudPushManual(){
  if(!cloudCfg)loadCloudConfig();
- if(!cloudCfg.endpoint){toast('Add the cloud sync link first','err');renderCloudStatus();return;}
+ if(!cloudCfg.endpoint){cloudMissingLink();return;}
  confirmBox('Save this device to Google Drive and make it the shared data for all devices?',()=>cloudPush({silent:false}));
 }
 async function cloudOpenDriveBackup(){
  if(!cloudCfg)loadCloudConfig();
  if(cloudCfg.driveUrl){window.open(cloudCfg.driveUrl,'_blank');return;}
- if(!cloudCfg.endpoint){toast('Add the cloud sync link first','err');renderCloudStatus();return;}
+ if(!cloudCfg.endpoint){cloudMissingLink();return;}
  if(cloudBusy)return;
  const tab=window.open('','_blank');
  cloudBusy=true;setCloudStatus('busy','Checking','Finding the Google Drive backup file...');
@@ -1049,7 +1070,7 @@ async function cloudOpenDriveBackup(){
 }
 async function cloudTest(){
  if(!cloudCfg)loadCloudConfig();
- if(!cloudCfg.endpoint){toast('Add the cloud sync link first','err');renderCloudStatus();return;}
+ if(!cloudCfg.endpoint){cloudMissingLink();return;}
  if(cloudBusy)return;
  cloudBusy=true;setCloudStatus('busy','Testing','Checking the cloud link...');
  try{
