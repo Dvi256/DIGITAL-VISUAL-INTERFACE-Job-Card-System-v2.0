@@ -608,7 +608,7 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
         <div class="cloud-strip">
           <div class="cloud-pill">Local-first<span>Job cards save instantly here.</span></div>
           <div class="cloud-pill">Background sync<span>Changes queue and sync automatically.</span></div>
-          <div class="cloud-pill">Shared office copy<span>Every device can restore the same data.</span></div>
+          <div class="cloud-pill">DVI account only<span>Cloud storage is locked to dviugandaow@gmail.com.</span></div>
         </div>
         <label class="toggle-line cloud-main-toggle"><input type="checkbox" id="cloudLiveToggle" onchange="setCloudMode(this.checked)"> DVI Cloud live sync on this device</label>
         <div class="data-btns" style="margin-top:14px">
@@ -625,7 +625,7 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
               <input id="cloudEndpoint" placeholder="https://script.google.com/macros/s/.../exec" onchange="saveCloudSettings()">
               <p class="cloud-note" style="margin-top:7px">Admin setup only: use the deployed Web App URL ending in <code>/exec</code>. A Google Drive home or project link will not sync data.</p>
             </div>
-            <div><label>Cloud account</label><input id="cloudOwner" readonly class="cloud-owner" value="dviugandaow@gmail.com"></div>
+            <div><label>Locked cloud account</label><input id="cloudOwner" readonly class="cloud-owner" value="dviugandaow@gmail.com"></div>
             <div><label>This device name</label><input id="cloudDeviceName" placeholder="e.g. Reception Laptop, Godrick Phone" onchange="saveCloudSettings()"></div>
             <div><label>Device ID</label><input id="cloudDeviceId" readonly class="mono"></div>
             <label class="toggle-line"><input type="checkbox" id="cloudAuto" onchange="setCloudMode(this.checked)"> Auto-sync every change</label>
@@ -635,7 +635,7 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
             <button class="ghost-btn" onclick="copyCloudScript()">Copy Cloud Script</button>
             <button class="ghost-btn" onclick="openAppsScriptSetup()">Open Apps Script</button>
           </div>
-          <p class="cloud-note">DVI Cloud uses the office Google account only as the storage engine. Daily users should only need Sync Now and Restore Latest.</p>
+          <p class="cloud-note">DVI Cloud saves only to <span class="cloud-owner">dviugandaow@gmail.com</span>. Daily users should not connect personal Google accounts; they only need Sync Now and Restore Latest.</p>
         </details>
       </div>
       <div class="card" style="margin-top:20px">
@@ -927,9 +927,9 @@ function renderCloudStatus(){
  if(!cloudCfg)loadCloudConfig();
  if(!cloudCfg.auto){setCloudStatus('', 'Local only', 'DVI Cloud is paused on this device. Job cards save locally here.');return;}
  const kind=cloudEndpointKind(cloudCfg.endpoint);
- if(kind==='missing'){setCloudStatus('', 'Offline ready', 'This device is saving locally. DVI Cloud needs activation for shared sync.');return;}
- if(kind==='project'){setCloudStatus('err','DVI Cloud setup incomplete','The setup project is open, but the deployed cloud connector is not active yet.');return;}
- if(kind!=='webapp'){setCloudStatus('err','DVI Cloud setup needed','The shared cloud connector is not active yet. Local saving still works.');return;}
+ if(kind==='missing'){setCloudStatus('', 'Offline ready', 'This device is saving locally. DVI Cloud must be activated from dviugandaow@gmail.com.');return;}
+ if(kind==='project'){setCloudStatus('err','DVI Cloud setup incomplete','The DVI Google project is open, but the deployed connector is not active yet.');return;}
+ if(kind!=='webapp'){setCloudStatus('err','DVI Cloud setup needed','The DVI account connector is not active yet. Local saving still works.');return;}
  const last=Math.max(cloudCfg.lastPull||0,cloudCfg.lastPush||0,cloudCfg.lastOk||0);
  if(!last){setCloudStatus('', 'DVI Cloud waiting', 'Cloud connector is saved. Press Check DVI Cloud once to activate this device.');return;}
  const mode=cloudCfg.auto?'Auto-sync is on':'Manual sync is on';
@@ -990,10 +990,10 @@ function cloudMissingLink(){
  if(!cloudCfg)loadCloudConfig();
  const kind=cloudEndpointKind(($('cloudEndpoint')&&$('cloudEndpoint').value)||cloudCfg.endpoint);
  if(kind==='project'){
-  setCloudStatus('err','DVI Cloud setup incomplete','The setup project is not the live connector yet. Deploy it as a Web App in advanced setup.');
+  setCloudStatus('err','DVI Cloud setup incomplete','The DVI Google project is not the live connector yet. Deploy it from dviugandaow@gmail.com.');
   toast('DVI Cloud is not active yet. Local saving still works.','err');
  }else{
-  setCloudStatus('err','DVI Cloud needs activation','Local saving works. Shared sync needs the office cloud connector to be activated.');
+  setCloudStatus('err','DVI Cloud needs activation','Local saving works. Shared sync must be activated from dviugandaow@gmail.com.');
   toast('DVI Cloud is not active yet. Local saving still works.','err');
  }
  try{switchView('settings');}catch(e){}
@@ -1042,8 +1042,8 @@ function cloudJsonp(action,extra,timeoutMs){
   try{
    script=document.createElement('script');
    script.src=cloudUrl(action,Object.assign({},extra,{callback:cb}));
-   script.onerror=()=>{cleanup();reject(new Error('DVI Cloud is not reachable yet. Local saving still works.'));};
-   timer=setTimeout(()=>{cleanup();reject(new Error('DVI Cloud did not answer. The office cloud connector still needs activation.'));},timeoutMs);
+   script.onerror=()=>{cleanup();reject(new Error('DVI Cloud is not reachable yet. It must save only to dviugandaow@gmail.com; local saving still works.'));};
+   timer=setTimeout(()=>{cleanup();reject(new Error('DVI Cloud did not answer. The dviugandaow@gmail.com connector still needs activation.'));},timeoutMs);
    document.head.appendChild(script);
   }catch(e){cleanup();reject(e);}
  });

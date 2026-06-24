@@ -1,8 +1,9 @@
 /*
   DVI Job Card System - Google Apps Script cloud sync
+  Cloud owner: dviugandaow@gmail.com only.
 
   One-time setup:
-  1. Open the DVI Apps Script project.
+  1. Sign in as dviugandaow@gmail.com and open the DVI Apps Script project.
   2. Replace everything in Code.gs with this whole file and save.
   3. Deploy > New deployment > Web app.
   4. Execute as: Me.
@@ -11,7 +12,7 @@
   7. Copy the Web app URL ending in /exec and paste it into Cloud Sync settings.
 
   The script creates or reuses a Sheet named "DVI Job Card Cloud Database"
-  and also keeps a JSON backup file in the same Google Drive account.
+  and also keeps a JSON backup file in dviugandaow@gmail.com's Google Drive.
 */
 
 const SPREADSHEET_NAME = 'DVI Job Card Cloud Database';
