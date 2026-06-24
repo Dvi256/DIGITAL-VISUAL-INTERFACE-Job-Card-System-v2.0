@@ -314,6 +314,7 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
 .cloud-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:12px 0 14px}
 .cloud-pill{border:1px solid var(--line-soft);background:rgba(255,255,255,.025);border-radius:12px;padding:10px 12px;color:#dce2ec;font-size:12px;font-weight:800}
 .cloud-pill span{display:block;color:var(--mut);font-size:10.5px;font-weight:700;margin-top:3px}
+.cloud-main-toggle{display:flex;margin:0 0 13px;padding:10px 12px;border:1px solid rgba(212,175,55,.22);border-radius:12px;background:rgba(212,175,55,.08)}
 .cloud-advanced{margin-top:13px;border:1px solid var(--line-soft);border-radius:13px;padding:10px 12px;background:rgba(0,0,0,.12)}
 .cloud-advanced summary{cursor:pointer;color:var(--gold-l);font-weight:900;font-size:12px}
 .cloud-advanced .set-grid{margin-top:12px}
@@ -609,6 +610,7 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
           <div class="cloud-pill">Background sync<span>Changes queue and sync automatically.</span></div>
           <div class="cloud-pill">Shared office copy<span>Every device can restore the same data.</span></div>
         </div>
+        <label class="toggle-line cloud-main-toggle"><input type="checkbox" id="cloudLiveToggle" onchange="setCloudMode(this.checked)"> DVI Cloud live sync on this device</label>
         <div class="data-btns" style="margin-top:14px">
           <button class="gold-btn" onclick="cloudPushManual()">Sync Now</button>
           <button class="ghost-btn" onclick="cloudPull()">Restore Latest</button>
@@ -626,7 +628,7 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
             <div><label>Cloud account</label><input id="cloudOwner" readonly class="cloud-owner" value="dviugandaow@gmail.com"></div>
             <div><label>This device name</label><input id="cloudDeviceName" placeholder="e.g. Reception Laptop, Godrick Phone" onchange="saveCloudSettings()"></div>
             <div><label>Device ID</label><input id="cloudDeviceId" readonly class="mono"></div>
-            <label class="toggle-line"><input type="checkbox" id="cloudAuto" onchange="saveCloudSettings()"> Auto-sync every change</label>
+            <label class="toggle-line"><input type="checkbox" id="cloudAuto" onchange="setCloudMode(this.checked)"> Auto-sync every change</label>
           </div>
           <div class="data-btns" style="margin-top:12px">
             <button class="ghost-btn" onclick="cloudOpenDriveBackup()">Open Cloud Backup</button>
@@ -736,6 +738,7 @@ const CLOUD_CLIENT_KEY='dvi_cloud_client_v1';
 const DVI_CLOUD_OWNER='dviugandaow@gmail.com';
 const DVI_CLOUD_PROJECT_URL='https://script.google.com/home/projects/1JcCnOQxiZ6PklFEl08RMrtKXyjadBWqmgTlwGf_Q1Atn98YWuFCPND3o/edit';
 const DVI_CLOUD_ENDPOINT='https://script.google.com/macros/s/AKfycbx5ckvFIKHAFpT-D9XNs-jPIi7ug_rz85JXytxFp8KdIeARcO_K1Hurvue-obAMizNh/exec';
+const DVI_CLOUD_POLL_MS=15000;
 const DVI_GCAL={
  id:'dviugandaow@gmail.com',
  name:'Dvi-Uganda O/W',
@@ -773,7 +776,7 @@ const DEFAULT_COMPANY={
 let state=null, editingJobId=null;
 let quickKind=null, quickEditId=null, quickTrigger=null, confirmCb=null;
 let calY, calM;
-let cloudCfg=null, cloudBusy=false, cloudSaveTimer=null, cloudPendingSave=false;
+let cloudCfg=null, cloudBusy=false, cloudSaveTimer=null, cloudPendingSave=false, cloudLiveTimer=null;
 
 /* ================= HELPERS ================= */
 const $=id=>document.getElementById(id);
@@ -911,7 +914,9 @@ function renderCloudSettings(){
  if($('cloudDeviceName'))$('cloudDeviceName').value=currentDeviceName();
  if($('cloudDeviceId'))$('cloudDeviceId').value=cloudClientId();
  if($('cloudAuto'))$('cloudAuto').checked=!!cloudCfg.auto;
+ if($('cloudLiveToggle'))$('cloudLiveToggle').checked=!!cloudCfg.auto;
  renderCloudStatus();
+ configureCloudLiveSync();
 }
 function setCloudStatus(kind,title,detail){
  const box=$('cloudStatus');if(!box)return;
@@ -920,6 +925,7 @@ function setCloudStatus(kind,title,detail){
 }
 function renderCloudStatus(){
  if(!cloudCfg)loadCloudConfig();
+ if(!cloudCfg.auto){setCloudStatus('', 'Local only', 'DVI Cloud is paused on this device. Job cards save locally here.');return;}
  const kind=cloudEndpointKind(cloudCfg.endpoint);
  if(kind==='missing'){setCloudStatus('', 'Offline ready', 'This device is saving locally. DVI Cloud needs activation for shared sync.');return;}
  if(kind==='project'){setCloudStatus('err','DVI Cloud setup incomplete','The setup project is open, but the deployed cloud connector is not active yet.');return;}
@@ -936,9 +942,25 @@ function saveCloudSettings(){
  cloudCfg.endpoint=($('cloudEndpoint').value||'').trim();
  cloudCfg.owner=DVI_CLOUD_OWNER;
  cloudCfg.deviceName=($('cloudDeviceName').value||defaultDeviceName()).trim();
- cloudCfg.auto=!!$('cloudAuto').checked;
+ if($('cloudLiveToggle'))cloudCfg.auto=!!$('cloudLiveToggle').checked;
  saveCloudConfig();renderCloudStatus();
+ configureCloudLiveSync();
  if(cloudEndpointReady()&&cloudCfg.auto)cloudPull({auto:true});
+}
+function setCloudMode(on){
+ if(!cloudCfg)loadCloudConfig();
+ cloudCfg.auto=!!on;
+ saveCloudConfig();
+ if($('cloudLiveToggle'))$('cloudLiveToggle').checked=cloudCfg.auto;
+ if($('cloudAuto'))$('cloudAuto').checked=cloudCfg.auto;
+ renderCloudStatus();
+ configureCloudLiveSync();
+ if(cloudCfg.auto){
+  toast('DVI Cloud live sync is on');
+  if(cloudEndpointReady())cloudPull({auto:true});
+ }else{
+  toast('Local only mode is on');
+ }
 }
 function cloudEndpointKind(value){
  const s=String(value||'').trim();
@@ -1037,6 +1059,17 @@ function scheduleCloudSave(){
  clearTimeout(cloudSaveTimer);
  cloudSaveTimer=setTimeout(()=>cloudPush({silent:true}),1000);
 }
+function cloudLiveEnabled(){return !!(cloudCfg&&cloudCfg.auto&&cloudEndpointReady());}
+function configureCloudLiveSync(){
+ const should=cloudLiveEnabled();
+ if(!should&&cloudLiveTimer){clearInterval(cloudLiveTimer);cloudLiveTimer=null;return;}
+ if(should&&!cloudLiveTimer){
+  cloudLiveTimer=setInterval(()=>{if(!document.hidden)cloudPull({auto:true,live:true});},DVI_CLOUD_POLL_MS);
+ }
+}
+function cloudFocusSync(){
+ if(cloudLiveEnabled())cloudPull({auto:true,live:true});
+}
 function applyCloudState(next,label){
  state=ensureStateShape(next);
  syncCompanyBranding();
@@ -1075,9 +1108,9 @@ async function cloudPull(opts){
    confirmBox('Replace this device with the latest DVI Cloud data ('+next.jobs.length+' job cards)?',doApply);
   }else doApply();
  }catch(e){
-  setCloudStatus('err','Cloud error',e.message||'Unable to sync');
- if(!opts.auto)toast(e.message||'DVI Cloud sync failed','err');
- }finally{cloudBusy=false;if(pushAfterPull)setTimeout(()=>cloudPush({silent:true}),120);}
+  setCloudStatus('err','DVI Cloud error',e.message||'Unable to sync');
+  if(!opts.auto&&!opts.live)toast(e.message||'DVI Cloud sync failed','err');
+  }finally{cloudBusy=false;if(pushAfterPull)setTimeout(()=>cloudPush({silent:true}),120);}
 }
 async function cloudPush(opts){
  opts=opts||{};
@@ -2365,9 +2398,10 @@ function init(){
  const now=new Date();
  $('topDate').textContent=WEEKDAYS[now.getDay()]+', '+fmtDateObj(now);
  $('jStatus').innerHTML='<option value="">All statuses</option>'+STATUSES.map(s=>`<option>${s}</option>`).join('');
- const n=new Date();calY=n.getFullYear();calM=n.getMonth();
- renderAll();
- if(cloudCfg&&cloudCfg.auto&&cloudEndpointReady())setTimeout(()=>cloudPull({auto:true}),900);
+  const n=new Date();calY=n.getFullYear();calM=n.getMonth();
+  renderAll();
+  configureCloudLiveSync();
+  if(cloudLiveEnabled())setTimeout(()=>cloudPull({auto:true}),900);
  const notifs=notifList();
  if(notifs.length)setTimeout(()=>toast('🔔 '+notifs.length+' item(s) need attention today'),700);
  document.addEventListener('keydown',e=>{
@@ -2380,6 +2414,8 @@ function init(){
 	 document.addEventListener('pointerup',endDashboardPanelPointer);
 	 document.addEventListener('pointercancel',endDashboardPanelPointer);
 	 window.addEventListener('resize',applyDashboardLayout);
+	 window.addEventListener('focus',cloudFocusSync);
+	 document.addEventListener('visibilitychange',()=>{if(!document.hidden)cloudFocusSync();});
 	 $('qmFields').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='INPUT'){e.preventDefault();saveQuick();}});
 	}
 init();
