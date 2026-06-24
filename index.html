@@ -311,6 +311,12 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
 .cloud-status b{font-family:var(--font-d);font-size:14px;color:#fff}
 .cloud-status em{font-style:normal;color:var(--mut);font-size:11.5px;line-height:1.35}
 .cloud-owner{font-family:Consolas,'Courier New',monospace;color:var(--gold-l)}
+.cloud-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:12px 0 14px}
+.cloud-pill{border:1px solid var(--line-soft);background:rgba(255,255,255,.025);border-radius:12px;padding:10px 12px;color:#dce2ec;font-size:12px;font-weight:800}
+.cloud-pill span{display:block;color:var(--mut);font-size:10.5px;font-weight:700;margin-top:3px}
+.cloud-advanced{margin-top:13px;border:1px solid var(--line-soft);border-radius:13px;padding:10px 12px;background:rgba(0,0,0,.12)}
+.cloud-advanced summary{cursor:pointer;color:var(--gold-l);font-weight:900;font-size:12px}
+.cloud-advanced .set-grid{margin-top:12px}
 .toggle-line{display:inline-flex;align-items:center;gap:9px;margin:0;color:#cdd3df;font-size:12.5px;text-transform:none;letter-spacing:0;font-weight:700}
 .toggle-line input{width:18px;height:18px;accent-color:var(--gold);padding:0}
 .cloud-note{margin:11px 0 0;color:var(--mut);font-size:12px;line-height:1.55}
@@ -591,46 +597,57 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
       <div class="card cloud-card" style="margin-top:20px">
         <div class="cloud-top">
           <div>
-            <h3>Google Drive Cloud Sync <span class="muted sm">- local plus shared backup</span></h3>
-            <p class="muted sm" style="margin:0">This device saves locally first, then saves the shared cloud copy to the DVI Google Drive.</p>
+            <h3>DVI Cloud <span class="muted sm">- automatic office sync</span></h3>
+            <p class="muted sm" style="margin:0">Works like a shared app: save on this device first, then sync in the background when DVI Cloud is active.</p>
           </div>
           <div class="cloud-status" id="cloudStatus">
-            <span class="cloud-dot"></span><b>Local only</b><em>Cloud sync is not connected yet.</em>
+            <span class="cloud-dot"></span><b>Offline ready</b><em>This device keeps working even before cloud sync connects.</em>
           </div>
         </div>
-        <div class="set-grid">
-          <div class="full">
-            <label>Google Apps Script web app URL</label>
-            <input id="cloudEndpoint" placeholder="https://script.google.com/macros/s/.../exec" onchange="saveCloudSettings()">
-            <p class="cloud-note" style="margin-top:7px">Use the deployed Web App URL ending in <code>/exec</code>. A Google Drive home or project link will not sync data.</p>
-          </div>
-          <div><label>Google Drive account</label><input id="cloudOwner" readonly class="cloud-owner" value="dviugandaow@gmail.com"></div>
-          <div><label>This device name</label><input id="cloudDeviceName" placeholder="e.g. Reception Laptop, Godrick Phone" onchange="saveCloudSettings()"></div>
-          <div><label>Device ID</label><input id="cloudDeviceId" readonly class="mono"></div>
-          <label class="toggle-line"><input type="checkbox" id="cloudAuto" onchange="saveCloudSettings()"> Auto save every change to Google Drive</label>
+        <div class="cloud-strip">
+          <div class="cloud-pill">Local-first<span>Job cards save instantly here.</span></div>
+          <div class="cloud-pill">Background sync<span>Changes queue and sync automatically.</span></div>
+          <div class="cloud-pill">Shared office copy<span>Every device can restore the same data.</span></div>
         </div>
         <div class="data-btns" style="margin-top:14px">
-          <button class="gold-btn" onclick="cloudPushManual()">Save to Google Drive</button>
-          <button class="ghost-btn" onclick="cloudPull()">Load from Google Drive</button>
-          <button class="ghost-btn" onclick="cloudOpenDriveBackup()">Open Drive Backup</button>
-          <button class="ghost-btn" onclick="cloudTest()">Test Cloud Link</button>
-          <button class="ghost-btn" onclick="copyCloudScript()">Copy Cloud Script</button>
-          <button class="ghost-btn" onclick="openAppsScriptSetup()">Open Apps Script</button>
+          <button class="gold-btn" onclick="cloudPushManual()">Sync Now</button>
+          <button class="ghost-btn" onclick="cloudPull()">Restore Latest</button>
+          <button class="ghost-btn" onclick="cloudTest()">Check DVI Cloud</button>
+          <button class="ghost-btn" onclick="document.getElementById('importFile').click()">Import Cloud Backup File</button>
         </div>
-        <p class="cloud-note">Until the cloud link is added, this app keeps using this browser as a local backup. Use <code>cloud-sync-apps-script.js</code> once from <span class="cloud-owner">dviugandaow@gmail.com</span> to create the Google Drive cloud link.</p>
+        <details class="cloud-advanced">
+          <summary>Advanced cloud setup</summary>
+          <div class="set-grid">
+            <div class="full">
+              <label>Google Apps Script web app URL</label>
+              <input id="cloudEndpoint" placeholder="https://script.google.com/macros/s/.../exec" onchange="saveCloudSettings()">
+              <p class="cloud-note" style="margin-top:7px">Admin setup only: use the deployed Web App URL ending in <code>/exec</code>. A Google Drive home or project link will not sync data.</p>
+            </div>
+            <div><label>Cloud account</label><input id="cloudOwner" readonly class="cloud-owner" value="dviugandaow@gmail.com"></div>
+            <div><label>This device name</label><input id="cloudDeviceName" placeholder="e.g. Reception Laptop, Godrick Phone" onchange="saveCloudSettings()"></div>
+            <div><label>Device ID</label><input id="cloudDeviceId" readonly class="mono"></div>
+            <label class="toggle-line"><input type="checkbox" id="cloudAuto" onchange="saveCloudSettings()"> Auto-sync every change</label>
+          </div>
+          <div class="data-btns" style="margin-top:12px">
+            <button class="ghost-btn" onclick="cloudOpenDriveBackup()">Open Cloud Backup</button>
+            <button class="ghost-btn" onclick="copyCloudScript()">Copy Cloud Script</button>
+            <button class="ghost-btn" onclick="openAppsScriptSetup()">Open Apps Script</button>
+          </div>
+          <p class="cloud-note">DVI Cloud uses the office Google account only as the storage engine. Daily users should only need Sync Now and Restore Latest.</p>
+        </details>
       </div>
       <div class="card" style="margin-top:20px">
         <h3>💾 Data &amp; Backups</h3>
         <div class="data-btns">
-          <button class="gold-btn" onclick="cloudPushManual()">Save Data to Google Drive</button>
-          <button class="ghost-btn" onclick="cloudPull()">Load Google Drive Data</button>
-          <button class="ghost-btn" onclick="document.getElementById('importFile').click()">Import Google Drive Backup</button>
+          <button class="gold-btn" onclick="cloudPushManual()">Sync to DVI Cloud</button>
+          <button class="ghost-btn" onclick="cloudPull()">Restore from DVI Cloud</button>
+          <button class="ghost-btn" onclick="document.getElementById('importFile').click()">Import Cloud Backup File</button>
           <button class="gold-btn" onclick="exportJSON()">⬇ Export Backup (JSON)</button>
           <button class="ghost-btn" onclick="document.getElementById('importFile').click()">⬆ Import Backup</button>
           <button class="ghost-btn" onclick="exportCSV()">📊 Export Jobs (CSV)</button>
           <button class="ghost-btn danger" onclick="clearAll()">🗑 Clear All Data</button>
         </div>
-        <p class="muted sm" style="margin-bottom:0;margin-top:13px">This device keeps a local backup. When Google Drive Cloud Sync is connected, every change can auto-save to the shared DVI Drive backup and every device can load the same job cards.</p>
+        <p class="muted sm" style="margin-bottom:0;margin-top:13px">This device keeps a local backup. When DVI Cloud is active, every change auto-syncs to the shared office copy and every device can restore the same job cards.</p>
       </div>
     </section>
   </main>
@@ -904,14 +921,15 @@ function setCloudStatus(kind,title,detail){
 function renderCloudStatus(){
  if(!cloudCfg)loadCloudConfig();
  const kind=cloudEndpointKind(cloudCfg.endpoint);
- if(kind==='missing'){setCloudStatus('', 'Local only', 'Local backup is active. Add the Google Drive cloud link to sync dviugandaow@gmail.com.');return;}
- if(kind==='project'){setCloudStatus('err','Project link pasted','This is the Apps Script project link. Open it, deploy it as a Web App, then paste the /exec URL here.');return;}
- if(kind!=='webapp'){setCloudStatus('err','Wrong cloud link','Use the deployed Apps Script Web App URL ending in /exec.');return;}
+ if(kind==='missing'){setCloudStatus('', 'Offline ready', 'This device is saving locally. DVI Cloud needs activation for shared sync.');return;}
+ if(kind==='project'){setCloudStatus('err','DVI Cloud setup incomplete','The setup project is open, but the deployed cloud connector is not active yet.');return;}
+ if(kind!=='webapp'){setCloudStatus('err','DVI Cloud setup needed','The shared cloud connector is not active yet. Local saving still works.');return;}
  const last=Math.max(cloudCfg.lastPull||0,cloudCfg.lastPush||0,cloudCfg.lastOk||0);
- const mode=cloudCfg.auto?'Auto-saving to Google Drive':'Manual Google Drive save';
- const drive=cloudCfg.driveUrl?' Drive backup file is ready.':'';
- const detail=(last?'Last cloud check: '+fmtDT(last)+'. ':'Cloud link added. ')+mode+'.'+drive;
- setCloudStatus('ok','Google Drive ready',detail);
+ if(!last){setCloudStatus('', 'DVI Cloud waiting', 'Cloud connector is saved. Press Check DVI Cloud once to activate this device.');return;}
+ const mode=cloudCfg.auto?'Auto-sync is on':'Manual sync is on';
+ const drive=cloudCfg.driveUrl?' Backup file is ready.':'';
+ const detail=(last?'Last sync check: '+fmtDT(last)+'. ':'Cloud connector saved. ')+mode+'.'+drive;
+ setCloudStatus('ok','DVI Cloud ready',detail);
 }
 function saveCloudSettings(){
  if(!cloudCfg)loadCloudConfig();
@@ -950,11 +968,11 @@ function cloudMissingLink(){
  if(!cloudCfg)loadCloudConfig();
  const kind=cloudEndpointKind(($('cloudEndpoint')&&$('cloudEndpoint').value)||cloudCfg.endpoint);
  if(kind==='project'){
-  setCloudStatus('err','Project link pasted','That Drive project link is not the sync link. Deploy it as a Web App and paste the URL ending in /exec.');
-  toast('That is the project link. Paste the deployed /exec web app URL.','err');
+  setCloudStatus('err','DVI Cloud setup incomplete','The setup project is not the live connector yet. Deploy it as a Web App in advanced setup.');
+  toast('DVI Cloud is not active yet. Local saving still works.','err');
  }else{
-  setCloudStatus('err','Google Drive link needed','Create the Apps Script web app, then paste its URL ending in /exec.');
-  toast('Paste the Google Apps Script /exec web app URL first','err');
+  setCloudStatus('err','DVI Cloud needs activation','Local saving works. Shared sync needs the office cloud connector to be activated.');
+  toast('DVI Cloud is not active yet. Local saving still works.','err');
  }
  try{switchView('settings');}catch(e){}
  setTimeout(()=>{const el=$('cloudEndpoint');if(el){el.focus();el.scrollIntoView({behavior:'smooth',block:'center'});}},80);
@@ -1002,8 +1020,8 @@ function cloudJsonp(action,extra,timeoutMs){
   try{
    script=document.createElement('script');
    script.src=cloudUrl(action,Object.assign({},extra,{callback:cb}));
-   script.onerror=()=>{cleanup();reject(new Error('Could not reach the Google cloud link. Check that the Web app access is set to Anyone.'));};
-   timer=setTimeout(()=>{cleanup();reject(new Error('Cloud link did not answer. Paste the DVI cloud script into Code.gs, redeploy, and set access to Anyone.'));},timeoutMs);
+   script.onerror=()=>{cleanup();reject(new Error('DVI Cloud is not reachable yet. Local saving still works.'));};
+   timer=setTimeout(()=>{cleanup();reject(new Error('DVI Cloud did not answer. The office cloud connector still needs activation.'));},timeoutMs);
    document.head.appendChild(script);
   }catch(e){cleanup();reject(e);}
  });
@@ -1032,7 +1050,7 @@ async function cloudPull(opts){
   if(!cloudEndpointReady()){cloudMissingLink();return;}
   if(cloudBusy)return;
   let pushAfterPull=false;
-  cloudBusy=true;setCloudStatus('busy','Syncing','Loading Google Drive job cards...');
+  cloudBusy=true;setCloudStatus('busy','Syncing','Restoring the latest DVI Cloud data...');
   try{
    const res=await cloudJsonp('load');
    if(!res.ok)throw new Error(res.error||'Cloud sync failed');
@@ -1040,8 +1058,8 @@ async function cloudPull(opts){
    const next=ensureStateShape(res.state);
    cloudCfg.lastPull=Date.now();cloudCfg.lastOk=cloudCfg.lastPull;saveCloudConfig();
    if(!next||!Array.isArray(next.jobs)){
-    setCloudStatus('ok','Google Drive empty','No shared data has been uploaded yet.');
-    if(!opts.auto)toast('Google Drive is empty. Save this device when ready.');
+    setCloudStatus('ok','DVI Cloud empty','No shared data has been uploaded yet.');
+    if(!opts.auto)toast('DVI Cloud is empty. Sync this device when ready.');
     return;
    }
   const localStamp=cloudStateStamp(state),remoteStamp=cloudStateStamp(next);
@@ -1049,16 +1067,16 @@ async function cloudPull(opts){
    const doApply=()=>applyCloudState(next,'Cloud data downloaded');
    if(opts.auto){
     if(!state.jobs.length||remoteStamp>localStamp)doApply();
-    else if(localStamp>remoteStamp&&!same){pushAfterPull=true;setCloudStatus('busy','Syncing','Local changes found. Saving this device to Google Drive...');}
+    else if(localStamp>remoteStamp&&!same){pushAfterPull=true;setCloudStatus('busy','Syncing','Local changes found. Syncing this device to DVI Cloud...');}
     else renderCloudStatus();
    }else if(same){
     renderCloudStatus();toast('This device already matches the cloud');
   }else if(state.jobs.length){
-   confirmBox('Replace this device with the shared cloud data ('+next.jobs.length+' job cards)?',doApply);
+   confirmBox('Replace this device with the latest DVI Cloud data ('+next.jobs.length+' job cards)?',doApply);
   }else doApply();
  }catch(e){
   setCloudStatus('err','Cloud error',e.message||'Unable to sync');
-  if(!opts.auto)toast(e.message||'Cloud sync failed','err');
+ if(!opts.auto)toast(e.message||'DVI Cloud sync failed','err');
  }finally{cloudBusy=false;if(pushAfterPull)setTimeout(()=>cloudPush({silent:true}),120);}
 }
 async function cloudPush(opts){
@@ -1066,7 +1084,7 @@ async function cloudPush(opts){
  if(!cloudCfg)loadCloudConfig();
  if(!cloudEndpointReady()){if(!opts.silent)cloudMissingLink();else renderCloudStatus();return false;}
  if(cloudBusy){cloudPendingSave=true;return false;}
- cloudBusy=true;setCloudStatus('busy','Syncing','Saving this device to Google Drive...');
+ cloudBusy=true;setCloudStatus('busy','Syncing','Syncing this device to DVI Cloud...');
  try{
   touchState();
   state.meta.cloudUpdatedAt=Date.now();
@@ -1078,18 +1096,18 @@ async function cloudPush(opts){
   rememberCloudMeta(meta);
   cloudCfg.lastPush=Date.now();cloudCfg.lastOk=cloudCfg.lastPush;saveCloudConfig();
   renderCloudStatus();
-  if(!opts.silent)toast('Google Drive updated');
+  if(!opts.silent)toast('DVI Cloud updated');
   return true;
  }catch(e){
-  setCloudStatus('err','Cloud error',e.message||'Unable to upload');
-  if(!opts.silent)toast(e.message||'Cloud upload failed','err');
+  setCloudStatus('err','DVI Cloud error',e.message||'Unable to sync');
+  if(!opts.silent)toast(e.message||'DVI Cloud sync failed','err');
   return false;
  }finally{cloudBusy=false;if(cloudPendingSave&&cloudCfg&&cloudCfg.auto&&cloudEndpointReady()){cloudPendingSave=false;scheduleCloudSave();}}
 }
 function cloudPushManual(){
  if(!cloudCfg)loadCloudConfig();
  if(!cloudEndpointReady()){cloudMissingLink();return;}
- confirmBox('Save this device to Google Drive and make it the shared data for all devices?',()=>cloudPush({silent:false}));
+ confirmBox('Sync this device to DVI Cloud and make it the shared data for all devices?',()=>cloudPush({silent:false}));
 }
 async function cloudOpenDriveBackup(){
  if(!cloudCfg)loadCloudConfig();
@@ -1097,17 +1115,17 @@ async function cloudOpenDriveBackup(){
  if(!cloudEndpointReady()){cloudMissingLink();return;}
  if(cloudBusy)return;
  const tab=window.open('','_blank');
- cloudBusy=true;setCloudStatus('busy','Checking','Finding the Google Drive backup file...');
+ cloudBusy=true;setCloudStatus('busy','Checking','Finding the DVI Cloud backup file...');
  try{
   const meta=await cloudJsonp('meta',{},9000);
   if(!meta.ok)throw new Error(meta.error||'Drive backup not ready');
   rememberCloudMeta(meta);
   if(cloudCfg.driveUrl){if(tab)tab.location=cloudCfg.driveUrl;else window.open(cloudCfg.driveUrl,'_blank');renderCloudStatus();}
-  else{if(tab)tab.close();toast('Save to Google Drive once, then open the backup file.');renderCloudStatus();}
+  else{if(tab)tab.close();toast('Sync this device once, then open the cloud backup file.');renderCloudStatus();}
  }catch(e){
   if(tab)tab.close();
-  setCloudStatus('err','Cloud error',e.message||'Could not open Drive backup');
-  toast(e.message||'Could not open Drive backup','err');
+  setCloudStatus('err','DVI Cloud error',e.message||'Could not open cloud backup');
+  toast(e.message||'Could not open cloud backup','err');
  }finally{cloudBusy=false;}
 }
 async function cloudTest(){
@@ -1119,9 +1137,9 @@ async function cloudTest(){
   const res=await cloudJsonp('ping');
   if(!res.ok)throw new Error(res.error||'Cloud link test failed');
   rememberCloudMeta(res);
-  cloudCfg.lastOk=Date.now();saveCloudConfig();renderCloudStatus();toast('Google Drive cloud link is working');
+  cloudCfg.lastOk=Date.now();saveCloudConfig();renderCloudStatus();toast('DVI Cloud is working');
  }catch(e){
-  setCloudStatus('err','Cloud error',e.message||'Cloud link test failed');toast(e.message||'Cloud link test failed','err');
+  setCloudStatus('err','DVI Cloud error',e.message||'Cloud check failed');toast(e.message||'DVI Cloud check failed','err');
  }finally{cloudBusy=false;}
 }
 function statusPill(s){const m=SMETA[s]||SMETA['Draft'];return `<span class="pill" style="color:${m[0]};background:${m[1]};border:1px solid ${m[0]}44">${s}</span>`;}
