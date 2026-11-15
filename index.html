@@ -2059,6 +2059,8 @@ async function downloadJobPdf(id,kind){
    if(!clone.getAttribute('xmlns'))clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
    const img=d.createElement('img');img.className=svg.getAttribute('class')||'';if(svg.getAttribute('style'))img.setAttribute('style',svg.getAttribute('style'));
    img.width=Math.round(r.width);img.height=Math.round(r.height);
+   /* keep the badge's own size: the band's logo rule (.pc-band img) would otherwise shrink it and move it off the band */
+   img.style.setProperty('width',r.width+'px','important');img.style.setProperty('height',r.height+'px','important');img.style.setProperty('max-width','none','important');
    img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(new XMLSerializer().serializeToString(clone));
    svg.replaceWith(img);
   }
