@@ -829,6 +829,19 @@ tbody tr:hover{background:rgba(255,255,255,.025);box-shadow:none}
 .card::before,.ag-day::before{background:none}
 .modal-box{box-shadow:0 16px 40px rgba(0,0,0,.45)}
 .modal.open{backdrop-filter:none;-webkit-backdrop-filter:none}
+/* ====== CREW ROLES (15 Nov 2026): several roles per person, role-checked crew rows ====== */
+#crewRows .dyn-row{flex-wrap:wrap}
+.crew-flag{flex-basis:100%;margin:-3px 0 2px;font-size:11.5px;color:var(--mut)}
+.crew-flag:empty{display:none}
+.crew-flag.warn{color:#e0a92e}
+.dyn-row.crew-mismatch select{border-color:rgba(224,169,46,.55)}
+.role-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 16px;margin-top:6px}
+.qfields .role-checks .role-check{display:flex;align-items:center;gap:8px;margin:0;font-size:12.5px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--tx);cursor:pointer}
+.role-check input{width:15px;height:15px;margin:0;accent-color:#d4af37}
+.role-help{margin:8px 0 0;font-size:11.5px;line-height:1.5;color:var(--mut)}
+.crew-note{display:block;margin-top:2px;font-size:10.5px;font-weight:500;letter-spacing:.2px;text-transform:none;color:var(--mut)}
+.crew-note.warn{color:#e0a92e}
+#crewConfirmModal .mb-foot{flex-wrap:wrap;gap:8px}
 </style>
 </head>
 <body>
@@ -1162,6 +1175,19 @@ tbody tr:hover{background:rgba(255,255,255,.025);box-shadow:none}
   </div>
 </div>
 
+<!-- CREW ROLE CONFIRM (crew assigned outside their roles) -->
+<div class="modal" id="crewConfirmModal">
+  <div class="modal-box small">
+    <div class="mb-head"><h2>Confirm crew assignment</h2></div>
+    <p id="ccMsg" style="line-height:1.7;margin:4px 0 0"></p>
+    <div class="mb-foot">
+      <button class="ghost-btn" id="ccCancel">Cancel</button>
+      <button class="ghost-btn" id="ccOnce">This job only</button>
+      <button class="gold-btn" id="ccAdd">Add role</button>
+    </div>
+  </div>
+</div>
+
 <div id="printArea"></div>
 <div id="toasts"></div>
 <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(this)">
@@ -1246,7 +1272,9 @@ const jobSiteManager=j=>technicianName(j&&j.siteManagerId)||String((j&&(j.siteMa
 const jobCardCreator=j=>technicianName(j&&j.jobCardCreatorId)||String((j&&(j.jobCardCreator||j.creator))||'').trim();
 const jobSiteManagerValue=j=>(j&&j.siteManagerId)||technicianIdByName(jobSiteManager(j));
 const jobCardCreatorValue=j=>(j&&j.jobCardCreatorId)||technicianIdByName(jobCardCreator(j));
-function technicianRoleName(t){return t&&t.role?nameOf('roles',t.role):'';}
+function techRoleIds(t){if(!t)return [];const ids=Array.isArray(t.roles)&&t.roles.length?t.roles:[];return [...new Set([t.role,...ids].filter(Boolean))];}
+function techHasRole(t,roleId){return !t||!roleId||techRoleIds(t).includes(roleId);}
+function technicianRoleName(t){return techRoleIds(t).map(id=>nameOf('roles',id)).filter(n=>n&&n!=='—').join(', ');}
 function technicianSelectLabel(it){
  let lb=it.name;
  const role=technicianRoleName(it);
@@ -1284,7 +1312,7 @@ function ensureStateShape(s){
   if(j.siteManager==null)j.siteManager='';
   if(j.jobCardCreator==null)j.jobCardCreator='';
  });
- if(Array.isArray(s.technicians))s.technicians.forEach(t=>{if(!t.workerType)t.workerType='DVI Staff';});
+ if(Array.isArray(s.technicians))s.technicians.forEach(t=>{if(!t.workerType)t.workerType='DVI Staff';if(!Array.isArray(t.roles))t.roles=t.role?[t.role]:[];if(t.role&&!t.roles.includes(t.role))t.roles.unshift(t.role);if(!t.role&&t.roles.length)t.role=t.roles[0];});
  if(!s.meta)s.meta={};
  if(!s.seq){
   const maxNo=s.jobs.reduce((m,j)=>{const n=String(j.no||'').match(/(\d+)$/);return Math.max(m,n?Number(n[1]):0);},0);
@@ -1698,6 +1726,7 @@ function openQuickAdd(kind,editId,trigger){
  $('qmFields').innerHTML=h;
  if(kind==='technicians')fillSelect($('qf_role'),'roles','— Select role —',item.role||'',true);
  if(kind==='technicians'&&$('qf_workerType'))$('qf_workerType').value=item.workerType||'DVI Staff';
+ if(kind==='technicians'){const mine=techRoleIds(item);$('qmFields').insertAdjacentHTML('beforeend',`<label>Other roles this person can do</label><div class="role-checks">${[...state.roles].sort((a,b)=>a.name.localeCompare(b.name)).map(r=>`<label class="role-check"><input type="checkbox" value="${r.id}"${mine.includes(r.id)&&r.id!==item.role?' checked':''}>${esc(r.name)}</label>`).join('')}</div><p class="role-help">Job cards offer this person first for the primary role and the roles ticked here. Any other role needs the job card creator to confirm.</p>`);}
  $('quickModal').classList.add('open');
  setTimeout(()=>{const f=$('qmFields').querySelector('input');if(f)f.focus();},60);
 }
@@ -1710,12 +1739,14 @@ function saveQuick(){
  let obj;
  if(quickEditId){obj=byId(quickKind,quickEditId);Object.assign(obj,vals);}
  else{obj=Object.assign({id:uid()},vals);state[quickKind].push(obj);}
+ if(quickKind==='technicians'){const extra=[...document.querySelectorAll('#qmFields .role-check input:checked')].map(i=>i.value);obj.roles=[...new Set([obj.role,...extra].filter(Boolean))];}
  save();
  const kind=quickKind, newId=obj.id, trig=quickTrigger, wasEdit=!!quickEditId;
  document.querySelectorAll(`select[data-kind="${kind}"]`).forEach(s=>{
   const v=(trig&&s===trig&&!wasEdit)?newId:s.value;
   fillSelect(s,kind,s.dataset.ph||'— Select —',v);
  });
+ document.querySelectorAll('#crewRows .dyn-row').forEach(refreshCrewRow);
  closeQuick();renderAll();toast((wasEdit?'Updated ':'Added ')+obj.name+' ✓');
 }
 function closeQuick(){$('quickModal').classList.remove('open');quickKind=null;quickEditId=null;quickTrigger=null;}
@@ -1769,20 +1800,95 @@ function addEquipRow(d){
 }
 function addCrewRow(c){
  c=c||{};
- const row=document.createElement('div');row.className='dyn-row';
- row.innerHTML=`<select class="cr-role" data-kind="roles" data-ph="— Role —" onchange="maybeQuickAdd(this)"></select>`+
+ const row=document.createElement('div');row.className='dyn-row crew-row';
+ row.innerHTML=`<select class="cr-role" data-kind="roles" data-ph="— Role —" onchange="crewRoleChanged(this)"></select>`+
   `<select class="cr-tech" data-kind="technicians" data-ph="— Technician —" onchange="crewTechChanged(this)"></select>`+
-  `<button type="button" class="row-x" title="Remove" onclick="this.parentElement.remove()">✕</button>`;
+  `<button type="button" class="row-x" title="Remove" onclick="this.parentElement.remove()">✕</button>`+
+  `<div class="crew-flag"></div>`;
+ row.dataset.origTech=c.techId||'';
+ if(c.signedIn)row.dataset.signedIn='1';
+ if(c.override){row.dataset.override='1';row.dataset.confirmedBy=c.confirmedBy||'';}
  $('crewRows').appendChild(row);
  fillSelect(row.querySelector('.cr-role'),'roles','— Role —',c.roleId||'');
  fillSelect(row.querySelector('.cr-tech'),'technicians','— Technician —',c.techId||'');
+ refreshCrewRow(row);
+}
+/* Crew roles: people are offered first for the roles they hold; any other role needs the job card creator's confirmation */
+function crewOptGroup(label,html){return html?`<optgroup label="${esc(label)}">${html}</optgroup>`:'';}
+function fillCrewTechSelect(row,val){
+ const sel=row.querySelector('.cr-tech'),roleId=row.querySelector('.cr-role').value;
+ if(!roleId){fillSelect(sel,'technicians','— Technician —',val);return;}
+ const role=nameOf('roles',roleId),items=[...state.technicians].sort((a,b)=>a.name.localeCompare(b.name));
+ const opt=t=>`<option value="${t.id}">${esc(technicianSelectLabel(t))}</option>`;
+ sel.innerHTML=`<option value="">— Technician —</option>`+
+  (crewOptGroup('Set up for '+role,items.filter(t=>techHasRole(t,roleId)).map(opt).join(''))||`<optgroup label="${esc('Nobody is set up for '+role+' yet')}"></optgroup>`)+
+  crewOptGroup('Not set up for '+role+' · needs confirmation',items.filter(t=>!techHasRole(t,roleId)).map(opt).join(''))+
+  `<option value="__add">+ Add new…</option>`;
+ sel.value=val||'';sel.dataset.prev=sel.value;
+}
+function fillCrewRoleSelect(row,val){
+ const sel=row.querySelector('.cr-role'),t=byId('technicians',row.querySelector('.cr-tech').value);
+ if(!t){fillSelect(sel,'roles','— Role —',val);return;}
+ const mine=techRoleIds(t),items=[...state.roles].sort((a,b)=>a.name.localeCompare(b.name));
+ const opt=r=>`<option value="${r.id}">${esc(r.name)}</option>`;
+ sel.innerHTML=`<option value="">— Role —</option>`+
+  crewOptGroup(t.name+"'s roles",items.filter(r=>mine.includes(r.id)).map(opt).join(''))+
+  crewOptGroup('Other roles · needs confirmation',items.filter(r=>!mine.includes(r.id)).map(opt).join(''))+
+  `<option value="__add">+ Add new…</option>`;
+ sel.value=val||'';sel.dataset.prev=sel.value;
+}
+function refreshCrewRow(row){
+ const r=row.querySelector('.cr-role').value,t=row.querySelector('.cr-tech').value;
+ fillCrewRoleSelect(row,r);fillCrewTechSelect(row,t);updateCrewFlag(row);
+}
+function crewRowMismatch(row){
+ const roleId=row.querySelector('.cr-role').value,t=byId('technicians',row.querySelector('.cr-tech').value);
+ return t&&roleId&&!techHasRole(t,roleId)?{t,roleId}:null;
+}
+function updateCrewFlag(row){
+ const f=row.querySelector('.crew-flag');if(!f)return;
+ const m=crewRowMismatch(row),ok=row.dataset.override==='1';
+ row.classList.toggle('crew-mismatch',!!m&&!ok);
+ f.className='crew-flag'+(m&&!ok?' warn':'');
+ f.textContent=!m?'':ok?`Outside ${m.t.name}'s roles · confirmed by ${nameOf('technicians',row.dataset.confirmedBy)||'the job card creator'}`:`${m.t.name} is not set up for ${nameOf('roles',m.roleId)}`;
+}
+function crewRoleChanged(sel){
+ if(sel.value==='__add'){maybeQuickAdd(sel);return;}
+ crewRowChanged(sel.closest('.dyn-row'),'.cr-role',sel.dataset.prev||'');
 }
 function crewTechChanged(sel){
- maybeQuickAdd(sel);
- const row=sel.closest('.dyn-row');
- const t=byId('technicians',sel.value);
- const roleSel=row.querySelector('.cr-role');
- if(t&&t.role&&!roleSel.value){roleSel.value=t.role;roleSel.dataset.prev=t.role;}
+ if(sel.value==='__add'){maybeQuickAdd(sel);return;}
+ const row=sel.closest('.dyn-row'),prev=sel.dataset.prev||'',t=byId('technicians',sel.value),roleSel=row.querySelector('.cr-role');
+ if(t&&!roleSel.value){const r=techRoleIds(t)[0];if(r)roleSel.value=r;}
+ crewRowChanged(row,'.cr-tech',prev);
+}
+function crewRowChanged(row,which,prev){
+ const was={override:row.dataset.override,confirmedBy:row.dataset.confirmedBy,signedIn:row.dataset.signedIn};
+ delete row.dataset.override;delete row.dataset.confirmedBy;delete row.dataset.roleAdded;
+ if(row.querySelector('.cr-tech').value!==row.dataset.origTech)delete row.dataset.signedIn;
+ refreshCrewRow(row);
+ const m=crewRowMismatch(row);if(!m)return;
+ const revert=()=>{const s=row.querySelector(which);s.value=prev;Object.keys(was).forEach(k=>{if(was[k]!=null)row.dataset[k]=was[k];});refreshCrewRow(row);};
+ const creator=byId('technicians',$('f_creator').value),role=nameOf('roles',m.roleId);
+ if(!creator){toast('Choose the job card creator first: they confirm crew outside their roles','err');revert();$('f_creator').focus();return;}
+ crewConfirm(`${m.t.name} is not set up for ${role}. As the job card creator, ${creator.name} needs to confirm this assignment.`,
+  `Add ${role} to ${m.t.name}`,
+  ()=>{row.dataset.override='1';row.dataset.confirmedBy=creator.id;updateCrewFlag(row);},
+  ()=>{m.t.roles=[...new Set([...techRoleIds(m.t),m.roleId])];save();row.dataset.roleAdded=m.roleId;row.dataset.roleAddedBy=creator.id;
+   document.querySelectorAll('#crewRows .dyn-row').forEach(refreshCrewRow);toast(role+' added to '+m.t.name+"'s roles ✓");},
+  revert);
+}
+function crewConfirm(msg,addLabel,onOnce,onAdd,onCancel){
+ const m=$('crewConfirmModal');$('ccMsg').textContent=msg;$('ccAdd').textContent=addLabel;
+ const done=fn=>()=>{m.classList.remove('open');fn();};
+ $('ccOnce').onclick=done(onOnce);$('ccAdd').onclick=done(onAdd);$('ccCancel').onclick=done(onCancel);
+ m.onclick=e=>{if(e.target===m)done(onCancel)();};
+ m.classList.add('open');
+}
+function crewRoleNote(r){
+ const t=byId('technicians',r.techId);
+ if(!t||!r.roleId||techHasRole(t,r.roleId))return '';
+ return r.override?`<span class="crew-note">Outside their roles · confirmed by ${esc(nameOf('technicians',r.confirmedBy)||'the creator')}</span>`:`<span class="crew-note warn">Not set up for this role</span>`;
 }
 function saveJobForm(){
  const ev=$('f_event').value.trim();
@@ -1792,10 +1898,17 @@ function saveJobForm(){
   const hire=Math.max(0,parseInt((r.querySelector('.eq-hire')||{}).value,10)||0);
   const o={itemId:it?it.id:null,name:it?it.name:'',spec:r.querySelector('.eq-spec').value.trim()};if(hire)o.hire=hire;return o;
  }).filter(e=>e.name);
- const crew=[...document.querySelectorAll('#crewRows .dyn-row')].map(r=>({
-  roleId:r.querySelector('.cr-role').value||null,
-  techId:r.querySelector('.cr-tech').value||null
- })).filter(c=>c.techId);
+ const crewRowEls=[...document.querySelectorAll('#crewRows .dyn-row')];
+ const crew=crewRowEls.map(r=>{
+  const o={roleId:r.querySelector('.cr-role').value||null,techId:r.querySelector('.cr-tech').value||null};
+  if(r.dataset.override==='1'&&crewRowMismatch(r)){o.override=true;o.confirmedBy=r.dataset.confirmedBy||null;}
+  if(r.dataset.signedIn==='1'&&o.techId&&o.techId===r.dataset.origTech)o.signedIn=true;
+  return o;
+ }).filter(c=>c.techId);
+ const prevCrew=editingJobId?((state.jobs.find(x=>x.id===editingJobId)||{}).crew||[]):[];
+ const crewNotes=crew.filter(c=>c.override&&!prevCrew.some(p=>p.override&&p.techId===c.techId&&p.roleId===c.roleId))
+  .map(c=>`Crew outside their roles: ${nameOf('technicians',c.techId)} as ${nameOf('roles',c.roleId)} · confirmed by ${nameOf('technicians',c.confirmedBy)}`);
+ crewRowEls.forEach(r=>{if(r.dataset.roleAdded&&r.dataset.roleAdded===r.querySelector('.cr-role').value)crewNotes.push(`${nameOf('roles',r.dataset.roleAdded)} added to ${nameOf('technicians',r.querySelector('.cr-tech').value)}'s roles · confirmed by ${nameOf('technicians',r.dataset.roleAddedBy)}`);});
  const setupFrom=$('f_setup_from').value||null,setupTo=$('f_setup_to').value||null;
  const siteManagerId=$('f_site_manager').value||null,siteManagerTech=byId('technicians',siteManagerId);
  const jobCardCreatorId=$('f_creator').value||null,jobCardCreatorTech=byId('technicians',jobCardCreatorId);
@@ -1818,6 +1931,7 @@ function saveJobForm(){
   j.createdDeviceId=cloudClientId();j.createdDeviceName=currentDeviceName();
   state.seq++;state.jobs.push(j);
  }
+ crewNotes.forEach(text=>j.history.push({ts:Date.now(),text}));
  save();closeJobModal();renderAll();toast('Job card '+j.no+' saved ✓');openView(j.id);
 }
 
@@ -3133,7 +3247,7 @@ function jobDetailHTML(j,idx,inModal){
  const tabs=[['Equipment',j.equipment.length],['Crew',j.crew.length],['Notes',''],['Activity',j.history.length]];
  let pane='';
  if(jobTab==='Equipment')pane=j.equipment.length?`<table class="jd-table"><thead><tr><th class="n">No.</th><th>Item</th><th>Stock on these dates</th><th class="c">Out</th><th class="c">Back</th></tr></thead><tbody>${j.equipment.map((e,i)=>`<tr><td class="n">${String(i+1).padStart(2,'0')}</td><td><span class="nm">${esc(e.name||nameOf('equipment',e.itemId))}</span>${e.spec?`<span class="spec">${esc(e.spec)}</span>`:''}</td><td>${rowStockHTML(j,e,sc)}</td><td class="c">${swHTML(j.id,'equipment',i,'out',e.out)}</td><td class="c">${swHTML(j.id,'equipment',i,'back',e.back)}</td></tr>`).join('')}</tbody></table>`:'<div class="jd-notes">No equipment listed yet.</div>';
- else if(jobTab==='Crew')pane=j.crew.length?`<table class="jd-table"><thead><tr><th>Role</th><th>Crew member</th><th class="c">Signed in</th></tr></thead><tbody>${j.crew.map((r,i)=>`<tr><td class="role">${esc(r.roleId?nameOf('roles',r.roleId):'Crew')}</td><td class="nm">${esc(crewDisplayName(r.techId))}</td><td class="c">${swHTML(j.id,'crew',i,'signedIn',r.signedIn)}</td></tr>`).join('')}</tbody></table>`:'<div class="jd-notes">No crew assigned yet.</div>';
+ else if(jobTab==='Crew')pane=j.crew.length?`<table class="jd-table"><thead><tr><th>Role</th><th>Crew member</th><th class="c">Signed in</th></tr></thead><tbody>${j.crew.map((r,i)=>`<tr><td class="role">${esc(r.roleId?nameOf('roles',r.roleId):'Crew')}${crewRoleNote(r)}</td><td class="nm">${esc(crewDisplayName(r.techId))}</td><td class="c">${swHTML(j.id,'crew',i,'signedIn',r.signedIn)}</td></tr>`).join('')}</tbody></table>`:'<div class="jd-notes">No crew assigned yet.</div>';
  else if(jobTab==='Notes')pane=`<div class="jd-notes">${j.notes?esc(j.notes).replace(/\n/g,'<br>'):'No notes.'}</div>`;
  else pane=`<ul class="jd-feed">${[...j.history].reverse().map(h=>`<li><time>${fmtDT(h.ts)}</time><span>${esc(visibleHistoryText(h.text))}</span></li>`).join('')}</ul>`;
  return `<div class="jd-head">
