@@ -2024,12 +2024,71 @@ function jobCardFileName(j){
  return parts.join(' - ')||'DVI Job Card';
 }
 function deliveryNoteFileName(j){return 'Delivery Note - '+jobCardFileName(j);}
+/* Download PDF: the PDF is made here and saved under the job card's own name, so nobody types a file name.
+   html2canvas and jsPDF load from cdnjs only when someone downloads. */
+const PDF_LIBS=['https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js','https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'];
+function loadScriptOnce(src){
+ return new Promise((res,rej)=>{
+  const have=src.includes('html2canvas')?window.html2canvas:(window.jspdf&&window.jspdf.jsPDF);if(have)return res();
+  const s=document.createElement('script');s.src=src;s.onload=()=>res();s.onerror=()=>rej(new Error('could not load '+src.split('/').pop()));document.head.appendChild(s);
+ });
+}
+let pdfBusy=false;
+async function downloadJobPdf(id,kind){
+ const j=state.jobs.find(x=>x.id===id);if(!j||pdfBusy)return;
+ const dn=kind==='delivery',name=(dn?deliveryNoteFileName(j):jobCardFileName(j))+'.pdf';
+ pdfBusy=true;toast('Preparing '+name+'…');
+ const fr=document.createElement('iframe');
+ try{
+  for(const src of PDF_LIBS)await loadScriptOnce(src);
+  fr.setAttribute('aria-hidden','true');fr.style.cssText='position:fixed;left:-12000px;top:0;width:794px;height:1123px;border:0';
+  document.body.appendChild(fr);
+  const d=fr.contentDocument;
+  d.open();d.write((dn?buildDeliveryNoteDocument(j,name):buildPrintDocument(j,name)).replace(/<script>[\s\S]*?<\/script>/g,''));d.close();
+  await new Promise(r=>{if(d.readyState==='complete')r();else fr.addEventListener('load',()=>r(),{once:true});setTimeout(r,4000);});
+  const printRules=[...d.styleSheets].flatMap(sh=>{try{return [...sh.cssRules];}catch(e){return [];}}).filter(r=>r.media&&/print/i.test(r.media.mediaText)).map(r=>[...r.cssRules].map(x=>x.cssText).join('\n')).join('\n');
+  const st=d.createElement('style');st.textContent=printRules+'\nhtml,body{margin:0!important;background:#fff!important}body{padding:12mm!important}.print-tools{display:none!important}';d.head.appendChild(st);
+  if(d.fonts)await d.fonts.ready;
+  await Promise.all([...d.images].map(im=>im.complete?0:new Promise(r=>{im.onload=im.onerror=r;})));
+  /* html2canvas skips inline SVG such as the DVI-J badge, so each SVG becomes an image with its colours baked in */
+  for(const svg of [...d.querySelectorAll('svg')]){
+   const r=svg.getBoundingClientRect();if(!r.width||!r.height)continue;
+   const clone=svg.cloneNode(true),src=[svg,...svg.querySelectorAll('*')],dst=[clone,...clone.querySelectorAll('*')];
+   src.forEach((el,i)=>{const cs=d.defaultView.getComputedStyle(el);if(dst[i]&&el!==svg)dst[i].setAttribute('style',`fill:${cs.fill};stroke:${cs.stroke};stroke-width:${cs.strokeWidth};opacity:${cs.opacity};font-family:${cs.fontFamily};font-weight:${cs.fontWeight}`);});
+   clone.setAttribute('width',r.width);clone.setAttribute('height',r.height);clone.removeAttribute('class');clone.removeAttribute('style');
+   if(!clone.getAttribute('xmlns'))clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
+   const img=d.createElement('img');img.className=svg.getAttribute('class')||'';if(svg.getAttribute('style'))img.setAttribute('style',svg.getAttribute('style'));
+   img.width=Math.round(r.width);img.height=Math.round(r.height);
+   img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(new XMLSerializer().serializeToString(clone));
+   svg.replaceWith(img);
+  }
+  await Promise.all([...d.images].map(im=>im.complete?0:new Promise(r=>{im.onload=im.onerror=r;})));
+  const W=794,pageH=1123,scale=2,body=d.body;
+  const canvas=await html2canvas(body,{scale,backgroundColor:'#ffffff',width:W,windowWidth:W,useCORS:true,logging:false});
+  const total=Math.ceil(canvas.height/scale);
+  const stops=[...new Set([...d.querySelectorAll('tr,table,section,h1,h2,h3,p,li,.pc>div')].map(el=>Math.round(el.getBoundingClientRect().bottom)))].sort((a,b)=>a-b);
+  const pdf=new jspdf.jsPDF({unit:'px',format:[W,pageH],hotfixes:['px_scaling'],compress:true});
+  let top=0,page=0;
+  while(top<total-2&&page<20){
+   let end=Math.min(top+pageH,total);
+   if(end<total){const ok=stops.filter(s=>s>top+pageH*.5&&s<=top+pageH);if(ok.length)end=ok[ok.length-1];}
+   const slice=document.createElement('canvas');slice.width=W*scale;slice.height=Math.max(1,Math.round((end-top)*scale));
+   const g=slice.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,slice.width,slice.height);g.drawImage(canvas,0,Math.round(top*scale),W*scale,slice.height,0,0,W*scale,slice.height);
+   if(page)pdf.addPage([W,pageH]);
+   pdf.addImage(slice.toDataURL('image/jpeg',0.92),'JPEG',0,0,W,end-top);
+   top=end;page++;
+  }
+  pdf.save(name);
+  toast('Downloaded '+name+' ✓');
+ }catch(e){toast('The PDF could not be made ('+e.message+'). Use Print and choose Save as PDF instead.','err');}
+ finally{fr.remove();pdfBusy=false;}
+}
 function buildPrintDocument(j,title){
  const base=location.href.slice(0,location.href.lastIndexOf('/')+1);
  const calUrl=dviGoogleCalendarUrl(j);
  const calBtn=calUrl?`<a href="${esc(calUrl)}" target="_blank" rel="noopener">Google Calendar</a>`:`<button disabled>Google Calendar</button>`;
  const fonts='<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet">';
- return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(title)}</title><base href="${esc(base)}">${fonts}<style>${printDocCSS()}</style></head><body><div class="print-tools">${calBtn}<button onclick="window.print()">Print / Save PDF</button></div>${buildPrintHTML(j)}<script>window.addEventListener('load',()=>(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>setTimeout(()=>window.print(),300)));<\/script></body></html>`;
+ return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(title)}</title><base href="${esc(base)}">${fonts}<style>${printDocCSS()}</style></head><body><div class="print-tools">${calBtn}<button onclick="window.print()">Print / Save PDF</button><button onclick="if(window.opener&&window.opener.downloadJobPdf)window.opener.downloadJobPdf('${j.id}')">Download PDF</button></div>${buildPrintHTML(j)}<script>window.addEventListener('load',()=>(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>setTimeout(()=>window.print(),300)));<\/script></body></html>`;
 }
 function buildDeliveryNoteDocument(j,title){
  const base=location.href.slice(0,location.href.lastIndexOf('/')+1);
@@ -3259,7 +3318,8 @@ function jobDetailHTML(j,idx,inModal){
   </div>
   ${inModal?'<button class="x" onclick="closeView()" aria-label="Close">✕</button>':`<div class="jd-badge-wrap">${badge}</div>`}
   <div class="jd-actions">
-   <button class="gold-btn sm" onclick="printJob('${j.id}')">${NI.print}Print / PDF</button>
+   <button class="gold-btn sm" onclick="printJob('${j.id}')">${NI.print}Print</button>
+   <button class="ghost-btn sm" onclick="downloadJobPdf('${j.id}')">Download PDF</button>
    <button class="ghost-btn sm" onclick="printDeliveryNote('${j.id}')">Delivery note</button>
    <button class="ghost-btn sm" onclick="addJobToCalendar('${j.id}')">Google Calendar</button>
    <button class="ghost-btn sm" onclick="duplicateJob('${j.id}')">Duplicate</button>
