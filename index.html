@@ -439,7 +439,7 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
 <div id="app">
   <aside id="sidebar">
     <div class="logo-box">
-      <img src="DVI%20logos%20png/dvi%20logo.png" alt="Digital Visual Interface" onerror="this.style.display='none';document.getElementById('logoFallback').style.display='flex'">
+      <img src="DVI%20logos%20png/dvi-logo-app.png" alt="Digital Visual Interface" onerror="this.style.display='none';document.getElementById('logoFallback').style.display='flex'">
       <div id="logoFallback">DVI</div>
     </div>
     <button class="navbtn active" data-view="dashboard" onclick="switchView('dashboard')">📊 Dashboard</button>
@@ -1648,7 +1648,7 @@ function buildPrintHTML(j){
  const clientSub=c&&(c.contact||c.phone)?`<div class="jc-sub">${esc([c.contact,c.phone].filter(Boolean).join(' · '))}</div>`:'';
  return `<div class="pc jc">
  <div class="pc-band">
-  <img src="DVI%20logos%20png/dvi%20logo.png" alt="" onerror="this.style.display='none'">
+  <img src="DVI%20logos%20png/dvi-logo-app.png" alt="" onerror="this.style.display='none'">
   <div class="pc-co">
    <div class="pc-name">${esc(co.name)}</div>
    ${co.tagline?`<div class="pc-tag">${esc(co.tagline)}</div>`:''}
@@ -1704,7 +1704,7 @@ function buildDeliveryNoteHTML(j){
  const itemRows=j.equipment.map((e,n)=>`<tr><td class="num">${n+1}</td><td>${esc(e.spec||'')}</td><td>${esc(e.name)}</td><td></td></tr>`).join('')||'<tr><td class="num">-</td><td colspan="3">No delivered items listed on this job card.</td></tr>';
  return `<div class="pc dn">
  <div class="pc-band">
-  <img src="DVI%20logos%20png/dvi%20logo.png" alt="" onerror="this.style.display='none'">
+  <img src="DVI%20logos%20png/dvi-logo-app.png" alt="" onerror="this.style.display='none'">
   <div class="pc-co">
    <div class="pc-name">${esc(co.name)}</div>
    ${co.tagline?`<div class="pc-tag">${esc(co.tagline.toUpperCase())}</div>`:''}
