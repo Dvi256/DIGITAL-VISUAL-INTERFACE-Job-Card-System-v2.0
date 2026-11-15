@@ -817,6 +817,18 @@ tbody tr:hover{background:rgba(255,255,255,.025);box-shadow:none}
 .trend-summary{gap:0;margin-top:12px;border-top:1px solid var(--hair)}
 .trend-pill{background:transparent;border:0;border-left:1px solid var(--hair);border-radius:0;padding:10px 12px 2px}
 .trend-pill:first-child{border-left:0;padding-left:0}
+/* ====== CORPORATE CLEAN-UP (15 Nov 2026): remove leftover gradients, sheens, glows and blur ====== */
+#bgfx{display:none}
+.gold-btn,.gold-btn.sm,.gold-btn.side-cta{background:#d4af37;box-shadow:none}
+.gold-btn:hover{background:#c9a432;box-shadow:none;transform:none}
+.gold-btn::after{display:none}
+.badge{background:#d4af37}
+.dash-hero,.jd-head{background:var(--panel)}
+.dash-hero::before,.dash-hero::after,.logo-box::before,.stat::before,.modal-box::before{display:none}
+.dash-kicker::before,.panel-kicker::before{box-shadow:none}
+.card::before,.ag-day::before{background:none}
+.modal-box{box-shadow:0 16px 40px rgba(0,0,0,.45)}
+.modal.open{backdrop-filter:none;-webkit-backdrop-filter:none}
 </style>
 </head>
 <body>
