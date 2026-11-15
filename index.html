@@ -7,7 +7,7 @@
 <title>Digital Visual Interface - Job Card System</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --gold:#d4af37; --gold-l:#f3dd8e; --gold-d:#9a7b1f;
@@ -15,8 +15,8 @@
   --glass:rgba(255,255,255,.035); --glass2:rgba(255,255,255,.07);
   --line:rgba(255,255,255,.10); --line-soft:rgba(255,255,255,.06);
   --tx:#f2f0ea; --mut:#98a0b3; --danger:#ff6b6b; --blue:#5b9bff;
-  --font-d:'Outfit','Segoe UI',system-ui,sans-serif;
-  --font-b:'Inter','Segoe UI',system-ui,sans-serif;
+  --font-d:'Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif;
+  --font-b:'Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif;
   --ease:cubic-bezier(.16,1,.3,1);
 }
 html{color-scheme:dark;scroll-behavior:smooth}
@@ -351,6 +351,35 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
 .dyn-row select{flex:1}
 .row-x{background:rgba(255,255,255,.03);border:1px solid var(--line-soft);color:var(--mut);border-radius:10px;width:34px;height:38px;flex:none;transition:all .18s}
 .row-x:hover{border-color:var(--danger);color:var(--danger)}
+/* ---- Stock tracking ---- */
+.eq-row{flex-wrap:wrap}
+.eq-row .eq-hire{width:78px;flex:none}
+.eq-av{flex:0 0 100%;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:-3px 0 3px 2px}
+.eq-av:empty{display:none}
+.sv{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;white-space:nowrap}
+.sv-ok{color:#3ddc84}.sv-full{color:#f0b429}.sv-short{color:var(--danger)}.sv-hire{color:var(--gold-l)}.sv-mut{color:var(--mut);font-weight:600;white-space:normal}
+.sv-btn{border:1px solid rgba(255,107,107,.45);background:rgba(255,107,107,.08);color:var(--danger);border-radius:8px;padding:3px 10px;font-size:11.5px;font-weight:800;cursor:pointer}
+.sv-btn:hover{background:rgba(255,107,107,.16)}
+.stk-head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px}
+.stk-nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.stk-wrap{overflow-x:auto;margin-top:12px;border:1px solid var(--line-soft);border-radius:12px}
+#stockTable{margin-top:0;min-width:900px}
+#stockTable th,#stockTable td{padding:7px 5px;text-align:center;white-space:nowrap}
+#stockTable .it{position:sticky;left:0;z-index:1;text-align:left;min-width:190px;padding-left:12px;background:#0e0f14}
+#stockTable thead .it{z-index:2}
+#stockTable .own{border-right:1px solid var(--line-soft)}
+#stockTable .own input{width:72px;padding:6px 8px;text-align:center;font-weight:700}
+.stk-dm{font-size:10px;letter-spacing:0;text-transform:none;color:var(--mut);font-weight:600}
+.stk-today{background:rgba(212,175,55,.07)}
+.stk-c{display:inline-block;min-width:34px;padding:3px 0;border-radius:7px;font-size:12px;font-weight:700;font-style:normal;text-align:center}
+.stk-none{color:rgba(255,255,255,.22)}.stk-free{color:var(--tx)}.stk-low{background:rgba(240,180,41,.12);color:#f0b429}.stk-full{background:rgba(240,180,41,.24);color:#f0b429}.stk-short{background:rgba(255,107,107,.2);color:var(--danger)}
+.stk-legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:12px}
+.stk-legend span{display:inline-flex;align-items:center;gap:6px}
+.stk-lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;margin-top:20px}
+.stk-row{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line-soft)}
+.stk-row:first-child{border-top:0}
+.stk-row a{color:var(--gold-l)}
+@media(max-width:640px){.eq-row select{flex:1 1 100%;order:-1}.eq-row .eq-spec{flex:1 1 0;width:auto;min-width:0}.eq-row .eq-hire{width:64px}.stk-nav{width:100%}}
 .qfields label{margin-top:13px}
 .qfields label:first-child{margin-top:0}
 #f_notes{resize:vertical}
@@ -397,6 +426,349 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
 
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
+/* ====== CORPORATE THEME (matches the approved Job Cards design: Segoe UI, light headings, hairlines, no glow) ====== */
+:root{--panel:#14161b;--raised:#1a1c22;--hair:#24262d;--hair2:#1d1f25;--tx:#ece9e2;--mut:#8d93a1;--line:rgba(255,255,255,.09);--line-soft:rgba(255,255,255,.055)}
+body{font-size:13px;background:#0b0c10}
+h1,h2,h3,h4{font-weight:600}
+#bgfx{background:#0b0c10}
+#bgfx::before,#bgfx::after{display:none}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14)}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.24)}
+svg.ni{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+#sidebar{background:#0f1015;backdrop-filter:none;border-right:1px solid var(--hair2);padding:18px 14px;gap:2px}
+.logo-box{padding:4px 8px 18px;margin-bottom:14px;border-bottom:1px solid var(--hair2)}
+.logo-box::before{display:none}
+.logo-box img{max-height:64px;filter:none}
+#logoFallback{font-size:26px;font-weight:600;letter-spacing:6px;background:none;-webkit-background-clip:border-box;background-clip:border-box;color:var(--gold)}
+.navbtn{gap:11px;padding:9px 10px;border-left:0;border-radius:8px;font-size:13px;font-weight:400;color:var(--mut)}
+.navbtn:hover{background:var(--raised);color:var(--tx);transform:none}
+.navbtn.active{background:rgba(212,175,55,.12);color:var(--gold-l);border-left:0;box-shadow:none}
+.side-cta{margin-top:14px}
+.side-foot{font-size:10px;color:#5d6270;letter-spacing:.4px}
+#topbar{background:rgba(11,12,16,.94);backdrop-filter:none;border-bottom:1px solid var(--hair2);padding:14px 24px}
+.eyebrow{font-size:10px;font-weight:600;letter-spacing:2px;color:var(--gold)}
+#topTitle{font-size:24px;font-weight:300;letter-spacing:-.2px;background:none;-webkit-background-clip:border-box;background-clip:border-box;color:var(--tx)}
+#topDate{font-size:12px}
+#bellBtn{width:36px;height:36px;border-radius:8px;background:var(--panel);border:1px solid var(--hair);color:var(--mut);display:inline-flex;align-items:center;justify-content:center;backdrop-filter:none}
+#bellBtn:hover{border-color:#3a3d45;color:var(--tx);transform:none;box-shadow:none}
+.badge{box-shadow:none;font-weight:600;top:-6px;right:-6px}
+#notifPanel{background:var(--panel);backdrop-filter:none;border:1px solid var(--hair);border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.55);top:46px}
+.np-head{font-family:var(--font-b);font-weight:600;font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:var(--gold)}
+.np-item{display:flex;gap:10px;align-items:baseline;font-size:12.5px}
+.np-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);flex:none;transform:translateY(-1px)}
+.gold-btn{border-radius:8px;padding:9px 16px;font-weight:600;font-size:12.5px;letter-spacing:0;box-shadow:none;background:linear-gradient(135deg,var(--gold-l),var(--gold) 60%,#b08a1f)}
+.gold-btn::after{display:none}
+.gold-btn:hover{transform:none;box-shadow:none;filter:brightness(1.06)}
+.gold-btn.sm{padding:6px 12px;font-size:12px;border-radius:8px}
+.ghost-btn{border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:600;background:var(--panel);border-color:var(--hair)}
+.ghost-btn:hover{transform:none;border-color:#3a3d45;color:var(--tx);background:var(--raised)}
+.ghost-btn.sm{padding:5px 11px;font-size:12px;border-radius:8px}
+.panel-action,.dash-link,.win-btn,.cal-nav button{border-radius:8px;font-weight:600;background:var(--panel);border:1px solid var(--hair);color:var(--mut);box-shadow:none}
+.panel-action:hover,.dash-link:hover,.win-btn:hover,.cal-nav button:hover{transform:none;border-color:#3a3d45;color:var(--tx);background:var(--raised)}
+.panel-action{padding:5px 10px;font-size:11.5px}
+input,select,textarea{border-radius:8px;background:#0f1015;border-color:var(--hair);padding:9px 12px;font-size:13px}
+input:focus,select:focus,textarea:focus{border-color:rgba(212,175,55,.7);box-shadow:none}
+input[readonly]{font-weight:600;background:rgba(212,175,55,.05);border-color:rgba(212,175,55,.22)}
+select{background-position:right 12px center}
+label{font-size:9.5px;font-weight:600;letter-spacing:1.4px;margin-bottom:5px}
+.pill{font-weight:600;font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;padding:2px 9px}
+.pill::before{box-shadow:none}
+.prio{font-weight:600}
+.card{background:var(--panel);border:1px solid var(--hair);border-radius:12px;padding:18px 20px;box-shadow:none;backdrop-filter:none;margin-bottom:16px}
+.card::before{display:none}
+.card h3{font-size:13.5px;font-weight:600;letter-spacing:0;margin-bottom:12px}
+.view{padding:18px 24px 48px}
+.view.active>*{animation:none}
+.dash-hero{background:linear-gradient(140deg,#191b21,#121318 60%);border:1px solid var(--hair);border-radius:12px;box-shadow:none;backdrop-filter:none}
+.dash-hero::before,.dash-hero::after{display:none}
+.dash-hero h2{font-size:24px;font-weight:300;letter-spacing:-.2px}
+.dash-kicker,.panel-kicker{font-size:10px;font-weight:600;letter-spacing:2px}
+.dash-kicker::before,.panel-kicker::before{display:none}
+.runway-tick{border-radius:6px;background:#0f1015;border-color:var(--hair)}
+.runway-tick::before{background:rgba(212,175,55,.5);opacity:1}
+.runway-tick.now{box-shadow:inset 0 0 0 1px rgba(212,175,55,.7)}
+.runway-tick span{font-weight:600}
+.brief-cell{background:#0f1015;border-color:var(--hair);border-radius:10px}
+.brief-cell span,.trend-pill span,.forecast-main span,.stat-l,.cal-mini-dow,.trend-lab,.cal-dow div{font-weight:600;letter-spacing:1.2px}
+.brief-cell b{font-family:var(--font-b);font-weight:300;font-size:22px}
+.stat{background:var(--panel);border:1px solid var(--hair);border-radius:12px;backdrop-filter:none}
+.stat::before{display:none}
+.stat:hover{transform:none;box-shadow:none;border-color:#3a3d45}
+.stat-n{font-family:var(--font-b);font-weight:300;font-size:28px}
+.stat-ic{background:transparent;color:var(--tone);border:1px solid color-mix(in srgb,var(--tone) 45%,transparent);border-radius:50%;font-weight:600;font-size:9.5px}
+.dash-arrange-bar{background:var(--panel);border-color:var(--hair);border-radius:10px}
+.dash-arrange-bar b{font-family:var(--font-b);font-weight:600}
+.dash-panel{background:var(--panel);border:1px solid var(--hair);border-radius:12px;box-shadow:none;backdrop-filter:none}
+.panel-head h3{font-size:16px;font-weight:300}
+.ag-lab{font-weight:600}
+.ag-lab::before{box-shadow:none;width:6px;height:6px}
+.ag-item,.rec{background:#0f1015;border-color:var(--hair);border-radius:10px}
+.ag-item:hover,.rec:hover{transform:none;box-shadow:none;border-color:rgba(212,175,55,.45);background:var(--raised)}
+.ag-type{font-weight:600}
+.ag-main b,.rec-main b{font-weight:600}
+.cal-mini-day{background:#0f1015;border-color:var(--hair);border-radius:8px}
+.cal-mini-day.has:hover{transform:none;box-shadow:none}
+.cal-mini-day.today{box-shadow:none}
+.cal-mini-n{font-family:var(--font-b);font-weight:600}
+.cal-dot{box-shadow:none}
+.trend-bar-wrap{background:#0f1015;border-color:var(--hair);border-radius:6px}
+.trend-bar{background:linear-gradient(180deg,var(--gold-l),var(--gold));box-shadow:none;border-radius:4px 4px 0 0}
+.trend-val{font-family:var(--font-b);font-weight:600;font-size:13px}
+.trend-pill,.forecast-row{background:#0f1015;border-color:var(--hair);border-radius:10px}
+.trend-pill b,.forecast-row b{font-family:var(--font-b);font-weight:600}
+.forecast-main{background:#0f1015;border-color:var(--hair);border-radius:10px}
+.forecast-main b{font-family:var(--font-b);font-weight:300}
+th{font-size:9.5px;font-weight:600;letter-spacing:1.4px;padding:9px 12px;border-bottom:1px solid var(--hair)}
+td{padding:10px 12px;border-bottom:1px solid var(--hair2)}
+tbody tr:hover{background:rgba(255,255,255,.025);box-shadow:none}
+#jobsTbody td.mono{white-space:nowrap;font-size:12px}
+.acts button{border-radius:7px;padding:4px 8px;display:inline-flex;align-items:center;background:var(--panel);border-color:var(--hair)}
+.acts button svg.ni,.row-acts button svg.ni{width:14px;height:14px}
+.cal-head h2{font-weight:300;background:none;-webkit-background-clip:border-box;background-clip:border-box;color:var(--tx)}
+.cal-nav button{padding:7px 13px}
+.ops-brief{background:var(--panel);border-color:var(--hair);border-radius:10px}
+.ops-brief b{font-weight:600}
+.cal-cell{background:#0f1015;border-color:var(--hair);border-radius:10px}
+.cal-cell:not(.blank):hover{transform:none;box-shadow:none;border-color:#3a3d45}
+.cal-grid>div:nth-child(7n):not(.blank),.cal-grid>div:nth-child(7n-1):not(.blank){background:#0d0e12}
+.cal-cell.today{box-shadow:none;border-color:var(--gold)}
+.cal-d{font-family:var(--font-b);font-weight:600}
+.chip{font-weight:600;border-radius:6px;background:var(--panel);border-color:var(--hair)}
+.chip:hover{transform:none;background:var(--raised)}
+.lg.setup,.lg.event{border-left:0;padding-left:0;display:inline-flex;align-items:center;gap:6px}
+.lg.setup::before,.lg.event::before{content:'';width:8px;height:8px;border-radius:2px;background:var(--gold)}
+.lg.event::before{background:var(--blue)}
+.gcal-head{background:transparent}
+.list-row{background:#0f1015;border-color:var(--hair);border-radius:8px}
+.cnt{font-weight:600;border-radius:999px;background:transparent;border-color:var(--hair);color:var(--mut)}
+.row-acts button{display:inline-flex;align-items:center;color:var(--mut)}
+.cloud-card{border-color:var(--hair)}
+.cloud-dot,.cloud-dot.ok,.cloud-dot.busy,.cloud-dot.err{box-shadow:none}
+.cloud-status b{font-family:var(--font-b);font-weight:600}
+.cloud-pill{font-weight:600;background:#0f1015;border-color:var(--hair);border-radius:10px}
+.cloud-main-toggle{background:rgba(212,175,55,.06);border-color:rgba(212,175,55,.2);border-radius:10px}
+.cloud-advanced{border-color:var(--hair);border-radius:10px}
+.cloud-advanced summary{font-weight:600}
+.toggle-line{font-weight:400}
+.modal{background:rgba(5,6,9,.78);backdrop-filter:blur(4px)}
+.modal-box{background:var(--panel);backdrop-filter:none;border:1px solid var(--hair);border-radius:14px;padding:22px 24px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.modal-box::before{display:none}
+.mb-head h2{font-size:22px;font-weight:300}
+.x{border-radius:8px;width:34px;height:34px;background:var(--panel);border-color:var(--hair)}
+.x:hover{transform:none}
+.f-section{border-top-color:var(--hair2)}
+.fs-head h3{font-size:10px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:var(--gold)}
+.date-preview{font-weight:600}
+.row-x{border-radius:8px;background:var(--panel);border-color:var(--hair)}
+.vw-head h2{font-size:26px;font-weight:300;letter-spacing:-.3px;background:none;-webkit-background-clip:border-box;background-clip:border-box;color:var(--tx)}
+.vw-cell{background:#0f1015;border-color:var(--hair);border-radius:10px}
+.vw-cell b{font-size:13px;font-weight:600}
+.vw-2col h4,.vw-notes h4{font-family:var(--font-b);font-size:9.5px;font-weight:600;letter-spacing:1.5px;color:var(--mut)}
+.vw-role{font-weight:600}
+.vw-notes{background:#0f1015;border-color:var(--hair);border-radius:10px}
+.st-pill{font-weight:600;border-radius:999px;background:var(--panel);border-color:var(--hair)}
+.st-pill:hover{transform:none}
+.st-pill.on{box-shadow:none}
+.vw-hist summary{font-weight:600}
+.toast{background:var(--panel);backdrop-filter:none;border:1px solid var(--hair);border-radius:10px;font-weight:400;font-size:13px}
+.toast.err{border-color:rgba(255,107,107,.45)}
+#stockTable .it{background:var(--panel)}
+.stk-wrap{border-color:var(--hair)}
+.sv{font-weight:600}
+.sv-ok::before,.sv-full::before,.sv-short::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+@media(max-width:900px){.navbtn,.navbtn.active{border-bottom:0}}
+
+/* ---- Job workspace + dashboard charts ---- */
+#jStatus{display:none}
+.jw-bar{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.jw-chips{display:flex;gap:6px;flex-wrap:wrap}
+.jchip{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--hair);background:transparent;color:var(--mut);font-size:12px;white-space:nowrap}
+.jchip:hover{color:var(--tx);border-color:#3a3d45}
+.jchip.on{background:var(--raised);border-color:#3a3d45;color:var(--tx)}
+.jchip i{width:7px;height:7px;border-radius:50%;display:inline-block}
+.jchip em{font-style:normal;color:#5d6270;font-size:11px}
+.jchip.warn{margin-left:auto;border-color:rgba(255,107,107,.45);color:var(--danger)}
+.jw-filters{margin:0}
+.jw-count{margin:0 2px 8px}
+.jobs-shell{display:grid;grid-template-columns:minmax(290px,350px) minmax(0,1fr);gap:16px;align-items:start}
+.jobs-list{max-height:calc(100vh - 250px);overflow:auto;padding-right:2px}
+.jl-item{display:block;width:100%;text-align:left;padding:12px 13px;margin-bottom:6px;border:1px solid transparent;border-radius:10px;background:transparent;color:inherit}
+.jl-item:hover{background:var(--panel)}
+.jl-item.on{background:var(--raised);border-color:rgba(212,175,55,.45)}
+.jl-row{display:flex;align-items:center;gap:8px}
+.jl-row .pill{margin-left:auto}
+.jl-no{font:600 11.5px/1.4 Consolas,'Courier New',monospace;color:var(--gold);white-space:nowrap}
+.jl-title{margin:6px 0 2px;font-size:14px;font-weight:600;line-height:1.35;color:var(--tx)}
+.jl-sub{font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jl-meta{display:flex;gap:14px;align-items:center;margin-top:8px;font-size:11.5px;color:var(--mut)}
+.jl-meta span{display:inline-flex;align-items:center;gap:5px}
+.jl-meta svg.ni{width:13px;height:13px}
+.jl-meta .sv{margin-left:auto}
+.job-detail{position:sticky;top:84px;max-height:calc(100vh - 104px);overflow:auto}
+.jd-empty{padding:60px 20px;text-align:center;color:var(--mut);border:1px dashed var(--hair);border-radius:12px}
+.jd-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px 16px;padding:18px 20px;border:1px solid var(--hair);border-radius:12px;background:linear-gradient(140deg,#191b21,#121318 60%)}
+.jd-eyebrow{font-size:10px;font-weight:600;letter-spacing:2px;color:var(--gold);text-transform:uppercase}
+.jd-head h2{margin:6px 0 2px;font-size:26px;font-weight:300;letter-spacing:-.3px;line-height:1.2;font-family:var(--font-b)}
+.jd-where{font-size:13px;color:var(--mut)}
+.jd-ids{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:10px;font-size:12px;color:var(--mut)}
+.jd-badge{display:block;width:92px;height:92px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.45))}
+.jd-actions{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px}
+.gold-btn svg.ni,.ghost-btn svg.ni{width:14px;height:14px;vertical-align:-3px;margin-right:6px}
+.jd-steps{display:flex;margin:16px 2px 4px}
+.jd-step{flex:1;position:relative;text-align:center;font-size:11px;color:#5d6270;background:none;border:0;padding:0}
+.jd-step::before{content:"";position:absolute;top:7px;left:-50%;right:50%;height:1px;background:var(--hair)}
+.jd-step:first-child::before{display:none}
+.jd-step b{position:relative;display:block;width:15px;height:15px;margin:0 auto 6px;border-radius:50%;border:1px solid #3a3d45;background:#0b0c10}
+.jd-step:hover{color:var(--tx)}
+.jd-step.done{color:var(--mut)}
+.jd-step.done b{background:var(--gold);border-color:var(--gold)}
+.jd-step.done::before,.jd-step.now::before{background:var(--gold)}
+.jd-step.now{color:var(--gold-l);font-weight:600}
+.jd-step.now b{border:4px solid var(--gold);box-shadow:0 0 0 4px rgba(212,175,55,.12)}
+.jd-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:14px;border:1px solid var(--hair);border-radius:12px;background:var(--panel);overflow:hidden}
+.jd-grid>div{padding:10px 14px;border-left:1px solid var(--hair2);border-top:1px solid var(--hair2)}
+.jd-grid>div:nth-child(4n+1){border-left:0}
+.jd-grid>div:nth-child(-n+4){border-top:0}
+.jd-k{font-size:9.5px;font-weight:600;letter-spacing:1.5px;color:var(--mut);text-transform:uppercase}
+.jd-v{margin-top:3px;font-size:13px;font-weight:600}
+.jd-v small{display:block;font-size:11px;font-weight:400;color:var(--mut)}
+.jd-tabs{display:flex;gap:2px;margin-top:18px;border-bottom:1px solid var(--hair)}
+.jd-tab{padding:9px 14px;border:0;background:none;color:var(--mut);font-size:13px;border-bottom:2px solid transparent;margin-bottom:-1px}
+.jd-tab:hover{color:var(--tx)}
+.jd-tab.on{color:var(--tx);border-bottom-color:var(--gold)}
+.jd-tab em{font-style:normal;font-size:11px;color:#5d6270;margin-left:4px}
+.jd-pane{margin-top:12px}
+.jd-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--hair);border-radius:12px;overflow:hidden;background:var(--panel);margin-top:0}
+.jd-table th{background:#17191f}
+.jd-table tbody tr{cursor:default}
+.jd-table tbody tr:hover{background:transparent}
+.jd-table .n{width:44px;color:#5d6270;font:12px Consolas,monospace}
+.jd-table .nm{font-weight:600}
+.jd-table .spec{display:block;font-size:11.5px;color:var(--mut)}
+.jd-table .c{width:64px;text-align:center}
+.jd-table .role{color:var(--mut);font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;width:34%}
+.sw{position:relative;display:inline-block;width:34px;height:20px;margin:0;vertical-align:middle}
+.sw input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;padding:0;cursor:pointer}
+.sw span{position:absolute;inset:0;border-radius:999px;background:#2a2c33;transition:.2s;pointer-events:none}
+.sw span::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#8d93a1;transition:.2s}
+.sw input:checked+span{background:rgba(61,220,132,.25)}
+.sw input:checked+span::after{left:17px;background:#3ddc84}
+.jd-notes{padding:13px 15px;border:1px solid var(--hair);border-radius:12px;background:var(--panel);line-height:1.65;color:#cfd2d8}
+.jd-feed{list-style:none;margin:0;padding:0;border:1px solid var(--hair);border-radius:12px;background:var(--panel)}
+.jd-feed li{display:flex;gap:12px;padding:10px 14px;border-top:1px solid var(--hair2);font-size:13px}
+.jd-feed li:first-child{border-top:0}
+.jd-feed time{width:190px;flex:none;color:var(--mut);font-size:12px}
+#vmBody .jd-head{border:0;padding:0;background:none}
+.dash-charts{display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:12px}
+.dc-panel{background:var(--panel);border:1px solid var(--hair);border-radius:12px;padding:14px 16px}
+.dc-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.dc-head h3{font-size:16px;font-weight:300;margin-top:3px;font-family:var(--font-b)}
+.dc-legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:12px}
+.dc-legend i,.dc-row i{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:6px}
+.dc-svg{display:block;width:100%;height:auto}
+.dc-svg .cg{stroke:rgba(255,255,255,.06)}
+.dc-svg .ct,.dc-svg .cx2{fill:#5d6270;font-size:10px}
+.dc-svg .cx{fill:#8d93a1;font-size:11px;font-weight:600}
+.dc-svg .cx.on{fill:var(--gold-l)}
+.dc-svg .cv{fill:#ece9e2;font-size:10.5px;font-weight:600}
+.dc-svg .ctoday{fill:rgba(212,175,55,.07)}
+.dc-svg .ctlab{fill:var(--gold);font-size:9.5px;font-weight:600;letter-spacing:1px}
+.dc-svg .cwk{stroke:rgba(255,255,255,.08);stroke-dasharray:2 3}
+.dc-svg .cbar:hover rect{opacity:.85}
+.dc-donut{display:flex;align-items:center;gap:16px;margin-top:6px}
+.dc-ring{width:132px;height:132px;flex:none}
+.dc-n{fill:#ece9e2;font-size:26px;font-weight:300}
+.dc-rows{flex:1;min-width:0;display:grid;gap:3px}
+.dc-row{display:grid;grid-template-columns:auto 1fr auto 40px;align-items:center;gap:4px;font-size:12.5px;padding:4px 6px;border-radius:6px;cursor:pointer}
+.dc-row:hover{background:var(--raised)}
+.dc-row b{font-weight:600}
+.dc-row em{font-style:normal;color:var(--mut);text-align:right;font-size:11.5px}
+.chip.setup{background:rgba(45,212,191,.14);border-color:rgba(45,212,191,.45);color:#7ef0dc}
+.lg.setup::before{background:#2dd4bf}
+@media(max-width:1280px){.jd-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.jd-grid>div:nth-child(4n+1){border-left:1px solid var(--hair2)}.jd-grid>div:nth-child(2n+1){border-left:0}.jd-grid>div:nth-child(-n+4){border-top:1px solid var(--hair2)}.jd-grid>div:nth-child(-n+2){border-top:0}}
+@media(max-width:1180px){.dash-charts{grid-template-columns:1fr}}
+@media(max-width:900px){.jobs-shell{grid-template-columns:1fr}.job-detail{display:none}.jobs-list{max-height:none}.jd-feed time{width:auto}}
+@media(max-width:640px){.jd-grid{grid-template-columns:1fr}.jd-grid>div{border-left:0!important}.jd-grid>div:nth-child(2){border-top:1px solid var(--hair2)}.dc-donut{flex-direction:column;align-items:stretch}.dc-ring{margin:0 auto}}
+
+/* ---- Schedule views ---- */
+.cal-head{margin-bottom:10px}
+.cal-views{display:inline-flex;border:1px solid var(--hair);border-radius:8px;overflow:hidden}
+.cal-views button{background:var(--panel);border:0;border-left:1px solid var(--hair);color:var(--mut);padding:7px 14px;font-size:12.5px;font-weight:600}
+.cal-views button:first-child{border-left:0}
+.cal-views button:hover{color:var(--tx)}
+.cal-views button.on{background:rgba(212,175,55,.14);color:var(--gold-l)}
+.cal-filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.cal-tg{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--hair);background:transparent;color:var(--mut);font-size:12px}
+.cal-tg i{width:9px;height:9px;border-radius:2px;display:inline-block;opacity:.3}
+.cal-tg.on{color:var(--tx);border-color:#3a3d45;background:var(--raised)}
+.cal-tg.on i{opacity:1}
+#calSummary{margin-left:auto}
+#calMonth.hide-setup .chip.setup{display:none}
+#calMonth.hide-event .chip:not(.setup):not(.more){display:none}
+.cal-d{cursor:pointer}
+.cal-d:hover{color:var(--gold-l)}
+.chip.more{cursor:pointer}
+.chip.more:hover{color:var(--tx)}
+.cal-empty{padding:14px 2px;color:var(--mut);font-size:12.5px}
+.wk{border:1px solid var(--hair);border-radius:12px;overflow:hidden;background:#0f1015}
+.wk-row{display:grid;grid-template-columns:230px minmax(0,1fr);border-top:1px solid var(--hair2)}
+.wk-row:first-child{border-top:0}
+.wk-headrow{grid-template-columns:230px repeat(7,minmax(0,1fr));background:#17191f}
+.wk-corner{font-size:9.5px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;color:var(--mut);cursor:default;align-self:end}
+.wk-dh{padding:8px 4px;text-align:center;font-size:10px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--mut);border-left:1px solid var(--hair2);cursor:pointer}
+.wk-dh:hover{color:var(--tx)}
+.wk-dh b{display:block;font-size:17px;font-weight:300;letter-spacing:0;color:var(--tx);margin-top:2px}
+.wk-dh.today{color:var(--gold);background:rgba(212,175,55,.06)}
+.wk-dh.today b{color:var(--gold-l)}
+.wk-lab{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;min-width:0}
+.wk-lab b{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wk-lab:hover b{color:var(--gold-l)}
+.wk-dot{width:7px;height:7px;border-radius:50%;flex:none}
+.wk-track{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));align-items:center;min-height:50px}
+.wk-bg{grid-row:1;align-self:stretch;border-left:1px solid var(--hair2)}
+.wk-bg.today{background:rgba(212,175,55,.06)}
+.wk-bar{grid-row:1;position:relative;z-index:1;margin:0 4px;height:28px;border-radius:6px;border:1px solid;font-size:11.5px;font-weight:600;padding:0 8px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wk-bar.su{background:rgba(45,212,191,.16);border-color:rgba(45,212,191,.5);color:#7ef0dc}
+.wk-bar.ev{background:rgba(240,180,41,.16);border-color:rgba(240,180,41,.5);color:#f6cf6e}
+.wk-bar:hover{filter:brightness(1.15)}
+.dy{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px}
+.dy-sec{margin-bottom:18px}
+.dy-sec h4{font-size:10px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:var(--gold);margin:0 0 8px;font-family:var(--font-b)}
+.dy-sec h4 em{font-style:normal;color:var(--mut);margin-left:8px}
+.dy-job{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid var(--hair);border-radius:10px;background:#0f1015;margin-bottom:8px;cursor:pointer}
+.dy-job:hover,.dy-kit:hover,.ag2-row:hover{border-color:rgba(212,175,55,.45)}
+.dy-main{flex:1;min-width:0}
+.dy-main b{display:block;font-size:14px;font-weight:600;margin:5px 0 2px}
+.dy-main span{display:block;font-size:12px;color:var(--mut)}
+.dy-main em{display:block;font-style:normal;font-size:11.5px;color:var(--mut);margin-top:4px}
+.dy-tag{flex:none;font-size:9.5px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:999px;border:1px solid;white-space:nowrap}
+.dy-tag.su{color:#7ef0dc;border-color:rgba(45,212,191,.5);background:rgba(45,212,191,.12)}
+.dy-tag.ev{color:#f6cf6e;border-color:rgba(240,180,41,.5);background:rgba(240,180,41,.12)}
+.dy-tab td{padding:8px 12px}
+.dy-kit{padding:10px 12px;border:1px solid var(--hair);border-radius:10px;background:#0f1015;margin-bottom:8px;font-size:12.5px;cursor:pointer}
+.dy-kit b{color:var(--gold);font-family:Consolas,monospace;font-size:11.5px;margin-right:8px}
+.dy-kit div{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.dy-kit span{font-size:11.5px;padding:2px 8px;border-radius:999px;border:1px solid var(--hair);color:var(--mut)}
+.ag2-day{display:grid;grid-template-columns:62px minmax(0,1fr);gap:14px;padding:12px 0;border-top:1px solid var(--hair2)}
+.ag2-day:first-child{border-top:0}
+.ag2-date{text-align:center;border:1px solid var(--hair);border-radius:10px;padding:8px 0;background:#0f1015;align-self:start;cursor:pointer}
+.ag2-date b{display:block;font-size:22px;font-weight:300}
+.ag2-date span{font-size:10px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--mut)}
+.ag2-date.today{border-color:var(--gold)}
+.ag2-date.today b{color:var(--gold-l)}
+.ag2-head{font-size:10px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+.ag2-row{display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,1.2fr) auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--hair);border-radius:8px;background:#0f1015;margin-bottom:6px;cursor:pointer;font-size:13px}
+.ag2-row b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ag2-row .muted{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:900px){.wk-row{grid-template-columns:130px minmax(0,1fr)}.wk-headrow{grid-template-columns:130px repeat(7,minmax(0,1fr))}.wk-lab .jl-no{display:none}.dy{grid-template-columns:1fr}.ag2-row{grid-template-columns:auto minmax(0,1fr) auto}.ag2-row .muted{display:none}}
+@media(max-width:560px){.wk{overflow-x:auto}.wk-row{min-width:640px}#calSummary{margin-left:0;width:100%}.cal-views button{padding:7px 10px}}
+
+/* ---- Stock categories ---- */
+#stockTable .stk-cat td{background:#17191f;font-size:10px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:var(--gold);padding:8px 12px;text-align:left}
+.stk-more{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:12px;color:var(--mut)}
+.stk-more:empty{display:none}
+.stk-nav .gold-btn.sm,.stk-nav .ghost-btn.sm{height:30px;padding:0 12px}
+
 /* ====== PRINT ====== */
 #printArea{display:none}
 @media print{
@@ -442,11 +814,12 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
       <img src="DVI%20logos%20png/dvi-logo-app.png" alt="Digital Visual Interface" onerror="this.style.display='none';document.getElementById('logoFallback').style.display='flex'">
       <div id="logoFallback">DVI</div>
     </div>
-    <button class="navbtn active" data-view="dashboard" onclick="switchView('dashboard')">📊 Dashboard</button>
-    <button class="navbtn" data-view="jobs" onclick="switchView('jobs')">🗂 Job Cards</button>
-    <button class="navbtn" data-view="schedule" onclick="switchView('schedule')">📅 Schedule</button>
-    <button class="navbtn" data-view="settings" onclick="switchView('settings')">⚙️ Settings</button>
-    <button class="gold-btn side-cta" onclick="openJobModal()">＋ New Job Card</button>
+    <button class="navbtn active" data-view="dashboard" onclick="switchView('dashboard')"><svg class="ni" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Dashboard</button>
+    <button class="navbtn" data-view="jobs" onclick="switchView('jobs')"><svg class="ni" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Job Cards</button>
+    <button class="navbtn" data-view="schedule" onclick="switchView('schedule')"><svg class="ni" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Schedule</button>
+    <button class="navbtn" data-view="stock" onclick="switchView('stock')"><svg class="ni" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>Stock</button>
+    <button class="navbtn" data-view="settings" onclick="switchView('settings')"><svg class="ni" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>Settings</button>
+    <button class="gold-btn side-cta" onclick="openJobModal()">+ New Job Card</button>
     <div class="side-foot">DIGITAL VISUAL INTERFACE<br>Job Card System v2.0</div>
   </aside>
 
@@ -458,9 +831,9 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
         <div id="topDate"></div>
       </div>
       <div class="top-right">
-        <button class="gold-btn" onclick="openJobModal()">＋ New Job Card</button>
+        <button class="gold-btn" onclick="openJobModal()">+ New Job Card</button>
         <div id="bellWrap">
-          <button id="bellBtn" onclick="toggleNotif(event)">🔔<span id="bellBadge" class="badge"></span></button>
+          <button id="bellBtn" onclick="toggleNotif(event)" aria-label="Notifications"><svg class="ni" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span id="bellBadge" class="badge"></span></button>
           <div id="notifPanel"></div>
         </div>
       </div>
@@ -470,6 +843,7 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
 	      <div class="dash-shell">
 	        <div class="dash-hero" id="dHero"></div>
 	        <div class="stats" id="dStats"></div>
+        <div class="dash-charts" id="dCharts"></div>
 	        <div class="dash-arrange-bar">
 	          <div>
 	            <b>Workspace layout</b>
@@ -521,9 +895,10 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
     </section>
 
     <section id="view-jobs" class="view">
-      <div class="card">
-        <div class="filters">
-          <input id="jq" placeholder="🔍 Search event, client, venue, manager, job no…" oninput="renderJobs()">
+      <div class="jw-bar">
+        <div class="jw-chips" id="jChips"></div>
+        <div class="filters jw-filters">
+          <input id="jq" placeholder="Search event, client, venue, manager or job no." oninput="renderJobs()">
           <select id="jStatus" onchange="renderJobs()"></select>
           <select id="jClient" onchange="renderJobs()"></select>
           <select id="jSort" onchange="renderJobs()">
@@ -532,12 +907,14 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
             <option value="created">Recently created</option>
           </select>
         </div>
-        <div id="jobsCount" class="muted sm"></div>
-        <table id="jobsTable">
-          <thead><tr><th>Job No</th><th>Event</th><th>Client</th><th>Venue</th><th>Set Up</th><th>Event Date</th><th>Site Manager</th><th>Crew</th><th>Status</th><th></th></tr></thead>
-          <tbody id="jobsTbody"></tbody>
-        </table>
-        <div id="jobsEmpty" class="empty"></div>
+      </div>
+      <div class="jobs-shell">
+        <div class="jobs-col">
+          <div id="jobsCount" class="muted sm jw-count"></div>
+          <div class="jobs-list" id="jobsList"></div>
+          <div id="jobsEmpty" class="empty"></div>
+        </div>
+        <div class="job-detail" id="jobDetail"></div>
       </div>
     </section>
 
@@ -545,12 +922,17 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
       <div class="card">
         <div class="cal-head">
           <div class="cal-nav">
-            <button onclick="calShift(-1)">‹</button>
+            <button onclick="calShift(-1)" aria-label="Previous">‹</button>
             <button onclick="calToday()">Today</button>
-            <button onclick="calShift(1)">›</button>
+            <button onclick="calShift(1)" aria-label="Next">›</button>
           </div>
           <h2 id="calLabel"></h2>
-          <div class="legend"><span class="lg setup">⚙ Setup day</span><span class="lg event">Event day</span></div>
+          <div class="cal-views" id="calViews"><button data-v="month" onclick="setCalView('month')">Month</button><button data-v="week" onclick="setCalView('week')">Week</button><button data-v="day" onclick="setCalView('day')">Day</button><button data-v="agenda" onclick="setCalView('agenda')">Agenda</button></div>
+        </div>
+        <div class="cal-filters">
+          <button class="cal-tg on" id="calTgSetup" onclick="toggleCalKind('setup')"><i style="background:#2dd4bf"></i>Setup &amp; build</button>
+          <button class="cal-tg on" id="calTgEvent" onclick="toggleCalKind('event')"><i style="background:#f0b429"></i>Event &amp; showtime</button>
+          <span class="muted sm" id="calSummary"></span>
         </div>
         <div class="ops-brief">
           <div><span class="panel-kicker">Operations Summary</span><b>16:9 executive export</b></div>
@@ -561,10 +943,11 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
             <button class="panel-action" onclick="downloadOpsSummary('month')">Month PDF</button>
           </div>
         </div>
-	        <div class="cal-dow"><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div></div>
-	        <div id="calGrid" class="cal-grid"></div>
-	      </div>
-	      <div class="card gcal-card">
+	        <div id="calMonth"><div class="cal-dow"><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div></div>
+        <div id="calGrid" class="cal-grid"></div></div>
+        <div id="calOther"></div>
+      </div>
+      <div class="card gcal-card">
 	        <div class="gcal-head">
 	          <div>
 	            <h3>DVI Google Calendar</h3>
@@ -582,9 +965,35 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
 	      </div>
 	    </section>
 
+    <section id="view-stock" class="view">
+      <div class="card">
+        <div class="stk-head">
+          <div>
+            <h3 style="margin:0">Stock &amp; availability</h3>
+            <p class="muted sm" style="margin:6px 0 0;max-width:720px">Set <b>Owned</b> for every item you want to track. Scheduled, Setup and In Progress job cards hold their equipment from the first set-up day to the last event day; Drafts don't until you confirm them. Each day shows what is left in the store. Hover a number to see which job cards are using it.</p>
+          </div>
+          <div class="stk-nav">
+            <button class="gold-btn sm" onclick="openQuickAdd('equipment')">+ Add stock item</button>
+            <button class="ghost-btn sm" onclick="addStarterTypes()">Add common DVI types</button>
+            <button class="panel-action" onclick="stockShift(-7)">‹ 7 days</button>
+            <b id="stkRange" class="sm"></b>
+            <button class="panel-action" onclick="stockShift(7)">7 days ›</button>
+            <button class="panel-action" onclick="stockShift(0)">Today</button>
+          </div>
+        </div>
+        <div class="stk-wrap"><table id="stockTable"></table></div>
+        <div class="stk-more" id="stkMore"></div>
+        <div class="stk-legend muted sm"><span><i class="stk-c stk-free">12</i> left in the store</span><span><i class="stk-c stk-low">3</i> running low</span><span><i class="stk-c stk-full">0</i> all out</span><span><i class="stk-c stk-short">-12</i> short: hire or move a job</span></div>
+      </div>
+      <div class="stk-lists">
+        <div class="card" style="margin:0"><h3>Short on stock</h3><div id="stkShort"></div></div>
+        <div class="card" style="margin:0"><h3>Hires planned</h3><div id="stkHires"></div></div>
+      </div>
+    </section>
+
     <section id="view-settings" class="view">
       <div class="card">
-        <h3>🏢 Company Details <span class="muted sm">— printed on every job card</span></h3>
+        <h3>Company Details <span class="muted sm">· printed on every job card</span></h3>
         <div class="set-grid">
           <div><label>Company name</label><input id="sName" onchange="saveCompany()"></div>
           <div><label>Tagline</label><input id="sTag" onchange="saveCompany()"></div>
@@ -639,15 +1048,15 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
         </details>
       </div>
       <div class="card" style="margin-top:20px">
-        <h3>💾 Data &amp; Backups</h3>
+        <h3>Data &amp; Backups</h3>
         <div class="data-btns">
           <button class="gold-btn" onclick="cloudPushManual()">Sync to DVI Cloud</button>
           <button class="ghost-btn" onclick="cloudPull()">Restore from DVI Cloud</button>
           <button class="ghost-btn" onclick="document.getElementById('importFile').click()">Import Cloud Backup File</button>
-          <button class="gold-btn" onclick="exportJSON()">⬇ Export Backup (JSON)</button>
-          <button class="ghost-btn" onclick="document.getElementById('importFile').click()">⬆ Import Backup</button>
-          <button class="ghost-btn" onclick="exportCSV()">📊 Export Jobs (CSV)</button>
-          <button class="ghost-btn danger" onclick="clearAll()">🗑 Clear All Data</button>
+          <button class="gold-btn" onclick="exportJSON()">Export Backup (JSON)</button>
+          <button class="ghost-btn" onclick="document.getElementById('importFile').click()">Import Backup</button>
+          <button class="ghost-btn" onclick="exportCSV()">Export Jobs (CSV)</button>
+          <button class="ghost-btn danger" onclick="clearAll()">Clear All Data</button>
         </div>
         <p class="muted sm" style="margin-bottom:0;margin-top:13px">This device keeps a local backup. When DVI Cloud is active, every change auto-syncs to the shared office copy and every device can restore the same job cards.</p>
       </div>
@@ -662,7 +1071,7 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
     <div class="fgrid">
       <div><label>Job Card No.</label><input id="f_no" readonly class="mono"></div>
       <div><label>Status</label>
-        <select id="f_status">
+        <select id="f_status" onchange="refreshStockHints()">
           <option>Draft</option><option>Scheduled</option><option>Setup</option>
           <option>In Progress</option><option>Completed</option><option>Cancelled</option>
         </select>
@@ -676,7 +1085,7 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
       <div><label>Event Date (from — to)</label><div class="dates"><input type="date" id="f_from" oninput="updateDatePreview()" onchange="updateDatePreview()"><input type="date" id="f_to" oninput="updateDatePreview()" onchange="updateDatePreview()"></div><div id="f_event_fmt" class="date-preview"></div></div>
     </div>
     <div class="f-section">
-      <div class="fs-head"><h3>🎛 Equipment</h3><button type="button" class="ghost-btn sm" onclick="addEquipRow()">＋ Add equipment</button></div>
+      <div class="fs-head"><h3>Equipment</h3><button type="button" class="ghost-btn sm" onclick="addEquipRow()">+ Add equipment</button></div>
       <div id="equipRows"></div>
     </div>
     <div class="f-section">
@@ -687,13 +1096,13 @@ tbody tr:hover{background:rgba(255,255,255,.035);box-shadow:inset 3px 0 0 var(--
       </div>
     </div>
     <div class="f-section">
-      <div class="fs-head"><h3>👷 Crew Assignment</h3><button type="button" class="ghost-btn sm" onclick="addCrewRow()">＋ Add crew member</button></div>
+      <div class="fs-head"><h3>Crew Assignment</h3><button type="button" class="ghost-btn sm" onclick="addCrewRow()">+ Add crew member</button></div>
       <div id="crewRows"></div>
     </div>
     <div class="notes-cell"><label>Notes / Special Instructions</label><textarea id="f_notes" rows="3" placeholder="Anything the team must know — power requirements, access times, contacts on site…"></textarea></div>
     <div class="mb-foot">
       <button class="ghost-btn" onclick="closeJobModal()">Cancel</button>
-      <button class="gold-btn" onclick="saveJobForm()">💾 Save Job Card</button>
+      <button class="gold-btn" onclick="saveJobForm()">Save Job Card</button>
     </div>
   </div>
 </div>
@@ -761,7 +1170,7 @@ const KINDS={
  venues:{label:'Venues',sing:'Venue',icon:'📍',fields:[['name','Venue name *'],['area','Area / City']]},
  technicians:{label:'Crew / Labour Register',sing:'Crew Member',icon:'👷',fields:[['name','Full name *'],['role','__roleselect'],['workerType','__labourtype'],['source','Source / supplier / site'],['phone','Phone'],['rateNote','Rate / allowance notes']]},
  roles:{label:'Crew Roles',sing:'Crew Role',icon:'🎚',fields:[['name','Role name *']]},
- equipment:{label:'Equipment Catalogue',sing:'Equipment Item',icon:'🎛',fields:[['name','Equipment name *']]},
+ equipment:{label:'Equipment Catalogue',sing:'Equipment Item',icon:'🎛',fields:[['name','Equipment name * (one line per type, e.g. LED panel P3.9 indoor 500×500)'],['category','__equipcat'],['stock','Number owned (for stock tracking; leave empty to not track)'],['unitSize','Size of one panel or deck, if you count it that way (e.g. 500x500 mm, 500x1000 mm or 1.2x2.4 m)']]},
  eventTypes:{label:'Event Types',sing:'Event Type',icon:'🎪',fields:[['name','Event type *']]}
 };
 const LABOUR_TYPES=['DVI Staff','Casual','Freelancer','Outsourced Labour'];
@@ -828,11 +1237,11 @@ function isAdminCrew(it){
 function labourMeta(t){
  if(t&&(t.workerType||'DVI Staff')==='DVI Staff')return '';
  if(!t)return '';
- return [t.workerType||'DVI Staff',t.source||''].filter(Boolean).join(' Â· ');
+ return [t.workerType||'DVI Staff',t.source||''].filter(Boolean).join(' · ');
 }
 function crewDisplayName(id){
  const t=byId('technicians',id);
- if(!t)return 'â€”';
+ if(!t)return '—';
  const meta=labourMeta(t);
  return t.name+(meta?' ('+meta+')':'');
 }
@@ -1203,7 +1612,7 @@ function seed(){
 }
 
 /* ================= NAV ================= */
-const TITLES={dashboard:'Dashboard',jobs:'Job Cards',schedule:'Schedule',settings:'Settings'};
+const TITLES={dashboard:'Dashboard',jobs:'Job Cards',schedule:'Schedule',stock:'Stock',settings:'Settings'};
 function switchView(v){
  document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id==='view-'+v));
  document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
@@ -1221,18 +1630,19 @@ function fillTechnicianSelect(sel,ph,val,noAdd){
  }else{
   for(const it of items)h+=`<option value="${it.id}">${esc(technicianSelectLabel(it))}</option>`;
  }
- if(!noAdd)h+=`<option value="__add">＋ Add new…</option>`;
+ if(!noAdd)h+=`<option value="__add">+ Add new…</option>`;
  sel.innerHTML=h;sel.value=val||'';sel.dataset.prev=sel.value;
 }
 function fillSelect(sel,kind,ph,val,noAdd){
  if(kind==='technicians'){fillTechnicianSelect(sel,ph,val,noAdd);return;}
+ if(kind==='equipment'){fillEquipmentSelect(sel,ph,val,noAdd);return;}
  const items=[...state[kind]].sort((a,b)=>a.name.localeCompare(b.name));
  let h=`<option value="">${esc(ph)}</option>`;
  for(const it of items){
   let lb=it.name;
   h+=`<option value="${it.id}">${esc(lb)}</option>`;
  }
- if(!noAdd)h+=`<option value="__add">＋ Add new…</option>`;
+ if(!noAdd)h+=`<option value="__add">+ Add new…</option>`;
  sel.innerHTML=h;sel.value=val||'';sel.dataset.prev=sel.value;
 }
 function maybeQuickAdd(sel){
@@ -1255,6 +1665,7 @@ function openQuickAdd(kind,editId,trigger){
  for(const [key,lab] of K.fields){
   if(lab==='__roleselect')h+=`<label>Primary role</label><select id="qf_${key}"></select>`;
   else if(lab==='__labourtype')h+=`<label>Labour type</label><select id="qf_${key}">${LABOUR_TYPES.map(x=>`<option>${esc(x)}</option>`).join('')}</select>`;
+  else if(lab==='__equipcat')h+=`<label>Category</label><select id="qf_${key}">${EQUIP_CATS.map(c=>`<option${(item[key]||guessEquipCat(item.name||''))===c?' selected':''}>${esc(c)}</option>`).join('')}</select>`;
   else h+=`<label>${lab}</label><input id="qf_${key}" value="${esc(item[key]||'')}">`;
  }
  $('qmFields').innerHTML=h;
@@ -1268,6 +1679,7 @@ function saveQuick(){
  const vals={};
  for(const [key] of K.fields){const el=$('qf_'+key);if(el)vals[key]=el.value.trim();}
  if(!vals.name){toast('Name is required','err');return;}
+ if(quickKind==='equipment'){if(vals.stock&&!/^\d+$/.test(vals.stock)){toast('Number owned must be a whole number, e.g. 144','err');return;}if(vals.unitSize&&!parseUnitSize(vals.unitSize)){toast('Size should look like 500x500 mm or 1.2x2.4 m','err');return;}}
  let obj;
  if(quickEditId){obj=byId(quickKind,quickEditId);Object.assign(obj,vals);}
  else{obj=Object.assign({id:uid()},vals);state[quickKind].push(obj);}
@@ -1311,18 +1723,22 @@ function openJobModal(id){
 function updateDatePreview(){
  $('f_setup_fmt').textContent=($('f_setup_from').value||$('f_setup_to').value)?fmtRange($('f_setup_from').value,$('f_setup_to').value):'';
  $('f_event_fmt').textContent=($('f_from').value||$('f_to').value)?fmtRange($('f_from').value,$('f_to').value):'';
+ refreshStockHints();
 }
 function closeJobModal(){$('jobModal').classList.remove('open');editingJobId=null;}
 function addEquipRow(d){
  d=d||{};
- const row=document.createElement('div');row.className='dyn-row';
- row.innerHTML=`<input class="eq-spec" placeholder="Qty / size (e.g. 8X3M, 6, 12)" value="${esc(d.spec||'')}">`+
-  `<select class="eq-sel" data-kind="equipment" data-ph="— Equipment item —" onchange="maybeQuickAdd(this)"></select>`+
-  `<button type="button" class="row-x" title="Remove" onclick="this.parentElement.remove()">✕</button>`;
+ const row=document.createElement('div');row.className='dyn-row eq-row';
+ row.innerHTML=`<input class="eq-spec" placeholder="Qty / size (e.g. 8X3M, 6, 12)" value="${esc(d.spec||'')}" oninput="refreshStockHints()">`+
+  `<select class="eq-sel" data-kind="equipment" data-ph="— Equipment item —" onchange="maybeQuickAdd(this);refreshStockHints()"></select>`+
+  `<input class="eq-hire" type="number" min="0" step="1" inputmode="numeric" placeholder="Hire" title="How many to hire in from a partner" value="${d.hire?esc(d.hire):''}" oninput="refreshStockHints()">`+
+  `<button type="button" class="row-x" title="Remove" onclick="this.parentElement.remove();refreshStockHints()">✕</button>`+
+  `<div class="eq-av"></div>`;
  $('equipRows').appendChild(row);
  let val=d.itemId||'';
  if(!val&&d.name){const m=state.equipment.find(e=>e.name.toLowerCase()===d.name.toLowerCase());if(m)val=m.id;}
  fillSelect(row.querySelector('select'),'equipment','— Equipment item —',val);
+ refreshStockHints();
 }
 function addCrewRow(c){
  c=c||{};
@@ -1346,7 +1762,8 @@ function saveJobForm(){
  if(!ev){toast('Please enter the event name','err');$('f_event').focus();return;}
  const equipment=[...document.querySelectorAll('#equipRows .dyn-row')].map(r=>{
   const sel=r.querySelector('select');const it=byId('equipment',sel.value);
-  return{itemId:it?it.id:null,name:it?it.name:'',spec:r.querySelector('.eq-spec').value.trim()};
+  const hire=Math.max(0,parseInt((r.querySelector('.eq-hire')||{}).value,10)||0);
+  const o={itemId:it?it.id:null,name:it?it.name:'',spec:r.querySelector('.eq-spec').value.trim()};if(hire)o.hire=hire;return o;
  }).filter(e=>e.name);
  const crew=[...document.querySelectorAll('#crewRows .dyn-row')].map(r=>({
   roleId:r.querySelector('.cr-role').value||null,
@@ -1399,40 +1816,18 @@ function visibleHistoryText(text){
 function openView(id){
  const j=state.jobs.find(x=>x.id===id);if(!j)return;
  $('notifPanel').classList.remove('open');
- const c=byId('clients',j.clientId);
- let crewH='';
- for(const [r,ns] of crewGrouped(j))crewH+=`<div class="vw-crewrow"><span class="vw-role">${esc(r)}</span><span>${ns.map(esc).join(', ')}</span></div>`;
- $('vmBody').innerHTML=`
- <div class="vw-head">
-  <div>
-   <div class="muted mono sm">${esc(j.no)}</div>
-   <h2>${esc(j.event)}</h2>
-   <div class="vw-sub">${j.typeId?'🎪 '+esc(nameOf('eventTypes',j.typeId))+' &nbsp;·&nbsp; ':''}${statusPill(j.status)}${j.priority&&j.priority!=='Normal'?` <span class="prio ${j.priority.toLowerCase()}">${j.priority}</span>`:''}</div>
-  </div>
-  <button class="x" onclick="closeView()">✕</button>
- </div>
- <div class="vw-grid">
-  <div class="vw-cell"><label>Client / Company</label><b>${esc(nameOf('clients',j.clientId))}</b>${c&&(c.contact||c.phone)?`<div class="muted sm">${esc([c.contact,c.phone].filter(Boolean).join(' · '))}</div>`:''}</div>
-  <div class="vw-cell"><label>Venue</label><b>${esc(nameOf('venues',j.venueId))}</b></div>
- <div class="vw-cell"><label>The Site Manager</label><b>${esc(jobSiteManager(j)||'—')}</b></div>
- <div class="vw-cell"><label>Job Card Created by</label><b>${esc(jobCardCreator(j)||'—')}</b></div>
-  <div class="vw-cell"><label>Set Up Date</label><b>${fmtSetupRange(j)}</b></div>
-  <div class="vw-cell"><label>Event Date</label><b>${fmtRange(j.eventFrom,j.eventTo)}</b></div>
-  </div>
- <div class="vw-2col">
-  <div><h4>🎛 Equipment (${j.equipment.length})</h4>${j.equipment.length?'<ul class="vw-eq">'+j.equipment.map(e=>'<li>'+esc((e.spec?e.spec+' ':'')+e.name)+'</li>').join('')+'</ul>':'<div class="muted sm">None listed</div>'}</div>
-  <div><h4>👷 Crew (${j.crew.length})</h4>${crewH||'<div class="muted sm">No crew assigned</div>'}</div>
- </div>
- ${j.notes?`<div class="vw-notes"><h4>📝 Notes</h4>${esc(j.notes).replace(/\n/g,'<br>')}</div>`:''}
- <div class="vw-status"><label>Update status:</label>${STATUSES.map(s=>`<button class="st-pill${s===j.status?' on':''}" style="--c:${SMETA[s][0]}" onclick="setJobStatus('${j.id}','${s}')">${s}</button>`).join('')}</div>
-  <div class="vw-actions">
-   <button class="gold-btn" onclick="printJob('${j.id}')">🖨 Print / Save PDF</button>
-   <button class="ghost-btn" onclick="addJobToCalendar('${j.id}')">Google Calendar</button>
-   <button class="ghost-btn" onclick="closeView();openJobModal('${j.id}')">✎ Edit</button>
-   <button class="ghost-btn" onclick="duplicateJob('${j.id}')">⧉ Duplicate</button>
-   <button class="ghost-btn danger" onclick="askDeleteJob('${j.id}')">🗑 Delete</button>
- </div>
- <details class="vw-hist"><summary>Activity log (${j.history.length})</summary>${[...j.history].reverse().map(h=>`<div class="hist-row"><span class="muted">${fmtDT(h.ts)}</span> — ${esc(visibleHistoryText(h.text))}</div>`).join('')}</details>`;
+ if(wideScreen()){
+  $('viewModal').classList.remove('open');viewJobId=null;
+  if(!jobFilterMatch(j)){$('jq').value='';$('jClient').value='';}
+  if($('jStatus').value&&$('jStatus').value!==j.status)$('jStatus').value='';
+  selectedJobId=id;
+  if(!$('view-jobs').classList.contains('active'))switchView('jobs');
+  renderJobs();
+  const el=document.querySelector('.jl-item[data-id="'+id+'"]');if(el)el.scrollIntoView({block:'nearest'});
+  return;
+ }
+ viewJobId=id;
+ $('vmBody').innerHTML=jobDetailHTML(j,null,true);
  $('viewModal').classList.add('open');
 }
 function closeView(){$('viewModal').classList.remove('open');}
@@ -1998,7 +2393,7 @@ function renderDashboard(){
 	   <p>${nextText}</p>
 	   <div class="ops-runway">${runwayHtml}</div>
 	   <div class="dash-hero-actions">
-    <button class="gold-btn" onclick="openJobModal()">＋ New Job Card</button>
+    <button class="gold-btn" onclick="openJobModal()">+ New Job Card</button>
     <button class="dash-link" onclick="switchView('schedule')">Open Schedule</button>
    </div>
   </div>
@@ -2089,47 +2484,35 @@ function renderDashboard(){
  $('dRecent').innerHTML=rec.length?rec.map((j,i)=>`<div class="rec" style="--i:${i}" onclick="openView('${j.id}')">
   <div class="rec-main"><div class="rec-no">${esc(j.no)}</div><b>${esc(j.event)}</b><span>${esc(nameOf('clients',j.clientId))} · ${esc(nameOf('venues',j.venueId))}</span></div>
   <div class="rec-meta"><span class="rec-date">${fmtRange(j.eventFrom,j.eventTo)}</span>${statusPill(j.status)}</div></div>`).join('')
- :'<div class="empty">Your latest job cards will appear here.<br><br><button class="gold-btn" onclick="openJobModal()">＋ Create your first Job Card</button></div>';
+ :'<div class="empty">Your latest job cards will appear here.<br><br><button class="gold-btn" onclick="openJobModal()">+ Create your first Job Card</button></div>';
  setupDashboardWindows();
 }
 
 /* ================= JOBS LIST ================= */
 function renderJobs(){
  fillFilter($('jClient'),'clients','All clients');
- const q=$('jq').value.toLowerCase().trim(),st=$('jStatus').value,cl=$('jClient').value,sort=$('jSort').value;
- let list=state.jobs.filter(j=>{
-  if(st&&j.status!==st)return false;
-  if(cl&&j.clientId!==cl)return false;
-  if(q){const hay=(j.event+' '+j.no+' '+nameOf('clients',j.clientId)+' '+nameOf('venues',j.venueId)+' '+jobSiteManager(j)+' '+jobCardCreator(j)).toLowerCase();if(!hay.includes(q))return false;}
-  return true;
- });
+ const st=$('jStatus').value,sort=$('jSort').value;
+ const base=state.jobs.filter(jobFilterMatch),list=base.filter(j=>!st||j.status===st);
  const key=j=>j.eventFrom||setupStart(j)||'';
  if(sort==='ev_desc')list.sort((a,b)=>key(b).localeCompare(key(a)));
  else if(sort==='ev_asc')list.sort((a,b)=>key(a).localeCompare(key(b)));
  else list.sort((a,b)=>b.createdAt-a.createdAt);
- $('jobsCount').textContent='Showing '+list.length+' of '+state.jobs.length+' job cards';
- $('jobsTbody').innerHTML=list.map(j=>`<tr onclick="openView('${j.id}')">
-  <td class="mono" style="color:var(--gold)">${esc(j.no)}</td>
-  <td><b>${esc(j.event)}</b></td>
-  <td>${esc(nameOf('clients',j.clientId))}</td>
-  <td>${esc(nameOf('venues',j.venueId))}</td>
-  <td>${fmtSetupRange(j)}</td>
-  <td>${fmtRange(j.eventFrom,j.eventTo)}</td>
-  <td>${esc(jobSiteManager(j)||'—')}</td>
-  <td>${j.crew.length?'👷 '+j.crew.length:'—'}</td>
-  <td>${statusPill(j.status)}</td>
-  <td class="acts" onclick="event.stopPropagation()">
-   <button title="Edit" onclick="openJobModal('${j.id}')">✎</button>
-   <button title="Print" onclick="printJob('${j.id}')">🖨</button>
-  </td></tr>`).join('');
- $('jobsTable').style.display=list.length?'':'none';
+ const sIdx=stockIndex(),shortN=state.jobs.filter(j=>stockFlagHTML(j,sIdx)).length;
+ $('jChips').innerHTML=['',...STATUSES].map(x=>{const n=x?base.filter(j=>j.status===x).length:base.length;return `<button type="button" class="jchip${x===st?' on':''}" onclick="setJobFilter('${x}')">${x?`<i style="background:${SMETA[x][0]}"></i>`:''}${x||'All'}<em>${n}</em></button>`;}).join('')
+  +(shortN?`<button type="button" class="jchip warn" onclick="switchView('stock')">${shortN} short on stock</button>`:'');
+ $('jobsCount').textContent=list.length+' of '+state.jobs.length+' job cards';
+ if(!list.some(j=>j.id===selectedJobId))selectedJobId=list.length?list[0].id:null;
+ $('jobsList').innerHTML=list.map(j=>{const sub=[j.clientId?nameOf('clients',j.clientId):'',j.venueId?nameOf('venues',j.venueId):''].filter(x=>x&&x!=='—').join(' · ');
+  return `<button type="button" class="jl-item${j.id===selectedJobId?' on':''}" data-id="${j.id}" onclick="selectJob(this.dataset.id)"><div class="jl-row"><span class="jl-no">${esc(j.no)}</span>${statusPill(j.status)}</div><div class="jl-title">${esc(j.event)}</div><div class="jl-sub">${esc(sub||'No client or venue yet')}</div><div class="jl-meta"><span>${NI.cal}${jobShortDates(j)}</span><span>${NI.crew}${j.crew.length}</span><span>${NI.kit}${j.equipment.length}</span>${stockFlagHTML(j,sIdx)}</div></button>`;}).join('');
+ $('jobsList').style.display=list.length?'':'none';
  $('jobsEmpty').style.display=list.length?'none':'';
  $('jobsEmpty').innerHTML=state.jobs.length?'No job cards match your filters.'
-  :`<div class="big-empty">🗂<br><b>No job cards yet</b><br>Create your first job card to get started.<br><br><button class="gold-btn" onclick="openJobModal()">＋ New Job Card</button></div>`;
+  :`<div class="big-empty"><b>No job cards yet</b><br>Create your first job card to get started.<br><br><button class="gold-btn" onclick="openJobModal()">+ New Job Card</button></div>`;
+ renderJobDetail(sIdx);
 }
 
 /* ================= SCHEDULE ================= */
-function renderSchedule(){
+function renderScheduleMonth(){
  const first=new Date(calY,calM,1);
  $('calLabel').textContent=MONTHS[calM]+' '+calY;
  if($('opsBriefDate')&&!$('opsBriefDate').value)$('opsBriefDate').value=todayISO();
@@ -2142,16 +2525,20 @@ function renderSchedule(){
   const iso=`${calY}-${String(calM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
   const su=state.jobs.filter(j=>setupCovers(j,iso)&&j.status!=='Cancelled');
   const evs=state.jobs.filter(j=>{const f=j.eventFrom,to=j.eventTo||j.eventFrom;return f&&f<=iso&&iso<=to&&j.status!=='Cancelled';});
-  let chips=su.map(j=>`<div class="chip setup" onclick="openView('${j.id}')" title="Setup — ${esc(j.event)}">⚙ ${esc(j.event)}</div>`)
+  let chips=su.map(j=>`<div class="chip setup" onclick="openView('${j.id}')" title="Setup — ${esc(j.event)}">${esc(j.event)}</div>`)
    .concat(evs.map(j=>`<div class="chip" style="border-color:${SMETA[j.status][0]};color:${SMETA[j.status][0]}" onclick="openView('${j.id}')" title="${esc(j.event)} (${j.status})">${esc(j.event)}</div>`));
   let more='';
-  if(chips.length>3){more=`<div class="chip more">+${chips.length-3} more</div>`;chips=chips.slice(0,3);}
-  h+=`<div class="cal-cell${iso===t?' today':''}"><div class="cal-d">${d}</div>${chips.join('')}${more}</div>`;
+  if(chips.length>3){more=`<div class="chip more" onclick="calDay='${iso}';setCalView('day')">+${chips.length-3} more</div>`;chips=chips.slice(0,3);}
+  h+=`<div class="cal-cell${iso===t?' today':''}"><div class="cal-d" onclick="calDay='${iso}';setCalView('day')" title="Open this day">${d}</div>${chips.join('')}${more}</div>`;
  }
  $('calGrid').innerHTML=h;
 }
-function calShift(n){calM+=n;if(calM<0){calM=11;calY--;}if(calM>11){calM=0;calY++;}renderSchedule();}
-function calToday(){const n=new Date();calY=n.getFullYear();calM=n.getMonth();if($('opsBriefDate'))$('opsBriefDate').value=todayISO();renderSchedule();}
+function calShift(n){
+ if(calView==='month'){calM+=n;if(calM<0){calM=11;calY--;}if(calM>11){calM=0;calY++;}}
+ else{calDay=addDaysISO(calDay||todayISO(),n*(calView==='week'?7:calView==='day'?1:30));const d=new Date(calDay+'T00:00:00');calY=d.getFullYear();calM=d.getMonth();}
+ renderSchedule();
+}
+function calToday(){const n=new Date();calY=n.getFullYear();calM=n.getMonth();calDay=todayISO();if($('opsBriefDate'))$('opsBriefDate').value=todayISO();renderSchedule();}
 function opsBriefDate(){const el=$('opsBriefDate');if(el&&!el.value)el.value=todayISO();return el&&el.value?el.value:todayISO();}
 function weekStartISO(iso){
  const d=new Date(iso+'T00:00:00');
@@ -2389,17 +2776,18 @@ function renderSettings(){
  for(const kind in KINDS){
   const K=KINDS[kind];
   const items=[...state[kind]].sort((a,b)=>a.name.localeCompare(b.name));
-  h+=`<div class="card list-card"><div class="list-head"><h3>${K.icon} ${K.label}<span class="cnt">${items.length}</span></h3>
-   <button class="gold-btn sm" onclick="openQuickAdd('${kind}')">＋ Add</button></div><div class="list-body">`+
+  h+=`<div class="card list-card"><div class="list-head"><h3>${K.label}<span class="cnt">${items.length}</span></h3>
+   <button class="gold-btn sm" onclick="openQuickAdd('${kind}')">+ Add</button></div><div class="list-body">`+
    (items.map(it=>{
     let meta='';
     if(kind==='technicians')meta=[it.role?nameOf('roles',it.role):'',it.phone||''].filter(Boolean).join(' · ');
     else if(kind==='clients')meta=[it.contact||'',it.phone||''].filter(Boolean).join(' · ');
     else if(kind==='venues')meta=it.area||'';
-    if(kind==='technicians')meta=[it.role?nameOf('roles',it.role):'',it.workerType||'DVI Staff',it.source||'',it.phone||'',it.rateNote||''].filter(Boolean).join(' Â· ');
+    else if(kind==='equipment')meta=[equipCat(it),stockOwned(it)!==null?'Owned: '+stockOwned(it):'',unitSizeText(parseUnitSize(it.unitSize),equipCat(it))].filter(Boolean).join(' · ');
+    if(kind==='technicians')meta=[it.role?nameOf('roles',it.role):'',it.workerType||'DVI Staff',it.source||'',it.phone||'',it.rateNote||''].filter(Boolean).join(' · ');
     return `<div class="list-row"><div><b>${esc(it.name)}</b>${meta?`<div class="muted sm">${esc(meta)}</div>`:''}</div>
-     <div class="row-acts"><button onclick="openQuickAdd('${kind}','${it.id}')" title="Edit">✎</button>
-     <button onclick="removeItem('${kind}','${it.id}')" title="Delete">🗑</button></div></div>`;
+     <div class="row-acts"><button onclick="openQuickAdd('${kind}','${it.id}')" title="Edit"><svg class="ni" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>
+     <button onclick="removeItem('${kind}','${it.id}')" title="Delete"><svg class="ni" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></div></div>`;
    }).join('')||'<div class="empty sm">Nothing here yet.</div>')+
   `</div></div>`;
  }
@@ -2475,6 +2863,452 @@ function clearAll(){
  });
 }
 
+/* ================= STOCK ================= */
+// "Number owned" lives on each Equipment Catalogue item. Scheduled, Setup and In Progress job cards hold their
+// equipment from the first set-up day to the last event day. Rows may carry "hire" = units hired in from a partner.
+const STOCK_HOLDS=['Scheduled','Setup','In Progress'];
+let stockStart=null;
+const fmtShort=iso=>{if(!iso)return '';const p=iso.split('-').map(Number);return p[2]+' '+MONTHS[p[1]-1].slice(0,3);};
+function parseUnitSize(v){
+ const m=String(v||'').trim().toUpperCase().replace(/×/g,'X').match(/^(\d+(?:\.\d+)?)\s*(MM|M)?\s*X\s*(\d+(?:\.\d+)?)\s*(MM|M)?$/);
+ if(!m)return null;
+ let a=+m[1],b=+m[3];
+ if(m[2]==='MM'||m[4]==='MM'||a>20||b>20){a/=1000;b/=1000;}   // 500x1000 means millimetres
+ return a>0&&b>0?[a,b]:null;
+}
+function stockOwned(it){if(!it||it.stock==null)return null;const v=String(it.stock).trim();return /^\d+$/.test(v)?Number(v):null;}
+// Store units one equipment row takes: "6" = 6, "2 x 75KVA" = 2, "8X3M" = panels/decks when the item has a unit size, else 1.
+function stockUnitsFor(e,it){
+ const spec=String((e&&e.spec)||'').trim().toUpperCase().replace(/×/g,'X').replace(/\s+/g,' ');
+ if(!spec)return 1;
+ let m=spec.match(/^X?\s*(\d+)\s*(PCS?|PIECES?|UNITS?|SETS?|PAIRS?|NOS?\.?|NO\.?|X)?$/);
+ if(m)return Number(m[1]);
+ m=spec.match(/^(\d+(?:\.\d+)?)\s*M?\s*X\s*(\d+(?:\.\d+)?)\s*M?$/);
+ if(m){const u=parseUnitSize(it&&it.unitSize);return u?Math.ceil(m[1]/u[0]-1e-9)*Math.ceil(m[2]/u[1]-1e-9):1;}
+ m=spec.match(/^(\d+)\s*X\s*\S/);
+ if(m)return Number(m[1]);
+ return 1;
+}
+function stockDays(j){
+ let a=setupStart(j)||j.eventFrom||j.eventTo||'',b=j.eventTo||j.eventFrom||setupEnd(j)||a;
+ if(!a)return null;
+ if(b<a){const x=a;a=b;b=x;}
+ const cap=addDaysISO(a,366);
+ return [a,b>cap?cap:b];
+}
+function stockRowNeed(e){const it=e.itemId?byId('equipment',e.itemId):null;return Math.max(0,stockUnitsFor(e,it)-(parseInt(e.hire,10)||0));}
+function stockIndex(){
+ const idx=new Map();
+ for(const j of state.jobs){
+  if(!STOCK_HOLDS.includes(j.status))continue;
+  const d=stockDays(j);if(!d)continue;
+  const per=new Map();
+  for(const e of j.equipment||[]){if(e.itemId)per.set(e.itemId,(per.get(e.itemId)||0)+stockRowNeed(e));}
+  for(const [id,n] of per){if(!n)continue;if(!idx.has(id))idx.set(id,[]);idx.get(id).push({j,s:d[0],e:d[1],n});}
+ }
+ return idx;
+}
+const stockHolders=(idx,id,iso,exceptId)=>(idx.get(id)||[]).filter(r=>r.s<=iso&&iso<=r.e&&r.j.id!==exceptId);
+const stockUsed=(idx,id,iso,exceptId)=>stockHolders(idx,id,iso,exceptId).reduce((n,r)=>n+r.n,0);
+// For each catalogue item on a job: units it takes from the store and its tightest day against every other booking.
+function stockCheck(j,idx){
+ idx=idx||stockIndex();
+ const out={},d=stockDays(j),rowsAll=j.equipment||[];
+ for(const id of [...new Set(rowsAll.map(e=>e.itemId).filter(Boolean))]){
+  const it=byId('equipment',id),owned=stockOwned(it),rows=rowsAll.filter(e=>e.itemId===id);
+  const need=rows.reduce((n,e)=>n+stockRowNeed(e),0),hired=rows.reduce((n,e)=>n+(parseInt(e.hire,10)||0),0);
+  if(owned===null){out[id]={k:'untracked',need,hired};continue;}
+  if(!d){out[id]={k:'nodates',need,hired,owned};continue;}
+  let worst=null;
+  for(let iso=d[0];iso<=d[1];iso=addDaysISO(iso,1)){
+   const free=owned-stockUsed(idx,id,iso,j.id);
+   if(!worst||free-need<worst.spare)worst={iso,free,spare:free-need};
+  }
+  out[id]=Object.assign({k:worst.spare<0?'short':(worst.spare===0&&need>0)?'full':'ok',need,hired,owned},worst);
+ }
+ return out;
+}
+function stockShortList(j,idx){const sc=stockCheck(j,idx);return Object.keys(sc).filter(id=>sc[id].k==='short').map(id=>Object.assign({id,name:nameOf('equipment',id)},sc[id]));}
+const stockWatch=j=>STOCK_HOLDS.includes(j.status)||j.status==='Draft';
+function stockFlagHTML(j,idx){
+ if(!stockWatch(j))return '';
+ const d=stockDays(j);if(!d||d[1]<todayISO())return '';
+ const sh=stockShortList(j,idx);
+ return sh.length?` <span class="sv sv-short" title="${esc(sh.map(x=>x.name+': short '+(-x.spare)+' on '+fmtShort(x.iso)).join('; '))}">Stock short</span>`:'';
+}
+function stockBadgeHTML(c){
+ if(!c)return '';
+ const hire=c.hired?` <span class="sv sv-hire">· hire ${c.hired}</span>`:'';
+ if(c.k==='short')return ` <span class="sv sv-short">short ${-c.spare} on ${fmtShort(c.iso)}</span>`+hire;
+ if(c.k==='full')return ` <span class="sv sv-full">last ones on ${fmtShort(c.iso)}</span>`+hire;
+ if(c.k==='ok')return ` <span class="sv sv-ok">${c.spare} spare</span>`+hire;
+ return hire;
+}
+function stockHintHTML(c,it,j){
+ if(!c||c.k==='untracked')return '';
+ const uses='Uses '+c.need+(c.hired?' + hire '+c.hired:'');
+ const draft=j.status==='Draft'?'<span class="sv sv-mut">Draft: not holding stock yet</span>':'';
+ if(c.k==='nodates')return `<span class="sv sv-mut">${uses} · add the set-up or event dates to check stock</span>`;
+ if(c.k==='short')return `<span class="sv sv-short">${uses} · short ${-c.spare} on ${fmtShort(c.iso)} (${Math.max(0,c.free)} of ${c.owned} free)</span><button type="button" class="sv-btn" onclick="planHire('${it.id}',${-c.spare})">Hire ${-c.spare}</button>${draft}`;
+ if(c.k==='full')return `<span class="sv sv-full">${uses} · takes the last ones on ${fmtShort(c.iso)}</span>${draft}`;
+ return `<span class="sv sv-ok">${uses} · ${c.spare} of ${c.owned} spare on these dates</span>${draft}`;
+}
+function formDraftJob(){
+ return{id:editingJobId||'__new',status:$('f_status').value,setupFrom:$('f_setup_from').value||null,setupTo:$('f_setup_to').value||null,
+  eventFrom:$('f_from').value||null,eventTo:$('f_to').value||null,
+  equipment:[...document.querySelectorAll('#equipRows .dyn-row')].map(r=>{const sel=r.querySelector('select'),h=r.querySelector('.eq-hire');
+   return{itemId:sel&&sel.value&&sel.value!=='__add'?sel.value:null,spec:r.querySelector('.eq-spec').value,hire:h?(parseInt(h.value,10)||0):0,_row:r};})};
+}
+function refreshStockHints(){
+ if(!state||!$('equipRows'))return;
+ const j=formDraftJob(),sc=stockCheck(j),seen=new Set(),closed=j.status==='Completed'||j.status==='Cancelled';
+ for(const e of j.equipment){
+  const box=e._row.querySelector('.eq-av');if(!box)continue;
+  const it=e.itemId?byId('equipment',e.itemId):null;
+  if(!it||closed||seen.has(it.id)){box.innerHTML='';continue;}
+  seen.add(it.id);box.innerHTML=stockHintHTML(sc[it.id],it,j);
+ }
+}
+function planHire(itemId,n){
+ const row=[...document.querySelectorAll('#equipRows .dyn-row')].find(r=>r.querySelector('select').value===itemId);
+ if(!row)return;
+ const h=row.querySelector('.eq-hire');h.value=(parseInt(h.value,10)||0)+n;
+ refreshStockHints();toast('Hire '+n+' added. Save the job card to keep it.');
+}
+function setStockOwned(id,v){
+ const it=byId('equipment',id);if(!it)return;
+ v=String(v==null?'':v).trim();
+ if(v&&!/^\d+$/.test(v)){toast('Use a whole number, e.g. 144','err');renderStock();return;}
+ it.stock=v;save();renderAll();
+ toast(v?it.name+': '+v+' owned ✓':'Stopped tracking '+it.name);
+}
+function stockShift(n){stockStart=n?addDaysISO(stockStart||todayISO(),n):todayISO();renderStock();}
+function renderStock(){
+ if(!$('stockTable')||!state)return;
+ if(!stockStart)stockStart=todayISO();
+ const t=todayISO(),idx=stockIndex(),days=[];
+ for(let i=0;i<14;i++)days.push(addDaysISO(stockStart,i));
+ $('stkRange').textContent=fmtShort(days[0])+' – '+fmtShort(days[13]);
+ const ord=c=>EQUIP_CATS.indexOf(c);
+ const allItems=[...state.equipment].sort((a,b)=>(ord(equipCat(a))-ord(equipCat(b)))||((stockOwned(b)!==null)-(stockOwned(a)!==null))||a.name.localeCompare(b.name));
+ const hiddenN=allItems.filter(it=>stockOwned(it)===null).length;
+ const items=stockShowAll?allItems:allItems.filter(it=>stockOwned(it)!==null);
+ let lastCat='';
+ const head='<thead><tr><th class="it">Item</th><th class="own">Owned</th>'+days.map(d=>{const p=d.split('-').map(Number);return `<th class="${d===t?'stk-today':''}">${WEEKDAYS[new Date(p[0],p[1]-1,p[2]).getDay()].slice(0,3)}<div class="stk-dm">${p[2]} ${MONTHS[p[1]-1].slice(0,3)}</div></th>`;}).join('')+'</tr></thead>';
+ const body=items.map(it=>{
+  const cat=equipCat(it),hd=cat!==lastCat?`<tr class="stk-cat"><td colspan="16">${esc(cat)}</td></tr>`:'';lastCat=cat;
+  const owned=stockOwned(it),u=parseUnitSize(it.unitSize);
+  const cells=days.map(d=>{
+   if(owned===null)return `<td class="${d===t?'stk-today':''}"><span class="stk-c stk-none">·</span></td>`;
+   const hs=stockHolders(idx,it.id,d),used=hs.reduce((n,r)=>n+r.n,0),left=owned-used;
+   const cls=used===0?'stk-none':left<0?'stk-short':left===0?'stk-full':left<=owned*0.25?'stk-low':'stk-free';
+   const tip=fmtShort(d)+': '+(hs.length?hs.map(r=>r.j.no+' '+r.j.event+' ('+r.n+')').join(', ')+' · ':'')+(left<0?'short '+(-left):left+' left')+' of '+owned;
+   return `<td class="${d===t?'stk-today':''}"><span class="stk-c ${cls}" title="${esc(tip)}">${used===0?'–':left}</span></td>`;
+  }).join('');
+  return hd+`<tr><td class="it"><b>${esc(it.name)}</b><div class="muted" style="font-size:11px">${owned===null?'Not tracked yet':(u?'Counted in '+unitSizeText(u,cat):'Counted in pieces')}</div></td>`+
+   `<td class="own"><input type="number" min="0" step="1" inputmode="numeric" value="${owned===null?'':owned}" placeholder="Set" aria-label="Number owned: ${esc(it.name)}" onchange="setStockOwned('${it.id}',this.value)"></td>${cells}</tr>`;
+ }).join('');
+ $('stockTable').innerHTML=head+'<tbody>'+(body||'<tr><td colspan="16" class="empty sm">No items tracked yet. Type a number owned on any item, or use “+ Add stock item”.</td></tr>')+'</tbody>';
+ $('stkMore').innerHTML=hiddenN?`${stockShowAll?'Showing':'Hiding'} ${hiddenN} item${hiddenN>1?'s':''} with no number owned yet.<button class="panel-action" onclick="stockShowAll=!stockShowAll;renderStock()">${stockShowAll?'Hide them':'Show them'}</button>`:'';
+ const shorts=[];
+ for(const it of state.equipment){
+  const owned=stockOwned(it),rs=idx.get(it.id)||[];
+  if(owned===null||!rs.length)continue;
+  const last=rs.reduce((m,r)=>r.e>m?r.e:m,t);
+  let cur=null;
+  for(let iso=t;iso<=last;iso=addDaysISO(iso,1)){
+   const hs=stockHolders(idx,it.id,iso),used=hs.reduce((n,r)=>n+r.n,0);
+   if(used<=owned){cur=null;continue;}
+   const key=hs.map(r=>r.j.id).join(',');
+   if(cur&&cur.key===key){cur.to=iso;cur.max=Math.max(cur.max,used-owned);}
+   else{cur={it,key,from:iso,to:iso,max:used-owned,hs};shorts.push(cur);}
+  }
+ }
+ $('stkShort').innerHTML=shorts.length?shorts.map(x=>`<div class="stk-row"><span class="sv sv-short">${fmtShort(x.from)}${x.to!==x.from?' – '+fmtShort(x.to):''}</span><div><b>${esc(x.it.name)}</b>: short ${x.max}<div class="muted sm">${x.hs.map(r=>`<a href="#" onclick="openView('${r.j.id}');return false">${esc(r.j.no)}</a> ${esc(r.j.event)} takes ${r.n}`).join(' · ')}</div></div></div>`).join('')
+  :'<div class="empty sm">Nothing short. Every confirmed job card can take its equipment from the store.</div>';
+ const hires=[];
+ for(const j of state.jobs){
+  if(!stockWatch(j))continue;
+  const d=stockDays(j);if(d&&d[1]<t)continue;
+  for(const e of j.equipment||[]){const n=parseInt(e.hire,10)||0;if(n)hires.push({j,e,n,d});}
+ }
+ $('stkHires').innerHTML=hires.length?hires.map(h=>`<div class="stk-row"><span class="sv sv-hire">Hire ${h.n}</span><div><b>${esc(h.e.name||nameOf('equipment',h.e.itemId))}</b> for <a href="#" onclick="openView('${h.j.id}');return false">${esc(h.j.no)}</a> ${esc(h.j.event)}<div class="muted sm">${h.d?fmtShort(h.d[0])+(h.d[1]!==h.d[0]?' – '+fmtShort(h.d[1]):''):'No dates yet'} · partner to confirm</div></div></div>`).join('')
+  :'<div class="empty sm">No hires planned. Use the Hire box on a job card’s equipment line when you are short.</div>';
+}
+
+/* ================= JOB WORKSPACE (list + detail, like the approved mock-up) ================= */
+let selectedJobId=null,jobTab='Equipment',viewJobId=null;
+const JOB_FLOW=['Draft','Scheduled','Setup','In Progress','Completed'];
+const NI={
+ cal:'<svg class="ni" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+ crew:'<svg class="ni" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/></svg>',
+ kit:'<svg class="ni" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h10M7 14h6"/></svg>',
+ print:'<svg class="ni" viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>'
+};
+const wideScreen=()=>window.innerWidth>900;
+function jobFilterMatch(j){
+ const q=$('jq').value.toLowerCase().trim(),cl=$('jClient').value;
+ if(cl&&j.clientId!==cl)return false;
+ if(q){const hay=(j.event+' '+j.no+' '+nameOf('clients',j.clientId)+' '+nameOf('venues',j.venueId)+' '+jobSiteManager(j)+' '+jobCardCreator(j)).toLowerCase();if(!hay.includes(q))return false;}
+ return true;
+}
+function jobShortDates(j){
+ const d=stockDays(j);if(!d)return 'No dates';
+ const t=todayISO();
+ if(d[0]<=t&&t<=d[1])return 'On now';
+ return fmtShort(d[0])+(d[1]!==d[0]?' – '+fmtShort(d[1]):'');
+}
+function setJobFilter(s){$('jStatus').value=s;renderJobs();}
+function selectJob(id){
+ if(!wideScreen()){openView(id);return;}
+ selectedJobId=id;
+ document.querySelectorAll('.jl-item').forEach(b=>b.classList.toggle('on',b.dataset.id===id));
+ renderJobDetail();
+}
+function renderJobDetail(idx){
+ const box=$('jobDetail');if(!box)return;
+ const j=state.jobs.find(x=>x.id===selectedJobId);
+ box.innerHTML=j?jobDetailHTML(j,idx,false):'<div class="jd-empty">Select a job card on the left to see it here.</div>';
+}
+function setJobTab(t){jobTab=t;refreshJobViews();}
+function refreshJobViews(){
+ renderJobDetail();
+ if($('viewModal').classList.contains('open')&&viewJobId){const j=state.jobs.find(x=>x.id===viewJobId);if(j)$('vmBody').innerHTML=jobDetailHTML(j,null,true);}
+}
+function swHTML(jid,list,i,field,on){
+ return `<label class="sw" title="${field==='signedIn'?'Signed in':field==='out'?'Gone out to the job':'Back in the store'}"><input type="checkbox"${on?' checked':''} onchange="toggleJobFlag('${jid}','${list}',${i},'${field}',this.checked)"><span></span></label>`;
+}
+function toggleJobFlag(id,list,i,field,on){
+ const j=state.jobs.find(x=>x.id===id);if(!j||!j[list]||!j[list][i])return;
+ const row=j[list][i];row[field]=!!on;
+ const what=list==='crew'?crewDisplayName(row.techId)+(on?' signed in':' sign-in cleared')
+  :(row.name||nameOf('equipment',row.itemId))+(field==='out'?(on?' went out':' marked not out'):(on?' came back':' marked not back'));
+ j.history.push({ts:Date.now(),text:what});j.updatedAt=Date.now();markJobDevice(j);
+ save();refreshJobViews();
+}
+function rowStockHTML(j,e,sc){
+ if(!e.itemId)return '<span class="muted sm">—</span>';
+ if(!stockWatch(j))return '<span class="muted sm">'+(j.status==='Completed'?'Returned':'—')+'</span>';
+ const c=sc[e.itemId];
+ if(!c||c.k==='untracked')return '<span class="muted sm">Not tracked</span>';
+ if(c.k==='nodates')return '<span class="muted sm">Add dates to check</span>';
+ return stockBadgeHTML(c).trim();
+}
+function jobDetailHTML(j,idx,inModal){
+ const sc=stockWatch(j)?stockCheck(j,idx||stockIndex()):{};
+ const shortN=Object.values(sc).filter(x=>x.k==='short').length;
+ const c=byId('clients',j.clientId),at=JOB_FLOW.indexOf(j.status),d=stockDays(j);
+ const badge=typeof DVI_JOB_CARD_BADGE==='string'?DVI_JOB_CARD_BADGE.replace(/jcb-/g,'jdb-').replace('class="pc-badge"','class="jd-badge"'):'';
+ const where=[j.clientId?nameOf('clients',j.clientId):'',j.venueId?nameOf('venues',j.venueId):''].filter(x=>x&&x!=='—').join(' · ');
+ const cells=[['Client',nameOf('clients',j.clientId),c&&(c.contact||c.phone)?[c.contact,c.phone].filter(Boolean).join(' · '):''],['Venue',nameOf('venues',j.venueId),''],
+  ['Set up date',fmtSetupRange(j),''],['Event date',fmtRange(j.eventFrom,j.eventTo),''],['Site manager',jobSiteManager(j)||'—',''],['Created by',jobCardCreator(j)||'—',''],
+  ['Created on',j.createdAt?fmtDateObj(new Date(j.createdAt)):'—',''],['Equipment out',d?fmtShort(d[0])+(d[1]!==d[0]?' – '+fmtShort(d[1]):''):'—','Holds stock on these days']];
+ const tabs=[['Equipment',j.equipment.length],['Crew',j.crew.length],['Notes',''],['Activity',j.history.length]];
+ let pane='';
+ if(jobTab==='Equipment')pane=j.equipment.length?`<table class="jd-table"><thead><tr><th class="n">No.</th><th>Item</th><th>Stock on these dates</th><th class="c">Out</th><th class="c">Back</th></tr></thead><tbody>${j.equipment.map((e,i)=>`<tr><td class="n">${String(i+1).padStart(2,'0')}</td><td><span class="nm">${esc(e.name||nameOf('equipment',e.itemId))}</span>${e.spec?`<span class="spec">${esc(e.spec)}</span>`:''}</td><td>${rowStockHTML(j,e,sc)}</td><td class="c">${swHTML(j.id,'equipment',i,'out',e.out)}</td><td class="c">${swHTML(j.id,'equipment',i,'back',e.back)}</td></tr>`).join('')}</tbody></table>`:'<div class="jd-notes">No equipment listed yet.</div>';
+ else if(jobTab==='Crew')pane=j.crew.length?`<table class="jd-table"><thead><tr><th>Role</th><th>Crew member</th><th class="c">Signed in</th></tr></thead><tbody>${j.crew.map((r,i)=>`<tr><td class="role">${esc(r.roleId?nameOf('roles',r.roleId):'Crew')}</td><td class="nm">${esc(crewDisplayName(r.techId))}</td><td class="c">${swHTML(j.id,'crew',i,'signedIn',r.signedIn)}</td></tr>`).join('')}</tbody></table>`:'<div class="jd-notes">No crew assigned yet.</div>';
+ else if(jobTab==='Notes')pane=`<div class="jd-notes">${j.notes?esc(j.notes).replace(/\n/g,'<br>'):'No notes.'}</div>`;
+ else pane=`<ul class="jd-feed">${[...j.history].reverse().map(h=>`<li><time>${fmtDT(h.ts)}</time><span>${esc(visibleHistoryText(h.text))}</span></li>`).join('')}</ul>`;
+ return `<div class="jd-head">
+  <div class="jd-main">
+   <div class="jd-eyebrow">${esc(j.typeId?nameOf('eventTypes',j.typeId):'Job card')} · ${esc(j.priority||'Normal')} priority</div>
+   <h2>${esc(j.event)}</h2>
+   <div class="jd-where">${esc(where||'No client or venue yet')}</div>
+   <div class="jd-ids"><span class="jl-no">${esc(j.no)}</span>${statusPill(j.status)}<span>Created by ${esc(jobCardCreator(j)||'—')}</span>${shortN?`<span class="sv sv-short">${shortN} item${shortN>1?'s':''} short on stock</span>`:''}</div>
+  </div>
+  ${inModal?'<button class="x" onclick="closeView()" aria-label="Close">✕</button>':`<div class="jd-badge-wrap">${badge}</div>`}
+  <div class="jd-actions">
+   <button class="gold-btn sm" onclick="printJob('${j.id}')">${NI.print}Print / PDF</button>
+   <button class="ghost-btn sm" onclick="printDeliveryNote('${j.id}')">Delivery note</button>
+   <button class="ghost-btn sm" onclick="addJobToCalendar('${j.id}')">Google Calendar</button>
+   <button class="ghost-btn sm" onclick="duplicateJob('${j.id}')">Duplicate</button>
+   <button class="ghost-btn sm" onclick="${inModal?'closeView();':''}openJobModal('${j.id}')">Edit</button>
+   ${j.status!=='Cancelled'?`<button class="ghost-btn sm" onclick="setJobStatus('${j.id}','Cancelled')">Cancel job</button>`:''}
+   <button class="ghost-btn sm danger" onclick="askDeleteJob('${j.id}')">Delete</button>
+  </div>
+ </div>
+ <div class="jd-steps">${JOB_FLOW.map((x,i)=>`<button type="button" class="jd-step${j.status==='Cancelled'?'':i<at?' done':i===at?' now':''}" title="Set status to ${x}" onclick="setJobStatus('${j.id}','${x}')"><b></b>${x}</button>`).join('')}</div>
+ <div class="jd-grid">${cells.map(([k,v,sm])=>`<div><div class="jd-k">${k}</div><div class="jd-v">${esc(v)}${sm?`<small>${esc(sm)}</small>`:''}</div></div>`).join('')}</div>
+ <div class="jd-tabs">${tabs.map(([t,n])=>`<button type="button" class="jd-tab${t===jobTab?' on':''}" onclick="setJobTab('${t}')">${t}${n!==''?`<em>${n}</em>`:''}</button>`).join('')}</div>
+ <div class="jd-pane">${pane}</div>`;
+}
+
+/* ================= DASHBOARD CHARTS (job-days per day + status mix) ================= */
+const SETUP_C='#2dd4bf',EVENT_C='#f0b429';
+function renderDashCharts(){
+ const box=$('dCharts');if(!box||!state)return;
+ const t=todayISO(),start=addDaysISO(t,-2),days=[];
+ for(let i=0;i<21;i++)days.push(addDaysISO(start,i));
+ const live=state.jobs.filter(j=>j.status!=='Cancelled');
+ const rows=days.map(d=>({d,su:live.filter(j=>setupCovers(j,d)),ev:live.filter(j=>jobEventCovers(j,d))}));
+ const max=Math.max(4,...rows.map(r=>r.su.length+r.ev.length)),step=Math.max(1,Math.ceil(max/4));
+ const W=760,H=230,L=30,R=10,T=26,B=40,cw=(W-L-R)/days.length,bw=Math.min(22,cw*.56),sy=(H-T-B)/max;
+ let g='';
+ for(let v=0;v<=max;v+=step){const y=H-B-v*sy;g+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" class="cg"/><text x="${L-8}" y="${y+4}" class="ct" text-anchor="end">${v}</text>`;}
+ rows.forEach((r,i)=>{
+  const x=L+i*cw+(cw-bw)/2,su=r.su.length,ev=r.ev.length,hs=su*sy,he=ev*sy,base=H-B,isT=r.d===t;
+  const p=r.d.split('-').map(Number),dow=new Date(p[0],p[1]-1,p[2]).getDay();
+  if(dow===1&&i>0)g+=`<line x1="${L+i*cw}" x2="${L+i*cw}" y1="${T}" y2="${H-B+30}" class="cwk"/>`;
+  if(isT)g+=`<rect x="${L+i*cw+1}" y="${T-6}" width="${cw-2}" height="${H-T-B+6}" class="ctoday"/><text x="${x+bw/2}" y="${T-11}" class="ctlab" text-anchor="middle">TODAY</text>`;
+  const tip=fmtD(r.d)+(su?'\nSetups: '+r.su.map(j=>j.event).join(', '):'')+(ev?'\nEvents: '+r.ev.map(j=>j.event).join(', '):'')+(su||ev?'':'\nNothing booked');
+  g+=`<g class="cbar"><title>${esc(tip)}</title><rect x="${L+i*cw}" y="${T}" width="${cw}" height="${H-T-B}" fill="transparent"/>`;
+  if(su)g+=`<rect x="${x}" y="${base-hs}" width="${bw}" height="${hs}" rx="2" fill="${SETUP_C}"/>`;
+  if(ev)g+=`<rect x="${x}" y="${base-hs-he}" width="${bw}" height="${he}" rx="2" fill="${EVENT_C}"/>`;
+  if(su+ev)g+=`<text x="${x+bw/2}" y="${base-hs-he-5}" class="cv" text-anchor="middle">${su+ev}</text>`;
+  g+=`</g><text x="${x+bw/2}" y="${H-B+15}" class="cx${isT?' on':''}" text-anchor="middle">${p[2]}</text><text x="${x+bw/2}" y="${H-B+28}" class="cx2" text-anchor="middle">${'SMTWTFS'[dow]}</text>`;
+ });
+ const tS=rows.reduce((n,r)=>n+r.su.length,0),tE=rows.reduce((n,r)=>n+r.ev.length,0);
+ const peak=rows.reduce((m,r)=>r.su.length+r.ev.length>m.n?{n:r.su.length+r.ev.length,d:r.d}:m,{n:0,d:null});
+ const counts=STATUSES.map(x=>[x,state.jobs.filter(j=>j.status===x).length]).filter(x=>x[1]),total=counts.reduce((n,x)=>n+x[1],0);
+ const rr=54,C=2*Math.PI*rr;let off=0,arcs='';
+ for(const [x,n] of counts){const len=C*n/total;arcs+=`<circle cx="70" cy="70" r="${rr}" fill="none" stroke="${SMETA[x][0]}" stroke-width="16" stroke-dasharray="${Math.max(.1,len-1.5)} ${C-len+1.5}" stroke-dashoffset="${-off}" transform="rotate(-90 70 70)"><title>${x}: ${n}</title></circle>`;off+=len;}
+ box.innerHTML=`<section class="dc-panel"><div class="dc-head"><div><span class="panel-kicker">Workload · next 3 weeks</span><h3>Job-days per day</h3></div><div class="dc-legend"><span><i style="background:${SETUP_C}"></i>Setups ${tS}</span><span><i style="background:${EVENT_C}"></i>Events ${tE}</span>${peak.d?`<span class="muted">Peak ${peak.n} on ${fmtShort(peak.d)}</span>`:''}</div></div><svg class="dc-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Setups and events per day over three weeks">${g}</svg></section>`+
+  `<section class="dc-panel"><div class="dc-head"><div><span class="panel-kicker">Status mix</span><h3>${total} job card${total===1?'':'s'}</h3></div></div><div class="dc-donut"><svg viewBox="0 0 140 140" class="dc-ring">${total?arcs:`<circle cx="70" cy="70" r="${rr}" fill="none" stroke="#24262d" stroke-width="16"/>`}<text x="70" y="79" text-anchor="middle" class="dc-n">${total}</text></svg><div class="dc-rows">${counts.map(([x,n])=>`<div class="dc-row" onclick="switchView('jobs');setJobFilter('${x}')" title="Show ${x} job cards"><i style="background:${SMETA[x][0]}"></i><span>${x}</span><b>${n}</b><em>${Math.round(n*100/total)}%</em></div>`).join('')||'<div class="muted sm">No job cards yet.</div>'}</div></div></section>`;
+}
+
+/* ================= SCHEDULE VIEWS (month / week / day / agenda) ================= */
+let calView='month',calDay=null,calShowSetup=true,calShowEvent=true;
+function setCalView(v){
+ calView=v;
+ if(!calDay)calDay=todayISO();
+ if(v!=='month'){const shown=calY+'-'+String(calM+1).padStart(2,'0');if(calDay.slice(0,7)!==shown)calDay=todayISO().slice(0,7)===shown?todayISO():shown+'-01';}
+ renderSchedule();
+}
+function toggleCalKind(k){if(k==='setup')calShowSetup=!calShowSetup;else calShowEvent=!calShowEvent;renderSchedule();}
+function calJobsOn(iso){
+ const live=state.jobs.filter(j=>j.status!=='Cancelled');
+ return{su:calShowSetup?live.filter(j=>setupCovers(j,iso)):[],ev:calShowEvent?live.filter(j=>jobEventCovers(j,iso)):[]};
+}
+const calWhere=j=>[nameOf('venues',j.venueId),nameOf('clients',j.clientId)].filter(x=>x&&x!=='—').join(' · ');
+const calDow=iso=>{const p=iso.split('-').map(Number);return WEEKDAYS[new Date(p[0],p[1]-1,p[2]).getDay()];};
+function renderSchedule(){
+ if(!$('calGrid'))return;
+ if(!calDay)calDay=todayISO();
+ renderScheduleMonth();
+ document.querySelectorAll('#calViews button').forEach(b=>b.classList.toggle('on',b.dataset.v===calView));
+ $('calTgSetup').classList.toggle('on',calShowSetup);$('calTgEvent').classList.toggle('on',calShowEvent);
+ const mon=$('calMonth'),box=$('calOther');
+ mon.classList.toggle('hide-setup',!calShowSetup);mon.classList.toggle('hide-event',!calShowEvent);
+ mon.style.display=calView==='month'?'':'none';box.style.display=calView==='month'?'none':'';
+ if(calView==='week')renderCalWeek(box);
+ else if(calView==='day')renderCalDay(box);
+ else if(calView==='agenda')renderCalAgenda(box);
+ else{
+  box.innerHTML='';
+  const ms=calY+'-'+String(calM+1).padStart(2,'0')+'-01',me=monthEndISO(ms);
+  const n=state.jobs.filter(j=>{if(j.status==='Cancelled')return false;const d=stockDays(j);return d&&d[0]<=me&&d[1]>=ms;}).length;
+  $('calSummary').textContent=n+' job card'+(n===1?'':'s')+' this month';
+ }
+}
+function renderCalWeek(box){
+ const ws=weekStartISO(calDay),days=[...Array(7)].map((_,i)=>addDaysISO(ws,i)),t=todayISO(),we=days[6];
+ $('calLabel').textContent=fmtShort(ws)+' – '+fmtShort(we)+' '+we.slice(0,4);
+ const jobs=state.jobs.filter(j=>j.status!=='Cancelled'&&days.some(d=>(calShowSetup&&setupCovers(j,d))||(calShowEvent&&jobEventCovers(j,d))))
+  .sort((a,b)=>(setupStart(a)||a.eventFrom||'').localeCompare(setupStart(b)||b.eventFrom||'')||a.event.localeCompare(b.event));
+ $('calSummary').textContent=jobs.length+' job card'+(jobs.length===1?'':'s')+' this week';
+ const head=`<div class="wk-row wk-headrow"><div class="wk-lab wk-corner">Job card</div>${days.map(d=>`<div class="wk-dh${d===t?' today':''}" onclick="calDay='${d}';setCalView('day')" title="Open ${calDow(d)}">${calDow(d).slice(0,3)}<b>${Number(d.slice(8))}</b></div>`).join('')}</div>`;
+ const rows=jobs.map(j=>{
+  const seg=[];let cur=null;
+  days.forEach((d,i)=>{
+   const ph=(calShowEvent&&jobEventCovers(j,d))?'ev':(calShowSetup&&setupCovers(j,d))?'su':'';
+   if(ph&&cur&&cur.ph===ph&&cur.b===i-1)cur.b=i;else if(ph){cur={ph,a:i,b:i};seg.push(cur);}else cur=null;
+  });
+  return `<div class="wk-row"><div class="wk-lab" onclick="openView('${j.id}')" title="Open ${esc(j.no)}"><span class="jl-no">${esc(j.no)}</span><i class="wk-dot" style="background:${SMETA[j.status][0]}"></i><b>${esc(j.event)}</b></div><div class="wk-track">${days.map((d,i)=>`<span class="wk-bg${d===t?' today':''}" style="grid-column:${i+1}"></span>`).join('')}${seg.map(x=>`<button type="button" class="wk-bar ${x.ph}" style="grid-column:${x.a+1}/${x.b+2}" onclick="openView('${j.id}')" title="${esc((x.ph==='su'?'Setup · ':'Event · ')+j.event+' · '+j.status)}">${x.ph==='su'?'Setup':esc(j.event)}</button>`).join('')}</div></div>`;
+ }).join('');
+ box.innerHTML=`<div class="wk">${head}${rows||'<div class="cal-empty">Nothing booked this week.</div>'}</div>`;
+}
+function renderCalDay(box){
+ const d=calDay,{su,ev}=calJobsOn(d),jobs=[...new Set([...su,...ev])];
+ $('calLabel').textContent=calDow(d)+', '+fmtD(d);
+ $('calSummary').textContent=su.length+' setup'+(su.length===1?'':'s')+' · '+ev.length+' event'+(ev.length===1?'':'s');
+ const card=(j,k)=>`<div class="dy-job" onclick="openView('${j.id}')"><span class="dy-tag ${k}">${k==='su'?'Setup':'Event'}</span><div class="dy-main"><div class="jl-row"><span class="jl-no">${esc(j.no)}</span>${statusPill(j.status)}</div><b>${esc(j.event)}</b><span>${esc(calWhere(j)||'No venue yet')}</span><em>${esc(jobSiteManager(j)||'No site manager')} · ${j.crew.length} crew · ${j.equipment.length} items</em></div></div>`;
+ const people=[];jobs.forEach(j=>j.crew.forEach(c=>{if(c.techId)people.push({name:crewDisplayName(c.techId),role:c.roleId?nameOf('roles',c.roleId):'Crew',job:j,on:!!c.signedIn});}));
+ const outs=state.jobs.filter(j=>STOCK_HOLDS.includes(j.status)&&(stockDays(j)||[])[0]===d);
+ const backs=state.jobs.filter(j=>STOCK_HOLDS.includes(j.status)&&(stockDays(j)||[])[1]===d);
+ box.innerHTML=`<div class="dy"><div class="dy-col">`+
+  (calShowSetup?`<div class="dy-sec"><h4>Setup &amp; build<em>${su.length}</em></h4>${su.map(j=>card(j,'su')).join('')||'<div class="cal-empty">No setups on this day.</div>'}</div>`:'')+
+  (calShowEvent?`<div class="dy-sec"><h4>Event &amp; showtime<em>${ev.length}</em></h4>${ev.map(j=>card(j,'ev')).join('')||'<div class="cal-empty">No events on this day.</div>'}</div>`:'')+
+  `</div><div class="dy-col">`+
+  `<div class="dy-sec"><h4>People on site<em>${people.length}</em></h4>${people.length?`<table class="jd-table dy-tab"><tbody>${people.map(p=>`<tr><td class="role">${esc(p.role)}</td><td class="nm">${esc(p.name)}${p.on?' <span class="sv sv-ok">signed in</span>':''}</td><td class="muted sm">${esc(p.job.no)}</td></tr>`).join('')}</tbody></table>`:'<div class="cal-empty">Nobody assigned on this day.</div>'}</div>`+
+  `<div class="dy-sec"><h4>Equipment going out<em>${outs.reduce((n,j)=>n+j.equipment.length,0)}</em></h4>${outs.length?outs.map(j=>`<div class="dy-kit" onclick="openView('${j.id}')"><b>${esc(j.no)}</b>${esc(j.event)}<div>${j.equipment.map(e=>`<span>${esc(((e.spec?e.spec+' ':'')+(e.name||'')).trim())}</span>`).join('')}</div></div>`).join(''):'<div class="cal-empty">Nothing leaves the store.</div>'}</div>`+
+  `<div class="dy-sec"><h4>Coming back<em>${backs.length}</em></h4>${backs.length?backs.map(j=>`<div class="dy-kit" onclick="openView('${j.id}')"><b>${esc(j.no)}</b>${esc(j.event)} · ${j.equipment.length} items</div>`).join(''):'<div class="cal-empty">Nothing due back.</div>'}</div>`+
+  `</div></div>`;
+}
+function renderCalAgenda(box){
+ const start=calDay,t=todayISO(),end=addDaysISO(start,29);
+ $('calLabel').textContent=fmtShort(start)+' – '+fmtShort(end)+' '+end.slice(0,4);
+ const row=(j,k)=>`<div class="ag2-row" onclick="openView('${j.id}')"><span class="dy-tag ${k}">${k==='su'?'Setup':'Event'}</span><b>${esc(j.event)}</b><span class="muted">${esc(calWhere(j))}</span>${statusPill(j.status)}</div>`;
+ let h='',n=0;
+ for(let d=start;d<=end;d=addDaysISO(d,1)){
+  const{su,ev}=calJobsOn(d);if(!su.length&&!ev.length)continue;
+  n++;
+  const rel=d===t?'Today · ':d===addDaysISO(t,1)?'Tomorrow · ':'';
+  h+=`<div class="ag2-day"><div class="ag2-date${d===t?' today':''}" onclick="calDay='${d}';setCalView('day')" title="Open this day"><b>${Number(d.slice(8))}</b><span>${calDow(d).slice(0,3)}</span></div><div class="ag2-items"><div class="ag2-head">${rel}${calDow(d)}, ${fmtShort(d)}</div>${su.map(j=>row(j,'su')).join('')}${ev.map(j=>row(j,'ev')).join('')}</div></div>`;
+ }
+ $('calSummary').textContent=n+' working day'+(n===1?'':'s')+' in the next 30 days';
+ box.innerHTML=`<div class="ag2">${h||'<div class="cal-empty">Nothing booked in these 30 days.</div>'}</div>`;
+}
+
+/* ================= EQUIPMENT TYPES (categories, per-type sizes) ================= */
+// Every physical type you stock is its own catalogue line (e.g. LED panel P3.9 500x500, LED mesh panel 500x1000,
+// Stage deck 1.2 x 2.4 m, Moving head spot), with its own count and unit size, grouped under a category.
+const EQUIP_CATS=['Screens & video','Sound','Lighting','Staging','Power','Furniture & décor','Media & services','Other'];
+let stockShowAll=false;
+function guessEquipCat(name){
+ const n=String(name||'').toLowerCase();
+ if(/light|moving head|\bpar\b|uplight|follow ?spot|strobe|blinder|\bwash\b|\bbeam\b|haze|fog/.test(n))return 'Lighting';
+ if(/\bled\b|screen|panel|projector|\btv\b|monitor|video ?wall|display|pixel/.test(n))return 'Screens & video';
+ if(/\bpa\b|speaker|micro|\bmics?\b|mixer|amplifier|sound|audio|sub ?woofer|line array/.test(n))return 'Sound';
+ if(/platform|stage|deck|truss|plinth|podium|frame|backdrop|dance floor|riser|barricade|steps?\b/.test(n))return 'Staging';
+ if(/generator|cable|extension|power|distro|\bups\b|kva/.test(n))return 'Power';
+ if(/carpet|chair|table|tent|d[eé]cor|drap|flower|furniture/.test(n))return 'Furniture & décor';
+ if(/photo|video|stream|camera|service/.test(n))return 'Media & services';
+ return 'Other';
+}
+const equipCat=it=>(it&&it.category&&EQUIP_CATS.includes(it.category))?it.category:guessEquipCat(it&&it.name);
+function unitSizeText(u,cat){
+ if(!u)return '';
+ const t=(u[0]<=1&&u[1]<=1)?Math.round(u[0]*1000)+' × '+Math.round(u[1]*1000)+' mm':u[0]+' × '+u[1]+' m';
+ return t+' '+(cat==='Staging'?'decks':cat==='Screens & video'?'panels':'units');
+}
+function fillEquipmentSelect(sel,ph,val,noAdd){
+ const groups={};
+ for(const it of state.equipment){const c=equipCat(it);(groups[c]=groups[c]||[]).push(it);}
+ let h=`<option value="">${esc(ph)}</option>`;
+ for(const c of EQUIP_CATS){
+  const list=(groups[c]||[]).sort((a,b)=>a.name.localeCompare(b.name));if(!list.length)continue;
+  h+=`<optgroup label="${esc(c)}">${list.map(it=>`<option value="${it.id}">${esc(it.name)}${stockOwned(it)!==null?' · '+stockOwned(it)+' owned':''}</option>`).join('')}</optgroup>`;
+ }
+ if(!noAdd)h+=`<option value="__add">+ Add new…</option>`;
+ sel.innerHTML=h;sel.value=val||'';sel.dataset.prev=sel.value;
+}
+const DVI_STARTER_TYPES=[
+ ['LED panel P2.6 indoor (500×500)','Screens & video','500x500'],
+ ['LED panel P3.9 indoor (500×500)','Screens & video','500x500'],
+ ['LED panel P3.9 indoor (500×1000)','Screens & video','500x1000'],
+ ['LED panel P4.8 outdoor (500×1000)','Screens & video','500x1000'],
+ ['LED mesh panel (500×1000)','Screens & video','500x1000'],
+ ['LED transparent panel (500×1000)','Screens & video','500x1000'],
+ ['Stage deck 1.2 × 1.2 m','Staging','1.2x1.2'],
+ ['Stage deck 1.2 × 2.4 m','Staging','1.2x2.4'],
+ ['Moving head spot','Lighting',''],
+ ['Moving head wash','Lighting',''],
+ ['Moving head beam','Lighting',''],
+ ['LED PAR','Lighting',''],
+ ['LED uplighter','Lighting',''],
+ ['Follow spot','Lighting',''],
+ ['Strobe / blinder','Lighting','']
+];
+function addStarterTypes(){
+ const have=new Set(state.equipment.map(e=>String(e.name).toLowerCase()));
+ const add=DVI_STARTER_TYPES.filter(x=>!have.has(x[0].toLowerCase()));
+ if(!add.length){toast('These types are already in your catalogue');return;}
+ confirmBox('Add '+add.length+' common equipment types to your catalogue: LED panel types and sizes, stage deck sizes and light fixtures? Each starts untracked, so type the number you own on the Stock page. You can rename or delete any of them later.',()=>{
+  add.forEach(([name,category,unitSize])=>state.equipment.push({id:uid(),name,category,unitSize,stock:''}));
+  stockShowAll=true;save();renderAll();toast(add.length+' types added. Now set the numbers you own.');
+ });
+}
+
 /* ================= NOTIFICATIONS ================= */
 function notifList(){
  const t=todayISO();const list=[];
@@ -2485,25 +3319,31 @@ function notifList(){
   if(f&&f<=t&&t<=to)list.push({icon:'🎬',text:'Event live today — '+j.event,id:j.id});
   else if(f&&to<t)list.push({icon:'⚠️',text:'Past event still open — '+j.event+' ('+j.status+')',id:j.id});
  }
+ const sIdx=stockIndex();
+ for(const j of state.jobs){
+  if(!STOCK_HOLDS.includes(j.status))continue;
+  const d=stockDays(j);if(!d||d[1]<t)continue;
+  for(const x of stockShortList(j,sIdx))list.push({icon:'📦',text:'Short on stock — '+j.event+': '+x.name+' short '+(-x.spare)+' on '+fmtShort(x.iso),id:j.id});
+ }
  return list;
 }
 function updateBell(){
  const n=notifList();const b=$('bellBadge');
  b.style.display=n.length?'flex':'none';b.textContent=n.length;
- $('notifPanel').innerHTML='<div class="np-head">🔔 Notifications</div>'+
-  (n.length?n.map(x=>`<div class="np-item" onclick="openView('${x.id}')">${x.icon} ${esc(x.text)}</div>`).join('')
+ $('notifPanel').innerHTML='<div class="np-head">Notifications</div>'+
+  (n.length?n.map(x=>`<div class="np-item" onclick="openView('${x.id}')"><i class="np-dot"></i>${esc(x.text)}</div>`).join('')
   :'<div class="np-empty">All clear ✓<br>Nothing needs attention right now.</div>');
 }
 function toggleNotif(e){e.stopPropagation();$('notifPanel').classList.toggle('open');}
 
 /* ================= INIT ================= */
-function renderAll(){renderDashboard();renderJobs();renderSchedule();renderSettings();updateBell();}
+function renderAll(){renderDashboard();renderDashCharts();renderJobs();renderSchedule();renderStock();renderSettings();updateBell();if($('jobModal').classList.contains('open'))refreshStockHints();}
 function init(){
  loadCloudConfig();
  load();
  const hr=new Date().getHours();
- const greet=hr<12?'Good morning ☀':hr<17?'Good afternoon 🌤':'Good evening 🌙';
- $('topGreet').textContent='Digital Visual Interface - '+greet;
+ const greet=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
+ $('topGreet').textContent='Digital Visual Interface · '+greet;
  const now=new Date();
  $('topDate').textContent=WEEKDAYS[now.getDay()]+', '+fmtDateObj(now);
  $('jStatus').innerHTML='<option value="">All statuses</option>'+STATUSES.map(s=>`<option>${s}</option>`).join('');
@@ -2512,7 +3352,7 @@ function init(){
   configureCloudLiveSync();
   if(cloudLiveEnabled())setTimeout(()=>cloudPull({auto:true}),900);
  const notifs=notifList();
- if(notifs.length)setTimeout(()=>toast('🔔 '+notifs.length+' item(s) need attention today'),700);
+ if(notifs.length)setTimeout(()=>toast(notifs.length+' item(s) need attention today'),700);
  document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){document.querySelectorAll('.modal.open').forEach(m=>m.classList.remove('open'));$('notifPanel').classList.remove('open');}
  });
