@@ -2063,6 +2063,8 @@ async function downloadJobPdf(id,kind){
    svg.replaceWith(img);
   }
   await Promise.all([...d.images].map(im=>im.complete?0:new Promise(r=>{im.onload=im.onerror=r;})));
+  const badge=d.querySelector('.pc-badge');
+  if(badge&&!(badge.tagName==='IMG'&&badge.naturalWidth>0))throw new Error('the DVI badge could not be drawn, so nothing was saved; please try again');
   const W=794,pageH=1123,scale=2,body=d.body;
   const canvas=await html2canvas(body,{scale,backgroundColor:'#ffffff',width:W,windowWidth:W,useCORS:true,logging:false});
   const total=Math.ceil(canvas.height/scale);
