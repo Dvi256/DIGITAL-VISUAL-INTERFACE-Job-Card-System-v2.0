@@ -860,7 +860,7 @@ tbody tr:hover{background:rgba(255,255,255,.025);box-shadow:none}
     <button class="navbtn" data-view="stock" onclick="switchView('stock')"><svg class="ni" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>Stock</button>
     <button class="navbtn" data-view="settings" onclick="switchView('settings')"><svg class="ni" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>Settings</button>
     <button class="gold-btn side-cta" onclick="openJobModal()">+ New Job Card</button>
-    <div class="side-foot">DIGITAL VISUAL INTERFACE<br>Job Card System v2.0</div>
+    <div class="side-foot">DIGITAL VISUAL INTERFACE<br>Job Card System v2.1</div>
   </aside>
 
   <main>
@@ -1272,7 +1272,7 @@ const jobSiteManager=j=>technicianName(j&&j.siteManagerId)||String((j&&(j.siteMa
 const jobCardCreator=j=>technicianName(j&&j.jobCardCreatorId)||String((j&&(j.jobCardCreator||j.creator))||'').trim();
 const jobSiteManagerValue=j=>(j&&j.siteManagerId)||technicianIdByName(jobSiteManager(j));
 const jobCardCreatorValue=j=>(j&&j.jobCardCreatorId)||technicianIdByName(jobCardCreator(j));
-function techRoleIds(t){if(!t)return [];const ids=Array.isArray(t.roles)&&t.roles.length?t.roles:[];return [...new Set([t.role,...ids].filter(Boolean))];}
+function techRoleIds(t){if(!t)return [];const ids=Array.isArray(t.roles)&&t.roles.length?t.roles:[];const other=String(t.otherRoles||'').split(',').map(x=>x.trim()).filter(Boolean);return [...new Set([t.role,...ids,...other].filter(Boolean))];}   // roles (Classic) + otherRoles (Pro)
 function techHasRole(t,roleId){return !t||!roleId||techRoleIds(t).includes(roleId);}
 function technicianRoleName(t){return techRoleIds(t).map(id=>nameOf('roles',id)).filter(n=>n&&n!=='—').join(', ');}
 function technicianSelectLabel(it){
@@ -1312,7 +1312,7 @@ function ensureStateShape(s){
   if(j.siteManager==null)j.siteManager='';
   if(j.jobCardCreator==null)j.jobCardCreator='';
  });
- if(Array.isArray(s.technicians))s.technicians.forEach(t=>{if(!t.workerType)t.workerType='DVI Staff';if(!Array.isArray(t.roles))t.roles=t.role?[t.role]:[];if(t.role&&!t.roles.includes(t.role))t.roles.unshift(t.role);if(!t.role&&t.roles.length)t.role=t.roles[0];});
+ if(Array.isArray(s.technicians))s.technicians.forEach(t=>{if(!t.workerType)t.workerType='DVI Staff';if(!Array.isArray(t.roles))t.roles=[...new Set([t.role,...String(t.otherRoles||'').split(',').map(x=>x.trim())].filter(Boolean))];if(t.role&&!t.roles.includes(t.role))t.roles.unshift(t.role);if(!t.role&&t.roles.length)t.role=t.roles[0];});
  if(!s.meta)s.meta={};
  if(!s.seq){
   const maxNo=s.jobs.reduce((m,j)=>{const n=String(j.no||'').match(/(\d+)$/);return Math.max(m,n?Number(n[1]):0);},0);
@@ -1322,7 +1322,7 @@ function ensureStateShape(s){
 }
 function touchState(){
  if(!state)return;
- state.meta=Object.assign({},state.meta,{updatedAt:Date.now(),appVersion:'2.1-cloud',updatedDeviceId:cloudClientId(),updatedDeviceName:currentDeviceName()});
+ state.meta=Object.assign({},state.meta,{updatedAt:Date.now(),appVersion:'2.2-cloud',updatedDeviceId:cloudClientId(),updatedDeviceName:currentDeviceName()});
 }
 function save(opts){
  opts=opts||{};
@@ -1337,8 +1337,11 @@ function load(){
  if(!state||!state.jobs)seed();
  ensureStateShape(state);syncCompanyBranding();save({cloud:false,touch:false});
 }
+function isLegacyDefaultCompany(c){return !!c&&c.profile!=='custom'&&(!c.name||['DVI CREATIVES','DVI Creatives',DEFAULT_COMPANY.name].includes(c.name));}
 function syncCompanyBranding(){
  const c=state.company||{};
+ // Shared records: only DVI's own default record gets DVI's fill-ins; another company keeps its details (as in Pro).
+ if(!isLegacyDefaultCompany(c)){state.company=Object.assign({},c);return;}
  state.company=Object.assign({},DEFAULT_COMPANY,c);
  if(!c.name||['DVI CREATIVES','DVI Creatives'].includes(c.name))state.company.name=DEFAULT_COMPANY.name;
  if(!c.tagline||c.tagline==='The Events & Advertising Company')state.company.tagline=DEFAULT_COMPANY.tagline;
@@ -1739,7 +1742,7 @@ function saveQuick(){
  let obj;
  if(quickEditId){obj=byId(quickKind,quickEditId);Object.assign(obj,vals);}
  else{obj=Object.assign({id:uid()},vals);state[quickKind].push(obj);}
- if(quickKind==='technicians'){const extra=[...document.querySelectorAll('#qmFields .role-check input:checked')].map(i=>i.value);obj.roles=[...new Set([obj.role,...extra].filter(Boolean))];}
+ if(quickKind==='technicians'){const extra=[...document.querySelectorAll('#qmFields .role-check input:checked')].map(i=>i.value);obj.roles=[...new Set([obj.role,...extra].filter(Boolean))];obj.otherRoles=obj.roles.filter(id=>id!==obj.role).join(',');}
  save();
  const kind=quickKind, newId=obj.id, trig=quickTrigger, wasEdit=!!quickEditId;
  document.querySelectorAll(`select[data-kind="${kind}"]`).forEach(s=>{
@@ -1752,7 +1755,8 @@ function saveQuick(){
 function closeQuick(){$('quickModal').classList.remove('open');quickKind=null;quickEditId=null;quickTrigger=null;}
 
 /* ================= JOB FORM ================= */
-function nextNoPreview(){return 'DVI-'+new Date().getFullYear()+'-'+String(state.seq).padStart(3,'0');}
+function cleanJobPrefix(v){return String(v==null?'':v).toUpperCase().replace(/[^A-Z0-9-]+/g,'').replace(/^-+|-+$/g,'').slice(0,12);}
+function nextNoPreview(){const c=state.company||{},p=c.jobPrefix==null?'DVI':cleanJobPrefix(c.jobPrefix);return (p?p+'-':'')+new Date().getFullYear()+'-'+String(state.seq).padStart(3,'0');}
 function openJobModal(id){
  editingJobId=id||null;
  const j=id?state.jobs.find(x=>x.id===id):null;
@@ -1787,6 +1791,7 @@ function closeJobModal(){$('jobModal').classList.remove('open');editingJobId=nul
 function addEquipRow(d){
  d=d||{};
  const row=document.createElement('div');row.className='dyn-row eq-row';
+ row._line=Object.keys(d).length?d:null;   // the saved line: saving keeps what this editor does not show (shared records)
  row.innerHTML=`<input class="eq-spec" placeholder="Qty / size (e.g. 8X3M, 6, 12)" value="${esc(d.spec||'')}" oninput="refreshStockHints()">`+
   `<select class="eq-sel" data-kind="equipment" data-ph="— Equipment item —" onchange="maybeQuickAdd(this);refreshStockHints()"></select>`+
   `<input class="eq-hire" type="number" min="0" step="1" inputmode="numeric" placeholder="Hire" title="How many to hire in from a partner" value="${d.hire?esc(d.hire):''}" oninput="refreshStockHints()">`+
@@ -1801,6 +1806,7 @@ function addEquipRow(d){
 function addCrewRow(c){
  c=c||{};
  const row=document.createElement('div');row.className='dyn-row crew-row';
+ row._line=Object.keys(c).length?c:null;   // the saved line (shared records)
  row.innerHTML=`<select class="cr-role" data-kind="roles" data-ph="— Role —" onchange="crewRoleChanged(this)"></select>`+
   `<select class="cr-tech" data-kind="technicians" data-ph="— Technician —" onchange="crewTechChanged(this)"></select>`+
   `<button type="button" class="row-x" title="Remove" onclick="this.parentElement.remove()">✕</button>`+
@@ -1874,7 +1880,7 @@ function crewRowChanged(row,which,prev){
  crewConfirm(`${m.t.name} is not set up for ${role}. As the job card creator, ${creator.name} needs to confirm this assignment.`,
   `Add ${role} to ${m.t.name}`,
   ()=>{row.dataset.override='1';row.dataset.confirmedBy=creator.id;updateCrewFlag(row);},
-  ()=>{m.t.roles=[...new Set([...techRoleIds(m.t),m.roleId])];save();row.dataset.roleAdded=m.roleId;row.dataset.roleAddedBy=creator.id;
+  ()=>{m.t.roles=[...new Set([...techRoleIds(m.t),m.roleId])];m.t.otherRoles=m.t.roles.filter(id=>id!==m.t.role).join(',');save();row.dataset.roleAdded=m.roleId;row.dataset.roleAddedBy=creator.id;
    document.querySelectorAll('#crewRows .dyn-row').forEach(refreshCrewRow);toast(role+' added to '+m.t.name+"'s roles ✓");},
   revert);
 }
@@ -1890,17 +1896,48 @@ function crewRoleNote(r){
  if(!t||!r.roleId||techHasRole(t,r.roleId))return '';
  return r.override?`<span class="crew-note">Outside their roles · confirmed by ${esc(nameOf('technicians',r.confirmedBy)||'the creator')}</span>`:`<span class="crew-note warn">Not set up for this role</span>`;
 }
+/* Shared records (docs/SHARED_RECORDS.md). A line keeps what this editor does not show (Pro's marks, any newer
+   field) while it is still the same item, or the same person in the same role; a changed line drops them. The
+   fields this editor decides (hire, role confirmation, sign-in) are always decided here. */
+function keepLineExtras(orig,next,same,decided){
+ if(!orig||typeof orig!=='object'||!same(orig))return next;
+ const kept=Object.assign({},orig);decided.forEach(k=>delete kept[k]);
+ return Object.assign(kept,next);
+}
+/* Pro's setup / event / finish times (shared records). Pro requires the setup start to sit on the setup date, the
+   event start on the event date and the finish on the event's end date when there is one. So when a date is
+   changed here, its time keeps its clock time on the new date; when a date is cleared here, its time goes with
+   it. Nothing else touches a time: a one-day card with no end date keeps its finish time. `was` holds the dates
+   before this save. */
+function keepProTimesOnDates(j,was){
+ const notes=[],stamp=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+ const move=(key,label,date)=>{const t=j[key];if(t.slice(0,10)!==date){j[key]=date+t.slice(10);notes.push(label+' '+t.slice(11)+' moved to '+fmtD(date));}};
+ const drop=(key,label)=>{delete j[key];notes.push(label+' time removed with its date');};
+ for(const [key,label,now,before] of [['setupStartAt','Setup start',j.setupFrom||j.setupDate,was.setup],['eventStartAt','Event start',j.eventFrom,was.eventFrom]]){
+  if(typeof j[key]!=='string'||!stamp.test(j[key]))continue;
+  if(now)move(key,label,now);else if(before)drop(key,label);
+ }
+ if(typeof j.finishAt==='string'&&stamp.test(j.finishAt)){
+  const before=was.eventTo||was.eventFrom;
+  if(j.eventTo)move('finishAt','Finish',j.eventTo);
+  else if(j.eventFrom){if(before&&before!==j.eventFrom&&j.finishAt.slice(0,10)===before)move('finishAt','Finish',j.eventFrom);}
+  else if(before)drop('finishAt','Finish');
+ }
+ return notes;
+}
 function saveJobForm(){
  const ev=$('f_event').value.trim();
  if(!ev){toast('Please enter the event name','err');$('f_event').focus();return;}
  const equipment=[...document.querySelectorAll('#equipRows .dyn-row')].map(r=>{
   const sel=r.querySelector('select');const it=byId('equipment',sel.value);
   const hire=Math.max(0,parseInt((r.querySelector('.eq-hire')||{}).value,10)||0);
-  const o={itemId:it?it.id:null,name:it?it.name:'',spec:r.querySelector('.eq-spec').value.trim()};if(hire)o.hire=hire;return o;
+  const next={itemId:it?it.id:null,name:it?it.name:'',spec:r.querySelector('.eq-spec').value.trim()};
+  const o=keepLineExtras(r._line,next,x=>(x.itemId||null)===next.itemId,['hire']);if(hire)o.hire=hire;return o;
  }).filter(e=>e.name);
  const crewRowEls=[...document.querySelectorAll('#crewRows .dyn-row')];
  const crew=crewRowEls.map(r=>{
-  const o={roleId:r.querySelector('.cr-role').value||null,techId:r.querySelector('.cr-tech').value||null};
+  const next={roleId:r.querySelector('.cr-role').value||null,techId:r.querySelector('.cr-tech').value||null};
+  const o=keepLineExtras(r._line,next,x=>(x.techId||null)===next.techId&&(x.roleId||null)===next.roleId,['override','confirmedBy','signedIn']);
   if(r.dataset.override==='1'&&crewRowMismatch(r)){o.override=true;o.confirmedBy=r.dataset.confirmedBy||null;}
   if(r.dataset.signedIn==='1'&&o.techId&&o.techId===r.dataset.origTech)o.signedIn=true;
   return o;
@@ -1924,7 +1961,7 @@ function saveJobForm(){
  let j;
  if(editingJobId){
   j=state.jobs.find(x=>x.id===editingJobId);
-  const old=j.status;Object.assign(j,fields);
+  const old=j.status,datesWere={setup:j.setupFrom||j.setupDate||'',eventFrom:j.eventFrom||'',eventTo:j.eventTo||''};Object.assign(j,fields);keepProTimesOnDates(j,datesWere).forEach(text=>crewNotes.push(text));
   j.history.push({ts:Date.now(),text:old!==j.status?('Updated · status '+old+' → '+j.status):'Details updated'});
  }else{
   j=Object.assign({id:uid(),no:nextNoPreview(),createdAt:Date.now(),history:[{ts:Date.now(),text:'Job card created'}]},fields);
@@ -2999,7 +3036,7 @@ function renderSettings(){
  renderCloudSettings();
 }
 function saveCompany(){
- state.company={name:$('sName').value.trim()||DEFAULT_COMPANY.name,tagline:$('sTag').value.trim(),phone:$('sPhone').value.trim(),email:$('sEmail').value.trim(),website:$('sWebsite').value.trim(),address:$('sAddress').value.trim()};
+ state.company=Object.assign({},state.company,{name:$('sName').value.trim()||DEFAULT_COMPANY.name,tagline:$('sTag').value.trim(),phone:$('sPhone').value.trim(),email:$('sEmail').value.trim(),website:$('sWebsite').value.trim(),address:$('sAddress').value.trim()});   // Pro's profile fields (time zone, colour, logo, prefix) stay
  save();toast('Company details saved ✓');
 }
 function usageCount(kind,id){
