@@ -1,0 +1,361 @@
+/* DVI Operations — theme tokens (edition 8.1).
+   Values follow Blender's default dark theme (userdef_default_theme.c) and the bundled
+   Blender Light preset. The single selection slot Blender fills with #4772b3 takes the
+   user's accent (Opera GX presets, prefs.js). Astro UXDS status colours are fixed and
+   never follow the accent. theme.js sets data-theme; prefs.js sets data-surface and
+   the --accent* / --ui-scale properties before this file applies. */
+
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  /* Surfaces (Blender dark). */
+  --editor-border: #161616;   /* gaps between areas */
+  --topbar: #181818;
+  --statusbar: #181818;
+  --header: #303030;          /* editor headers */
+  --region: #303030;          /* properties / dope sheet / graph background */
+  --panel: #3d3d3d;           /* panel header + body */
+  --panel-sub: rgba(0, 0, 0, .12);
+  --panel-outline: rgba(255, 255, 255, .067);
+  --outliner: #282828;
+  --row-alt: rgba(255, 255, 255, .016);
+  --navbar: #181818;          /* properties tab column */
+  --channels: #1d1d1d;        /* dope sheet channel region, time scrub */
+  --viewport: #3d3d3d;
+  --menu-back: #181818;
+  --menu-outline: #242424;
+  --tooltip: #1d1d1d;
+  --overlay: rgba(0, 0, 0, .35);
+
+  /* Widgets. */
+  --w-inner: #545454;         /* buttons, number fields, toggles */
+  --w-inner-hover: #5f5f5f;
+  --w-outline: #3d3d3d;
+  --w-text: #e6e6e6;
+  --w-field: #1d1d1d;         /* text fields */
+  --w-field-edit: #181818;
+  --w-field-text: #e6e6e6;
+  --w-menu: #282828;          /* dropdown (menu) buttons */
+  --w-menu-hover: #313131;
+  --w-tool: #282828;          /* toolbar items */
+  --w-tab: #1d1d1d;
+  --w-tab-sel: #303030;
+  --w-tab-text: #989898;
+  --emboss: rgba(0, 0, 0, .15);
+  --scroll-thumb: #545454;
+
+  /* Text. */
+  --text: #e6e6e6;
+  --text-hi: #ffffff;
+  --text-2: #c3c3c3;          /* outliner / list text */
+  --text-3: #acacac;          /* labels, menu text (Blender #999, raised to 4.5:1 on panels and striped rows) */
+  --text-4: #838383;          /* status bar, disabled */
+  --text-sel: #ffffff;
+
+  /* Selection (Blender #4772b3 slot) — accent from preferences. */
+  --sel-row: color-mix(in srgb, var(--accent) 38%, #282828);   /* outliner active (#334d80 in Blender) */
+  --sel-row-soft: color-mix(in srgb, var(--accent) 22%, #282828); /* outliner selected (#1d314d) */
+  --accent-text: var(--accent-text-dark, #eb8fb6);
+  --accent-fill: var(--accent-fill-dark, #bf115d);   /* slider fill under #e6e6e6 text */
+  --placeholder: #8a8a8a;
+  --statusbar-text: #a8a8a8;
+
+  /* Production data colours (phases) and Blender-style colour tags for job status. */
+  --setup: #3fbfa6;
+  --setup-text: #6fd6c5;
+  --setup-soft: rgba(63, 191, 166, .2);
+  --event: #e2ac2a;
+  --event-text: #f0c24e;
+  --event-soft: rgba(226, 172, 42, .2);
+  --crew: #8ea2ff;
+  --crew-soft: rgba(142, 162, 255, .22);
+  --st-draft: #8f8f8f;
+  --st-scheduled: #4b8fd8;
+  --st-setup: #f1a355;
+  --st-progress: #9e6fd3;
+  --st-completed: #6bba5a;
+  --st-cancelled: #e2605b;
+
+  /* Astro UXDS status (fixed; colour + shape). */
+  --status-critical: #ff3838;
+  --status-serious: #ffb302;
+  --status-caution: #fce83a;
+  --status-normal: #56f000;
+  --status-standby: #2dccff;
+  --status-off: #a4abb6;
+  --status-edge: transparent;
+
+  /* 3D viewport (Blender). */
+  --vp-bg-hi: #3d3d3d;
+  --vp-bg-lo: #3d3d3d;
+  --vp-grid: rgba(84, 84, 84, .5);
+  --vp-grid-hi: #545454;
+  --vp-text: #ffffff;
+  --vp-text-dim: #bdbdbd;
+  --vp-edge: #000000;
+  --vp-hover: #ffffff;
+  --vp-active: #ffa028;       /* Blender active object */
+  --vp-selected: #ed5700;
+  --vp-solid-setup: #9fb7b2;
+  --vp-solid-event: #c4b79a;
+
+  /* Dope sheet / graph editor. */
+  --ds-back: #303030;
+  --strip-base: #303030;      /* calendar strips mix their colour with this */
+  --ds-grid: #161616;
+  --ds-scrub: #1d1d1d;
+  --ds-scrub-text: #9a9a9a;
+  --ds-key: #bfbfbf;
+  --ds-key-sel: #ffbe33;
+  --ds-long: rgba(255, 255, 255, .12);
+  --ds-summary: rgba(77, 39, 39, .4);
+  --ds-channel: rgba(18, 18, 18, .6);
+  --ds-channel-text: #b8b8b8;
+  --graph-grid: #1a1a1a;
+
+  --line: rgba(255, 255, 255, .06);
+  --line-2: rgba(0, 0, 0, .35);
+  --line-3: rgba(255, 255, 255, .14);
+  --signal-text: #ff6b6b;
+  --signal-soft: rgba(255, 56, 56, .15);
+  --warn-text: #ffc547;
+  --warn-soft: rgba(255, 179, 2, .14);
+  --danger-text: #ff7070;
+  --danger-soft: rgba(255, 56, 56, .14);
+  --chart-bg: #303030;
+  --chart-grid: #1a1a1a;
+  --chart-axis: #a6a6a6;
+  --chart-cross: rgba(255, 255, 255, .5);
+}
+
+/* Opera GX surfaces: the same Blender steps with a low-chroma violet tint. */
+:root[data-surface="gx"]:not([data-theme="light"]) {
+  --editor-border: #141318;
+  --topbar: #141219;
+  --statusbar: #141219;
+  --header: #2d2a35;
+  --region: #2d2a35;
+  --panel: #3a3642;
+  --outliner: #25222c;
+  --navbar: #141219;
+  --channels: #1b1920;
+  --viewport: #3a3642;
+  --menu-back: #15131b;
+  --menu-outline: #221f29;
+  --tooltip: #1b1920;
+  --w-inner: #504b5a;
+  --w-inner-hover: #5b5566;
+  --w-outline: #3a3642;
+  --w-field: #1b1920;
+  --w-field-edit: #16141b;
+  --w-menu: #25222c;
+  --w-menu-hover: #2e2a36;
+  --w-tool: #25222c;
+  --w-tab: #1b1920;
+  --w-tab-sel: #2d2a35;
+  --text: #e8e5ef;
+  --text-2: #c7c2d3;
+  --text-3: #aaa3ba;
+  --text-4: #857e98;
+  --vp-bg-hi: #3a3642;
+  --vp-bg-lo: #2d2a35;
+  --ds-back: #2d2a35;
+  --ds-scrub: #1b1920;
+  --sel-row: color-mix(in srgb, var(--accent) 36%, #25222c);
+  --sel-row-soft: color-mix(in srgb, var(--accent) 20%, #25222c);
+  --chart-bg: #2d2a35;
+}
+
+/* Blender Light preset. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --editor-border: #999999;
+  --topbar: #b3b3b3;
+  --statusbar: #999999;
+  --header: #b3b3b3;
+  --region: #b3b3b3;
+  --panel: #cccccc;
+  --panel-sub: rgba(0, 0, 0, .12);
+  --panel-outline: rgba(255, 255, 255, .13);
+  --outliner: #a3a3a3;
+  --row-alt: rgba(255, 255, 255, .06);
+  --navbar: #a6a6a6;
+  --channels: #adadad;
+  --viewport: #646464;
+  --menu-back: #c0c0c0;
+  --menu-outline: #a6a6a6;
+  --tooltip: #19191a;
+  --overlay: rgba(0, 0, 0, .2);
+
+  --w-inner: #dbdbdb;
+  --w-inner-hover: #e6e6e6;
+  --w-outline: #4d4d4d;
+  --w-text: #1a1a1a;
+  --w-field: #282828;
+  --w-field-edit: #333333;
+  --w-field-text: #dddddd;
+  --w-menu: #3b3b3b;
+  --w-menu-hover: #474747;
+  --w-tool: #434343;
+  --w-tab: #8a8a8a;
+  --w-tab-sel: #b3b3b3;
+  --w-tab-text: #1a1a1a;
+  --emboss: rgba(0, 0, 0, .15);
+  --scroll-thumb: #6e6e6e;
+
+  --text: #1a1a1a;
+  --text-hi: #000000;
+  --text-2: #1a1a1a;
+  --text-3: #2e2e2e;
+  --text-4: #4d4d4d;
+  --text-sel: #ffffff;
+  --accent-text: var(--accent-text-light, #7e0c3d);
+  --accent-fill: var(--accent-fill-light, #e05390);  /* slider fill under #1a1a1a text */
+  --placeholder: #a0a0a0;
+  --statusbar-text: #1a1a1a;
+  --sel-row: color-mix(in srgb, var(--accent) 34%, #929eb7);
+  --sel-row-soft: color-mix(in srgb, var(--accent) 18%, #a3a3a3);
+
+  --setup: #13866f;
+  --setup-text: #0b5c4c;
+  --setup-soft: rgba(19, 134, 111, .22);
+  --event: #b37f00;
+  --event-text: #5e4300;
+  --event-soft: rgba(179, 127, 0, .22);
+  --crew: #3e55c7;
+  --crew-soft: rgba(62, 85, 199, .18);
+  --st-draft: #5c5c5c;
+  --st-scheduled: #2b65b0;
+  --st-setup: #b35f0e;
+  --st-progress: #6b3fb0;
+  --st-completed: #2f7d22;
+  --st-cancelled: #b52a26;
+
+  --status-critical: #ff2a04;
+  --status-serious: #ffaf3d;
+  --status-caution: #fad800;
+  --status-normal: #00e200;
+  --status-standby: #64d9ff;
+  --status-off: #7b8089;
+  --status-edge: rgba(0, 0, 0, .55);
+
+  --vp-bg-hi: #646464;
+  --vp-bg-lo: #646464;
+  --vp-grid: rgba(0, 0, 0, .2);
+  --vp-grid-hi: rgba(0, 0, 0, .4);
+  --vp-text: #ffffff;
+  --vp-text-dim: #f5f5f5;
+  --vp-edge: #000000;
+  --vp-hover: #ffffff;
+  --vp-active: #ffaa40;
+  --vp-selected: #f15800;
+  --vp-solid-setup: #b8cdc8;
+  --vp-solid-event: #d9cdb0;
+
+  --ds-back: #a3a3a3;           /* Blender Light #6b6b6b, lightened so dark text reads */
+  --strip-base: #5e5e5e;
+  --ds-grid: #4d4d4d;
+  --ds-scrub: #949494;
+  --ds-scrub-text: #272727;
+  --ds-key: #e8e8e8;
+  --ds-key-sel: #ffbe33;
+  --ds-long: rgba(26, 21, 21, .5);
+  --ds-summary: rgba(211, 102, 0, .4);
+  --ds-channel: #999999;
+  --ds-channel-text: #050505;
+  --graph-grid: #8a8a8a;
+
+  --line: rgba(0, 0, 0, .1);
+  --line-2: rgba(0, 0, 0, .25);
+  --line-3: rgba(0, 0, 0, .3);
+  --signal-text: #a3000f;
+  --signal-soft: rgba(255, 42, 4, .16);
+  --warn-text: #7a4b00;
+  --warn-soft: rgba(255, 175, 61, .22);
+  --danger-text: #a3000f;
+  --danger-soft: rgba(255, 42, 4, .14);
+  --chart-bg: #a3a3a3;
+  --chart-grid: #8a8a8a;
+  --chart-axis: #1a1a1a;
+  --chart-cross: rgba(0, 0, 0, .55);
+}
+
+/* Theme-independent tokens and aliases kept for earlier modules. */
+:root {
+  /* Fallbacks only: prefs.js sets the accent set inline, app.js sets the company pair. */
+  --accent: #d41367;
+  --accent-hi: #dc3d82;
+  --accent-ink: #ffffff;
+  --accent-text-dark: #eb8fb6;
+  --accent-text-light: #7e0c3d;
+  --accent-fill-dark: #bf115d;
+  --accent-fill-light: #e05390;
+  --focus-ring: var(--accent-text);
+  --ui-scale: 1;
+  --company: #d4af37;
+  --company-ink: #181203;
+  --axis-x: #ff3352;
+  --axis-y: #8bdc00;
+  --axis-z: #2890ff;
+  --link: var(--accent-text);
+  --bg-0: var(--topbar);
+  --bg-1: var(--region);
+  --bg-2: var(--panel);
+  --bg-3: var(--header);
+  --bg-4: var(--w-inner);
+  --bg-5: var(--w-inner-hover);
+  --field: var(--w-field);
+  --signal: var(--status-critical);
+  --ok: var(--status-normal);
+  --warn: var(--status-serious);
+  --danger: var(--status-critical);
+  --chart-label-bg: var(--accent);
+}
+
+/* Scale: Blender draws every UI string at 11 pt (= 11 px at 72 DPI, scale 1.0) and
+   every widget at UI_UNIT_Y = 20 px. --ui-scale is Blender's Resolution Scale. */
+:root {
+  --font: 'DVI Inter', Inter, 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+  --mono: 'DejaVu Sans Mono', 'Cascadia Mono', Consolas, ui-monospace, monospace;
+  --s: var(--ui-scale, 1);
+  --fs: calc(11px * var(--s));
+  --fs-2xs: calc(9px * var(--s));
+  --fs-xs: calc(10px * var(--s));
+  --fs-sm: var(--fs);
+  --fs-base: var(--fs);
+  --fs-md: var(--fs);
+  --fs-lg: calc(12px * var(--s));
+  --fs-xl: calc(13px * var(--s));
+  --fs-2xl: calc(14px * var(--s));
+  --fs-num: calc(14px * var(--s));
+  --lh: 1.36;
+  --unit: calc(20px * var(--s));
+  --h-ctl: var(--unit);
+  --h-ctl-sm: calc(18px * var(--s));
+  --h-row: var(--unit);
+  --h-header: calc(26px * var(--s));
+  --h-topbar: calc(26px * var(--s));
+  --h-status: calc(22px * var(--s));
+  --h-panel-head: calc(25px * var(--s));   /* PNL_HEADER = 1.25 × UI_UNIT_Y */
+  --h-tabbar: 0px;
+  --r-1: calc(3px * var(--s));
+  --r-2: calc(4px * var(--s));     /* widget roundness 0.2 × 20 px */
+  --r-3: calc(4px * var(--s));     /* panels: 0.4 × 20 × 0.5 */
+  --r-4: calc(4px * var(--s));     /* menus / popups */
+  --r-area: calc(6px * var(--s));  /* EDITORRADIUS */
+  --gap: 4px;                      /* 2 px inset on each side of every editor */
+  --pad: calc(8px * var(--s));     /* UI_PANEL_MARGIN_X */
+  --inspector-width: 288px;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+}
+
+/* Phones and tablets draw the PC layout at 1280 px and scale it down (index.html viewport), so
+   touch screens get the same sizes as the PC: no larger rows or 16 px fields there. Pinch to zoom. */
+/* Narrow desktop windows: denser chrome; text stays at Blender's 11 px (Resolution Scale enlarges it). */
+@media (max-width: 759px) {
+  :root { --h-topbar: calc(40px * var(--s)); --h-tabbar: 50px; --pad: calc(6px * var(--s)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

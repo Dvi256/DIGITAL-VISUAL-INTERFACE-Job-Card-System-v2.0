@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#06070b">
 <title>Digital Visual Interface - Job Card System</title>
+<script src="look.js"></script>
+<script>window.DviLook&&DviLook.openRemembered();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
@@ -842,6 +844,13 @@ tbody tr:hover{background:rgba(255,255,255,.025);box-shadow:none}
 .crew-note{display:block;margin-top:2px;font-size:10.5px;font-weight:500;letter-spacing:.2px;text-transform:none;color:var(--mut)}
 .crew-note.warn{color:#e0a92e}
 #crewConfirmModal .mb-foot{flex-wrap:wrap;gap:8px}
+/* Pro | Classic switch (look.js). Hidden on phones: Pro has no phone layout yet. */
+.look-switch{display:inline-flex;align-self:center;border:1px solid rgba(247,168,27,.5);border-radius:999px;overflow:hidden;flex:none}
+.look-btn{background:transparent;color:var(--gold-l);border:0;padding:8px 14px;font:inherit;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+.look-btn[aria-pressed="true"]{background:var(--gold);color:#06070b;cursor:default}
+.look-btn[aria-pressed="false"]:hover{background:rgba(247,168,27,.14)}
+.look-btn:focus-visible{outline:2px solid var(--gold-l);outline-offset:-2px}
+@media (max-width:760px){.look-switch{display:none}}
 </style>
 </head>
 <body>
@@ -860,7 +869,7 @@ tbody tr:hover{background:rgba(255,255,255,.025);box-shadow:none}
     <button class="navbtn" data-view="stock" onclick="switchView('stock')"><svg class="ni" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>Stock</button>
     <button class="navbtn" data-view="settings" onclick="switchView('settings')"><svg class="ni" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>Settings</button>
     <button class="gold-btn side-cta" onclick="openJobModal()">+ New Job Card</button>
-    <div class="side-foot">DIGITAL VISUAL INTERFACE<br>Job Card System v2.1</div>
+    <div class="side-foot">DIGITAL VISUAL INTERFACE<br>Job Card System v2.2</div>
   </aside>
 
   <main>
@@ -871,6 +880,7 @@ tbody tr:hover{background:rgba(255,255,255,.025);box-shadow:none}
         <div id="topDate"></div>
       </div>
       <div class="top-right">
+        <div class="look-switch" role="group" aria-label="Look"><button type="button" class="look-btn" aria-pressed="false" onclick="DviLook.go('pro')" title="Open the Pro look on the same records">Pro</button><button type="button" class="look-btn" aria-pressed="true" title="You are in the Classic look">Classic</button></div>
         <button class="gold-btn" onclick="openJobModal()">+ New Job Card</button>
         <div id="bellWrap">
           <button id="bellBtn" onclick="toggleNotif(event)" aria-label="Notifications"><svg class="ni" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span id="bellBadge" class="badge"></span></button>
@@ -1322,7 +1332,7 @@ function ensureStateShape(s){
 }
 function touchState(){
  if(!state)return;
- state.meta=Object.assign({},state.meta,{updatedAt:Date.now(),appVersion:'2.2-cloud',updatedDeviceId:cloudClientId(),updatedDeviceName:currentDeviceName()});
+ state.meta=Object.assign({},state.meta,{updatedAt:Date.now(),appVersion:'2.3-cloud',updatedDeviceId:cloudClientId(),updatedDeviceName:currentDeviceName()});
 }
 function save(opts){
  opts=opts||{};
@@ -3593,6 +3603,10 @@ function init(){
   renderAll();
   configureCloudLiveSync();
   if(cloudLiveEnabled())setTimeout(()=>cloudPull({auto:true}),900);
+  // Two looks, one set of records: a save made in Pro (or another tab) on this device is taken at once, as a
+  // cloud download would be. A job card opened in Pro (#job/<id>) opens here too.
+  window.addEventListener('storage',e=>{if(e.key!==DB||e.newValue===null)return;try{const s=JSON.parse(e.newValue);if(!s||!Array.isArray(s.jobs))return;state=ensureStateShape(s);syncCompanyBranding();renderAll();}catch(_){}});
+  if(window.DviLook){const hj=DviLook.jobFromHash(location.hash);if(hj&&state.jobs.some(j=>j.id===hj))setTimeout(()=>openView(hj),0);}
  const notifs=notifList();
  if(notifs.length)setTimeout(()=>toast(notifs.length+' item(s) need attention today'),700);
  document.addEventListener('keydown',e=>{

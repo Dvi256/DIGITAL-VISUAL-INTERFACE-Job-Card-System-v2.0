@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' https://script.google.com https://script.googleusercontent.com; style-src 'self' 'unsafe-inline'; connect-src https://script.google.com https://script.googleusercontent.com; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'self'">
+<meta name="viewport" content="width=1280, viewport-fit=cover">
+<meta name="theme-color" content="#252525">
+<meta name="description" content="DVI production operations: job cards, crew planning and event schedules.">
+<title>DVI Operations — Pro</title>
+<script src="theme.js"></script>
+<script src="prefs.js"></script>
+<script src="look.js"></script>
+<script>DviLook.openRemembered();</script>
+<link rel="stylesheet" href="workspace.css">
+<link rel="stylesheet" href="views.css">
+<link rel="stylesheet" href="gx.css">
+</head>
+<body>
+<a class="skip-link" href="#workspaceContent">Skip to workspace</a>
+<div id="app">
+  <header id="topbar">
+    <button class="tb-app" type="button" data-menu="app" aria-label="DVI menu" title="DVI Operations"><span class="brand-tile" id="brandTile"><img src="DVI%20logos%20png/dvi%20logo.png" alt=""></span></button>
+    <nav class="tb-menus" aria-label="Menus"><button type="button" data-menu="file">File</button><button type="button" data-menu="edit">Edit</button><button type="button" data-menu="view">View</button><button type="button" data-menu="help">Help</button></nav>
+    <nav class="workspace-tabs" aria-label="Workspaces">
+      <button class="workspace-tab active" data-workspace="dashboard" onclick="switchView('dashboard')" aria-current="page"><span class="wt-label">Overview</span></button>
+      <button class="workspace-tab" data-workspace="jobs" onclick="switchView('jobs')"><span class="wt-label">Job Cards</span></button>
+      <button class="workspace-tab" data-workspace="schedule" onclick="switchView('schedule')"><span class="wt-label">Schedule</span></button>
+      <button class="workspace-tab" data-workspace="dispatch" onclick="switchView('dispatch')"><span class="wt-label">Dispatch</span></button>
+      <button class="workspace-tab" data-workspace="stock" onclick="switchView('stock')"><span class="wt-label">Stock</span></button>
+      <button class="workspace-tab" data-workspace="insights" onclick="switchView('insights')"><span class="wt-label">Insights</span></button>
+      <button class="workspace-tab" data-workspace="settings" onclick="switchView('settings')"><span class="wt-label">Resources</span></button>
+    </nav>
+    <h1 id="topTitle" class="tb-title">Overview</h1>
+    <div class="tb-tools">
+      <div class="look-switch" role="group" aria-label="Look"><button type="button" class="look-btn" aria-pressed="true" title="You are in the Pro look">Pro</button><button type="button" class="look-btn" aria-pressed="false" onclick="DviLook.go('classic')" title="Open the Classic look on the same records">Classic</button></div>
+      <button class="tb-search" type="button" onclick="openCommand()" aria-label="Search workspace"><span data-icon="search"></span><span>Search</span><kbd>/</kbd></button>
+      <span class="app-state" id="cloudState" title="DVI Cloud">DVI Cloud</span>
+      <div id="bellWrap"><button id="bellBtn" class="icon-btn monitor" type="button" aria-label="Today’s alerts" title="Today’s alerts" onclick="toggleNotif(event)"><span data-icon="alert"></span><span id="bellBadge" class="badge"></span></button><div id="notifPanel" role="region" aria-label="Today’s alerts"></div></div>
+      <button id="themeToggle" class="icon-btn theme-toggle" type="button" aria-label="Light theme" aria-pressed="false" onclick="toggleTheme()" title="Switch to light theme"><svg class="theme-sun" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1v2m0 10v2M1 8h2m10 0h2M3 3l1.4 1.4m7.2 7.2L13 13M3 13l1.4-1.4m7.2-7.2L13 3"/></svg><svg class="theme-moon" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.6A5.8 5.8 0 0 1 6.4 2.5 6 6 0 1 0 13.5 9.6Z"/></svg><span id="themeLabel" class="sr-only">Dark</span></button>
+      <button class="icon-btn" type="button" onclick="openPrefs()" aria-label="Preferences" title="Preferences (Ctrl ,)"><span data-icon="settings"></span></button>
+      <button id="focusWorkspace" class="icon-btn" type="button" aria-pressed="false" aria-label="Hide outliner and properties" title="Hide outliner and properties" onclick="toggleWorkspaceFocus()"><span data-icon="sidebar"></span></button>
+      <button class="btn tb-new" type="button" onclick="openJobModal()" aria-label="New job card" title="New job card (N)"><span data-icon="plus"></span><span class="tb-new-label">New</span></button>
+    </div>
+  </header>
+
+  <div class="shell">
+  <main id="workspaceContent" tabindex="-1">
+    <div id="storageAlert" class="persistent-alert" role="alert" hidden></div>
+
+    <!-- OVERVIEW: Blender "Layout" workspace — 3D viewport + sidebar, dope sheet below -->
+    <section id="view-dashboard" class="view active" aria-label="Overview">
+      <div class="area viewport-area" data-mode="charts">
+        <header class="area-header">
+          <button class="editor-type" type="button" data-menu="view" title="Editor type: Production Viewport" aria-label="Editor type"><span data-icon="cube"></span><span class="tri" aria-hidden="true"></span></button>
+          <nav class="hdr-menus" aria-label="Viewport menus"><button type="button" data-menu="vpview">View</button><button type="button" data-menu="vpselect">Select</button><button type="button" data-menu="vpadd">Add</button></nav>
+          <span class="hdr-info" id="dHero"></span>
+          <span class="spacer"></span>
+          <div class="hdr-group" role="group" aria-label="Period"><button class="icon-btn" type="button" onclick="viewportCommand('shift',-7)" aria-label="Previous week"><span data-icon="chevron-left"></span></button><button class="btn sm" type="button" onclick="viewportCommand('today')">Today</button><button class="icon-btn" type="button" onclick="viewportCommand('shift',7)" aria-label="Next week"><span data-icon="chevron-right"></span></button></div>
+          <label class="hdr-field"><span class="sr-only">Days shown</span><select id="vpRange" aria-label="Days shown" onchange="viewportCommand('range',this.value)"><option value="7">7 days</option><option value="14">14 days</option><option value="21" selected>21 days</option><option value="42">42 days</option></select></label>
+          <div class="aligned vp-modes" role="group" aria-label="Viewport display"><button type="button" data-vp-mode="charts" aria-pressed="true" onclick="viewportCommand('mode','charts')" title="3D charts: daily activity, status mix and timing"><span data-icon="chart"></span>Charts</button><button type="button" data-vp-mode="blocks" aria-pressed="false" onclick="viewportCommand('mode','blocks')" title="Job cards as 3D blocks on a time axis"><span data-icon="cube"></span>Blocks</button></div>
+          <div class="aligned chart-metric" role="group" aria-label="Bar values"><button type="button" data-chart-metric="jobdays" aria-pressed="true" onclick="chartsCommand('metric','jobdays')" title="Setup and event job-days per day">Job-days</button><button type="button" data-chart-metric="people" aria-pressed="false" onclick="chartsCommand('metric','people')" title="Distinct people assigned per day">People</button></div>
+          <div class="aligned chart-style" role="group" aria-label="Chart style"><button type="button" data-chart-style-set="pro" aria-pressed="false" onclick="chartsCommand('style',chartsStyle()==='pro'?'classic':'pro')" title="Pro charts (on): headline figures, previous-period comparison and load by client. Off: Classic charts, light and simple">Pro</button></div>
+          <div class="aligned" role="group" aria-label="Phases shown"><button type="button" data-vp-show="setup" aria-pressed="true" onclick="viewportCommand('show','setup')" title="Show setup phases"><i class="tagc setup"></i>Setup</button><button type="button" data-vp-show="event" aria-pressed="true" onclick="viewportCommand('show','event')" title="Show event phases"><i class="tagc event"></i>Event</button></div>
+          <div class="aligned shading" role="group" aria-label="Viewport shading"><button type="button" data-vp-shading="wire" aria-pressed="false" onclick="viewportCommand('shading','wire')" title="Wireframe" aria-label="Wireframe shading"><span data-icon="shade-wire"></span></button><button type="button" data-vp-shading="solid" aria-pressed="true" onclick="viewportCommand('shading','solid')" title="Solid" aria-label="Solid shading"><span data-icon="shade-solid"></span></button><button type="button" data-vp-shading="phase" aria-pressed="false" onclick="viewportCommand('shading','phase')" title="Phase colours" aria-label="Phase colour shading"><span data-icon="shade-material"></span></button><button type="button" data-vp-shading="status" aria-pressed="false" onclick="viewportCommand('shading','status')" title="Status colours" aria-label="Status colour shading"><span data-icon="shade-render"></span></button></div>
+        </header>
+        <div id="dNextUp" class="next-up" role="region" aria-label="Next up"></div><div class="vp-body">
+          <div class="vp-toolbar" role="toolbar" aria-label="Viewport tools" aria-orientation="vertical">
+            <button type="button" class="icon-btn" aria-pressed="true" title="Select (click an object)" aria-label="Select tool"><span data-icon="cursor"></span></button>
+            <button type="button" class="icon-btn" onclick="viewportCommand('frame')" title="Frame all (Home)" aria-label="Frame all"><span data-icon="frame"></span></button>
+            <button type="button" class="icon-btn" onclick="viewportCommand('zoom',1.15)" title="Zoom in (+)" aria-label="Zoom in"><span data-icon="zoom-in"></span></button>
+            <button type="button" class="icon-btn" onclick="viewportCommand('zoom',1/1.15)" title="Zoom out (−)" aria-label="Zoom out"><span data-icon="zoom-out"></span></button>
+            <button type="button" class="icon-btn" onclick="viewportCommand('ortho')" title="Perspective / Orthographic (5)" aria-label="Toggle perspective"><span data-icon="ortho"></span></button>
+            <span class="tool-sep"></span>
+            <button type="button" class="icon-btn" onclick="openJobModal()" title="Add job card (N)" aria-label="Add job card"><span data-icon="plus"></span></button>
+          </div>
+          <div class="vp-stage">
+            <canvas id="vpCanvas" tabindex="0" role="img" aria-label="Production viewport: recorded jobs as 3D objects along time. Drag to orbit, Shift+drag to pan, arrow keys orbit, 1 3 7 change view, Home frames all, N selects the next job, Enter opens it. A text list of the same jobs follows."></canvas>
+            <canvas id="vpCharts" tabindex="0" role="img" aria-label="3D charts: job-days per day as bars, status mix and timing completeness as donuts. Arrow keys move between bars and slices, Up and Down switch chart, Enter opens the day or the matching job cards. The same numbers are listed in text below."></canvas>
+            <div id="vpTip" class="vp-tip" hidden></div>
+            <div id="vpStats" class="vp-stats" aria-hidden="true"></div>
+            <div id="vpGizmo" class="vp-gizmo" title="Drag to orbit · click an axis to view along it"></div>
+            <div id="vpEmpty" class="vp-empty" hidden>No recorded setups or events in this window</div>
+            <p id="vpInfo" class="sr-only" aria-live="polite"></p>
+          </div>
+          <aside class="npanel" aria-label="Sidebar">
+            <div class="npanel-tabs" role="tablist" aria-label="Sidebar tabs">
+              <button type="button" role="tab" data-npanel-tab="today" aria-selected="true">Today</button>
+              <button type="button" role="tab" data-npanel-tab="checks" aria-selected="false">Checks</button>
+              <button type="button" role="tab" data-npanel-tab="status" aria-selected="false">Status</button>
+              <button type="button" role="tab" data-npanel-tab="month" aria-selected="false">Month</button>
+            </div>
+            <div class="npanel-body">
+              <div class="npanel-page" data-npanel="today" role="tabpanel">
+                <section class="bl-panel open"><button class="bl-panel-head" type="button" aria-expanded="true"><span class="bl-tri"></span>Needs Attention<small id="dAttentionCount" class="bl-count"></small></button><div class="bl-panel-body flush" id="dAttention" aria-live="polite"></div></section>
+                <section class="bl-panel open"><button class="bl-panel-head" type="button" aria-expanded="true"><span class="bl-tri"></span>Next 7 Days</button><div class="bl-panel-body flush" id="dAgenda"></div></section><section class="bl-panel open"><button class="bl-panel-head" type="button" aria-expanded="true"><span class="bl-tri"></span>Statistics</button><div class="bl-panel-body" id="dStats"></div></section>
+              </div>
+              <div class="npanel-page" data-npanel="checks" role="tabpanel" hidden>
+                <section class="bl-panel open"><button class="bl-panel-head" type="button" aria-expanded="true"><span class="bl-tri"></span>Crew Scheduling</button><div class="bl-panel-body flush" id="scheduleWarnings" aria-live="polite"></div></section>
+              </div>
+              <div class="npanel-page" data-npanel="status" role="tabpanel" hidden>
+                <section class="bl-panel open"><button class="bl-panel-head" type="button" aria-expanded="true"><span class="bl-tri"></span>Pipeline</button><div class="bl-panel-body" id="dTrend"></div></section>
+                <section class="bl-panel open"><button class="bl-panel-head" type="button" aria-expanded="true"><span class="bl-tri"></span>Brief Readiness</button><div class="bl-panel-body" id="dForecast"></div></section>
+                <section class="bl-panel"><button class="bl-panel-head" type="button" aria-expanded="false"><span class="bl-tri"></span>Recently Updated</button><div class="bl-panel-body flush" id="dRecent"></div></section>
+              </div>
+              <div class="npanel-page" data-npanel="month" role="tabpanel" hidden>
+                <section class="bl-panel open"><button class="bl-panel-head" type="button" aria-expanded="true"><span class="bl-tri"></span><span id="dCalTitle">This Month</span></button><div class="bl-panel-body"><div class="dash-calendar" id="dMonthCalendar"></div><p class="prop-hint"><i class="tagc setup"></i>Setup <i class="tagc event"></i>Event · click a day for its running order</p></div></section>
+              </div>
+            </div>
+          </aside>
+        </div>
+        <details class="vp-a11y"><summary id="vpListLabel">Chart data (text)</summary><ul id="vpList"></ul></details>
+      </div>
+      <div class="area dopesheet-area" id="productionTimeline" aria-label="Dope sheet">
+        <header class="area-header">
+          <button class="editor-type" type="button" data-menu="view" title="Editor type: Dope Sheet" aria-label="Editor type"><span data-icon="dopesheet"></span><span class="tri" aria-hidden="true"></span></button>
+          <span class="hdr-label">Dope Sheet</span>
+          <span class="hdr-info" id="timelinePeriod"></span>
+          <span class="spacer"></span>
+          <div class="hdr-group timeline-nav" role="group" aria-label="Dope sheet period"><button class="icon-btn" type="button" onclick="shiftProductionTimeline(-14)" aria-label="Previous two weeks"><span data-icon="chevron-left"></span></button><button class="btn sm" type="button" onclick="resetProductionTimeline()">Today</button><button class="icon-btn" type="button" onclick="shiftProductionTimeline(14)" aria-label="Next two weeks"><span data-icon="chevron-right"></span></button></div>
+          <button class="btn sm timeline-open" type="button" onclick="openTimelineDay()">Open Day in Dispatch</button>
+        </header>
+        <div id="timelineGrid" class="dopesheet"></div>
+      </div>
+    </section>
+
+    <!-- JOB CARDS: spreadsheet editor -->
+    <section id="view-jobs" class="view" aria-labelledby="jobsTitle">
+      <header class="area-header">
+        <button class="editor-type" type="button" data-menu="view" title="Editor type: Spreadsheet" aria-label="Editor type"><span data-icon="sheet"></span><span class="tri" aria-hidden="true"></span></button>
+        <h2 id="jobsTitle" class="hdr-label">Job Cards</h2><span class="hdr-info" id="jobsCount" aria-live="polite"></span>
+        <label class="input-icon register-search hdr-search"><span data-icon="search"></span><span class="sr-only">Search job cards</span><input id="jq" type="search" aria-label="Search job cards" placeholder="Filter" oninput="renderJobs()"></label>
+        <span class="spacer"></span>
+        <div class="aligned" role="group" aria-label="Job display"><button id="listMode" class="active" onclick="setJobMode('list')" aria-pressed="true" title="Spreadsheet"><span data-icon="list"></span></button><button id="boardMode" onclick="setJobMode('board')" aria-pressed="false" title="Group by status"><span data-icon="columns"></span></button></div>
+        <button class="btn sm" onclick="exportCSV()" title="Export CSV"><span data-icon="download"></span>CSV</button>
+        <button class="btn sm" onclick="openJobModal()"><span data-icon="plus"></span>New</button>
+      </header>
+      <div class="area-sub">
+        <div id="jobTabs" class="aligned filter-tabs" role="group" aria-label="Job status"></div>
+        <span hidden><select aria-label="Filter by status" id="jStatus" onchange="renderJobs()" tabindex="-1"></select></span>
+        <label class="hdr-field"><span class="sr-only">Client</span><select aria-label="Filter by client" id="jClient" onchange="renderJobs()"></select></label>
+        <label class="hdr-field"><span class="sr-only">Sort</span><select aria-label="Sort job cards" id="jSort" onchange="renderJobs()">
+          <option value="ev_desc">Event date (newest)</option>
+          <option value="ev_asc">Event date (oldest)</option>
+          <option value="created">Recently created</option>
+        </select></label>
+      </div>
+      <div class="sheet jobs-register">
+        <div id="jobBoard" class="job-board" hidden></div>
+        <div class="table-scroll"><table id="jobsTable" class="data-table jobs-table">
+          <thead><tr><th>Job No.</th><th>Event</th><th>Client</th><th>Venue</th><th>Setup</th><th>Event Date</th><th>Times</th><th>Site Manager</th><th class="num">Crew</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead>
+          <tbody id="jobsTbody"></tbody>
+        </table></div>
+        <div id="jobsEmpty" class="empty"></div>
+      </div>
+    </section>
+
+    <!-- SCHEDULE -->
+    <section id="view-schedule" class="view" aria-labelledby="calLabel">
+      <div class="schedule-register">
+        <div id="dvcStudio" class="dvc-studio">
+          <aside class="dvc-sidebar" aria-label="Calendar tools">
+            <div id="dvcMini" class="dvc-mini"></div>
+            <section class="bl-panel open"><button class="bl-panel-head" type="button" aria-expanded="true"><span class="bl-tri"></span>Calendars</button><div class="bl-panel-body">
+              <label class="check"><input type="checkbox" data-cal-filter="setup" checked><i class="tagc setup"></i>Setup &amp; build</label>
+              <label class="check"><input type="checkbox" data-cal-filter="event" checked><i class="tagc event"></i>Event &amp; showtime</label>
+            </div></section>
+            <div id="dvcWidgets" class="dvc-widgets" aria-label="In-app widgets"></div>
+            <section class="bl-panel open ops-brief"><button class="bl-panel-head" type="button" aria-expanded="true"><span class="bl-tri"></span>Operations Brief</button><div class="bl-panel-body">
+              <div class="prop-row"><span class="prop-label">Date</span><div class="prop-value"><input type="date" id="opsBriefDate" aria-label="Operations brief reference date"></div></div>
+              <div class="aligned ops-brief-controls"><button onclick="downloadOpsSummary('day')">Day</button><button onclick="downloadOpsSummary('week')">Week</button><button onclick="downloadOpsSummary('month')">Month</button></div>
+            </div></section>
+          </aside>
+          <section class="dvc-main" aria-label="Calendar">
+            <header class="area-header dvc-toolbar">
+              <button class="editor-type" type="button" data-menu="view" title="Editor type: Calendar" aria-label="Editor type"><span data-icon="calendar"></span><span class="tri" aria-hidden="true"></span></button>
+              <div class="hdr-group dvc-navigation"><button class="icon-btn" data-cal-action="prev" aria-label="Previous period"><span data-icon="chevron-left"></span></button><button class="btn sm" data-cal-action="today">Today</button><button class="icon-btn" data-cal-action="next" aria-label="Next period"><span data-icon="chevron-right"></span></button></div>
+              <h2 id="calLabel" class="hdr-label" aria-live="polite"></h2>
+              <span class="hdr-info" id="dvcRangeSummary"></span>
+              <span class="spacer"></span>
+              <div class="dvc-mobile-filters aligned" role="group" aria-label="Calendar phases"><button type="button" data-cal-toggle="setup" aria-pressed="true"><i class="tagc setup"></i>Setup</button><button type="button" data-cal-toggle="event" aria-pressed="true"><i class="tagc event"></i>Event</button></div>
+              <div class="dvc-modes aligned" role="group" aria-label="Calendar view"><button data-cal-mode="month" title="Month (M)">Month</button><button data-cal-mode="week" title="Week (W)">Week</button><button data-cal-mode="day" title="Day (D)">Day</button><button data-cal-mode="agenda" title="Agenda (A)">Agenda</button></div>
+              <button class="btn sm" data-cal-action="create" title="New job card"><span data-icon="plus"></span>New</button>
+            </header>
+            <div id="dvcCanvas" class="dvc-canvas"><div id="calGrid"></div></div>
+            <div id="dvcPopover" class="dvc-popover" role="dialog" aria-modal="false" aria-labelledby="dvcPopTitle" hidden></div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <!-- DISPATCH -->
+    <section id="view-dispatch" class="view" aria-labelledby="dispatchTitle">
+      <header class="area-header">
+        <button class="editor-type" type="button" data-menu="view" title="Editor type: Dispatch" aria-label="Editor type"><span data-icon="signal"></span><span class="tri" aria-hidden="true"></span></button>
+        <h2 id="dispatchTitle" class="hdr-label">Dispatch</h2>
+        <div class="hdr-group dispatch-date"><button class="icon-btn" type="button" aria-label="Previous dispatch day" onclick="shiftDispatch(-1)"><span data-icon="chevron-left"></span></button><button class="btn sm" type="button" onclick="resetDispatchDate()">Today</button><button class="icon-btn" type="button" aria-label="Next dispatch day" onclick="shiftDispatch(1)"><span data-icon="chevron-right"></span></button></div>
+        <label for="dispatchDate" class="hdr-field dispatch-date-field"><span class="sr-only">Dispatch date</span><input id="dispatchDate" type="date" onchange="renderDispatch()"></label>
+        <label for="dispatchSearch" class="input-icon hdr-search dispatch-search"><span data-icon="search"></span><input id="dispatchSearch" type="search" placeholder="Filter job, venue, person, role" aria-label="Search dispatch" oninput="renderDispatch()"></label>
+        <span class="spacer"></span>
+        <label for="dispatchNeeds" class="check dispatch-check"><input id="dispatchNeeds" type="checkbox" onchange="renderDispatch()"> Needs attention</label>
+      </header>
+      <div class="area-body">
+        <div id="dispatchSummary" class="stat-line" aria-live="polite"></div>
+        <div class="dispatch-grid">
+          <section class="bl-panel open dispatch-main"><div class="bl-panel-head static"><span data-icon="list"></span>Running Order<span class="spacer"></span><span id="dispatchCount" class="count"></span></div><div class="bl-panel-body flush" id="dispatchRows"></div></section>
+          <aside class="bl-panel open dispatch-team"><div class="bl-panel-head static"><span data-icon="people"></span>Assigned Crew</div><div class="bl-panel-body flush" id="dispatchCrew"></div><p class="prop-hint pad">Assignments come from job cards; they do not confirm attendance. Overlap checks use recorded job timings, not individual shifts.</p></aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- STOCK: two weeks of stock per item, what is short, hires planned (dist/stockview.js) -->
+    <section id="view-stock" class="view" aria-labelledby="stockTitle">
+      <header class="area-header">
+        <button class="editor-type" type="button" data-menu="view" title="Editor type: Stock" aria-label="Editor type"><span data-icon="box"></span><span class="tri" aria-hidden="true"></span></button>
+        <h2 id="stockTitle" class="hdr-label">Stock</h2>
+        <div class="hdr-group"><button class="icon-btn" type="button" aria-label="Previous two weeks" title="Previous two weeks" onclick="stockShift(-14)"><span data-icon="chevron-left"></span></button><button class="btn sm" type="button" onclick="stockShift(0)">Today</button><button class="icon-btn" type="button" aria-label="Next two weeks" title="Next two weeks" onclick="stockShift(14)"><span data-icon="chevron-right"></span></button></div>
+        <span class="hdr-info" id="stockRange"></span>
+        <span class="spacer"></span>
+        <div class="hdr-tools"><button class="btn sm" type="button" id="stockAllBtn" aria-pressed="false" onclick="stockToggleAll()">Show untracked</button><button class="btn sm" type="button" onclick="stockAddStarterTypes()">Add Common Types…</button><button class="btn sm" type="button" onclick="openQuickAdd('equipment')"><span data-icon="plus"></span>Add Item</button></div>
+      </header>
+      <div class="area-body">
+        <div class="stock-grid">
+          <section class="bl-panel open stock-main"><div class="bl-panel-head static"><span data-icon="box"></span>Left in the Store Each Day</div><div class="bl-panel-body flush"><div class="table-scroll"><table id="stockSheet" class="stock-sheet" aria-describedby="stockSheetNote"></table></div><p class="prop-hint pad" id="stockSheetNote">Each day shows how many are left after the Scheduled, Setup and In Progress job cards take theirs, from their first setup day to their last event day. Hover a day to see who holds them. Units hired in are not taken from the store. Type a number in Owned to track an item.</p></div></section>
+          <aside class="stock-side">
+            <section class="bl-panel open"><div class="bl-panel-head static"><span data-icon="box"></span>Item</div><div class="bl-panel-body" id="stockItem"></div></section>
+            <section class="bl-panel open"><div class="bl-panel-head static"><span data-icon="alert"></span>Short<span class="spacer"></span><span class="count" id="stockShortCount"></span></div><div class="bl-panel-body flush" id="stockShort" aria-live="polite"></div></section>
+            <section class="bl-panel open"><div class="bl-panel-head static"><span data-icon="truck"></span>Hires Planned</div><div class="bl-panel-body flush" id="stockHires"></div></section>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- INSIGHTS: graph editor + breakdowns -->
+    <section id="view-insights" class="view" aria-labelledby="insightsTitle">
+      <header class="area-header">
+        <button class="editor-type" type="button" data-menu="view" title="Editor type: Graph Editor" aria-label="Editor type"><span data-icon="chart"></span><span class="tri" aria-hidden="true"></span></button>
+        <h2 id="insightsTitle" class="hdr-label">Insights</h2>
+        <span class="spacer"></span>
+        <div class="hdr-tools" id="insightsTools"></div>
+      </header>
+      <div class="area-body">
+        <section id="productionChart" class="area graph-area" aria-label="Production activity graph"></section>
+        <div id="insightsBody" class="insights-body"></div>
+      </div>
+    </section>
+
+    <!-- RESOURCES -->
+    <section id="view-settings" class="view" aria-labelledby="resTitle">
+      <header class="area-header">
+        <button class="editor-type" type="button" data-menu="view" title="Editor type: Resources" aria-label="Editor type"><span data-icon="people"></span><span class="tri" aria-hidden="true"></span></button>
+        <h2 id="resTitle" class="hdr-label">People &amp; Resources</h2>
+        <span class="spacer"></span>
+        <button class="btn sm" onclick="document.getElementById('backupSection').scrollIntoView({behavior:'smooth',block:'start'})"><span data-icon="archive"></span>Data &amp; Backups</button>
+      </header>
+      <div class="area-body resources">
+        <section class="bl-panel open company-panel" id="companySection"><button class="bl-panel-head" type="button" aria-expanded="true"><span class="bl-tri"></span>Company Profile<span class="spacer"></span><span class="count">Used in the app, job cards, delivery notes, briefs and file names</span></button>
+          <div class="bl-panel-body">
+            <div class="set-grid">
+              <div class="prop-row"><label class="prop-label" for="sName">Company Name</label><div class="prop-value"><input id="sName" autocomplete="organization" onchange="saveCompany()"></div></div>
+              <div class="prop-row"><label class="prop-label" for="sShort">Short Name</label><div class="prop-value"><input id="sShort" maxlength="16" onchange="saveCompany()"></div></div>
+              <div class="prop-row"><label class="prop-label" for="sTag">Tagline</label><div class="prop-value"><input id="sTag" onchange="saveCompany()"></div></div>
+              <div class="prop-row"><label class="prop-label" for="sPhone">Phone</label><div class="prop-value"><input id="sPhone" type="tel" onchange="saveCompany()"></div></div>
+              <div class="prop-row"><label class="prop-label" for="sEmail">Email</label><div class="prop-value"><input id="sEmail" type="email" onchange="saveCompany()"></div></div>
+              <div class="prop-row"><label class="prop-label" for="sWebsite">Website</label><div class="prop-value"><input id="sWebsite" onchange="saveCompany()"></div></div>
+              <div class="prop-row"><label class="prop-label" for="sAddress">Address</label><div class="prop-value"><input id="sAddress" autocomplete="street-address" onchange="saveCompany()"></div></div>
+              <div class="prop-row"><label class="prop-label" for="sPrefix">Job No. Prefix</label><div class="prop-value"><input id="sPrefix" maxlength="12" spellcheck="false" autocapitalize="characters" aria-describedby="sNextNo" onchange="saveCompany()"><small class="prop-hint" id="sNextNo"></small></div></div>
+              <div class="prop-row"><label class="prop-label" for="sTimeZone">Time Zone</label><div class="prop-value"><span class="zone-field"><select id="sTimeZone" aria-describedby="sZoneNow" onchange="previewCompanyTimeZone(this)"></select><button type="button" class="btn sm" id="sZoneApply" disabled onclick="changeCompanyTimeZone(document.getElementById('sTimeZone'))">Apply</button></span><small class="prop-hint" id="sZoneNow"></small><p class="zone-alert" id="sZoneAlert" role="alert" hidden></p></div></div>
+              <div class="prop-row"><label class="prop-label" for="sBrand">Brand Colour</label><div class="prop-value"><span class="color-field"><input id="sBrand" type="color" onchange="saveCompany()"></span><small class="prop-hint">Printed documents use it. Preferences › Accent › Company uses it in the interface.</small></div></div>
+              <div class="prop-row"><span class="prop-label">Logo</span><div class="prop-value"><div class="logo-field"><span id="sLogoPreview" class="logo-preview"></span><span class="aligned"><button type="button" onclick="chooseCompanyLogo()">Upload…</button><button type="button" onclick="removeCompanyLogo()">Remove</button></span></div><small class="prop-hint">PNG, JPEG or WebP, up to 256 KB. Saved with the records and included in backups.</small><input id="sLogoFile" type="file" accept="image/png,image/jpeg,image/webp" hidden onchange="uploadCompanyLogo(this)"></div></div>
+            </div>
+            <div class="company-actions"><span class="prop-hint">Setting up for another company? Start from a blank profile. Job cards and lists are not touched.</span><span class="spacer"></span><button class="btn sm" type="button" onclick="resetCompanyProfile('blank')">Blank Profile…</button><button class="btn sm" type="button" onclick="resetCompanyProfile('default')">Restore Default…</button></div>
+          </div>
+        </section>
+        <div id="listsWrap" class="lists-grid"></div>
+        <div class="data-row">
+          <section class="bl-panel open" id="backupSection"><div class="bl-panel-head static"><span data-icon="archive"></span>Data &amp; Backups</div>
+            <div class="bl-panel-body data-panel">
+              <div id="recoveryPanel"></div>
+              <p class="prop-hint">Job cards are saved in this browser and synced with DVI Cloud, the same as Classic. Export a backup before big changes. Imports are validated before anything is replaced.</p>
+              <div class="data-btns">
+                <button class="btn" onclick="exportJSON()"><span data-icon="download"></span>Export Backup (JSON)</button>
+                <button class="btn" onclick="document.getElementById('importFile').click()"><span data-icon="upload"></span>Import Backup</button>
+                <button class="btn" onclick="exportCSV()"><span data-icon="list"></span>Export Jobs (CSV)</button>
+                <button class="btn danger" onclick="clearAll()"><span data-icon="trash"></span>Clear All Data</button>
+              </div>
+            </div>
+          </section>
+          <section class="bl-panel open cloud-card"><div class="bl-panel-head static"><span data-icon="cloud-off"></span>DVI Cloud</div>
+            <div class="bl-panel-body">
+              <div id="cloudStatus" class="cloud-status"></div>
+              <p class="prop-hint">Pro uses the same DVI Cloud as Classic. It loads the latest records when it opens, every 15 seconds and when you come back to the window, and sends after each save. This device's cloud settings (on or off, device name) are in Classic › Settings.</p>
+              <div class="data-btns"><button class="btn" type="button" onclick="cloudPushManual()">Sync Now</button><button class="btn" type="button" onclick="cloudPull()">Restore Latest</button></div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <aside id="workspaceInspector" aria-label="Outliner and properties">
+    <div id="workspaceDivider" role="separator" tabindex="0" aria-label="Resize properties panel" aria-orientation="vertical" aria-valuemin="225" aria-valuemax="420" aria-valuenow="288"></div>
+    <section class="wb-outliner"><header class="wb-area-header"><span data-icon="outliner"></span><b>Outliner</b><button onclick="openCommand()" aria-label="Search job cards" title="Search"><span data-icon="search"></span></button><button class="inspector-close" onclick="toggleInspector(false)" aria-label="Close panel"><span data-icon="x"></span></button></header><div class="wb-scroll"><div class="wb-collection-heading"><span class="bl-tri open"></span><span data-icon="collection"></span><b>Job Cards</b><small id="wbJobCount">0</small></div><div id="wbOutliner"></div><div id="wbResourceCollections" class="wb-resource-collections"></div></div></section>
+    <section class="wb-properties"><header class="wb-area-header"><span data-icon="settings"></span><b id="wbPropertiesTitle">Workspace properties</b></header><div class="wb-properties-shell"><div class="wb-properties-tools"><button title="Workspace properties" aria-label="Workspace properties" onclick="workbenchSelection=null;renderWorkbench()"><span data-icon="scene"></span></button><button title="Production schedule" aria-label="Production schedule" onclick="switchView('schedule')"><span data-icon="calendar"></span></button><button title="People and resources" aria-label="People and resources" onclick="switchView('settings')"><span data-icon="people"></span></button></div><div id="wbProperties"></div></div></section>
+  </aside>
+  </div>
+
+  <footer class="wb-statusbar">
+    <span class="sb-hints"><span class="mouse-l"></span>Select <span class="mouse-r"></span>Menu <kbd>/</kbd> Search <kbd>N</kbd> New</span>
+    <span class="sb-report" id="toasts" role="status" aria-live="polite" aria-atomic="false"></span>
+    <span class="sb-right"><span class="sb-local" id="cloudStateBar" title="DVI Cloud"><i></i><span>DVI Cloud</span></span><span id="wbFooterCount">0 job cards</span><span><span id="topDate"></span> <b id="kampalaClock">--:--</b> <span data-tz="abbr">EAT</span></span><span>Pro 8.2</span></span>
+  </footer>
+
+  <nav class="tabbar" aria-label="Primary">
+    <button data-tab="dashboard" class="active" onclick="switchView('dashboard')"><span data-icon="cube"></span>Overview</button>
+    <button data-tab="jobs" onclick="switchView('jobs')"><span data-icon="sheet"></span>Jobs<span class="tab-count" id="tabJobCount" hidden></span></button>
+    <button data-tab="schedule" onclick="switchView('schedule')"><span data-icon="calendar"></span>Schedule</button>
+    <button data-tab="dispatch" onclick="switchView('dispatch')"><span data-icon="signal"></span>Dispatch</button>
+    <button id="mobileMenu" data-tab="more" aria-label="More destinations" aria-controls="sidebar" aria-expanded="false" onclick="toggleNavigation()"><span data-icon="menu"></span>More</button>
+  </nav>
+</div>
+
+<button class="menu-backdrop" aria-label="Close menu" tabindex="-1" onclick="toggleNavigation(false);toggleInspector(false)"></button>
+<aside id="sidebar" aria-label="More">
+  <div class="drawer-section"><span class="drawer-label">Workspaces</span>
+    <button class="navbtn" data-view="dashboard" onclick="switchView('dashboard')"><span data-icon="cube"></span>Overview</button>
+    <button class="navbtn" data-view="jobs" onclick="switchView('jobs')"><span data-icon="sheet"></span>Job Cards<span id="navJobCount" class="nav-count">0</span></button>
+    <button class="navbtn" data-view="schedule" onclick="switchView('schedule')"><span data-icon="calendar"></span>Schedule</button>
+    <button class="navbtn" data-view="dispatch" onclick="switchView('dispatch')"><span data-icon="signal"></span>Dispatch</button>
+    <button class="navbtn" data-view="stock" onclick="switchView('stock')"><span data-icon="box"></span>Stock</button>
+    <button class="navbtn" data-view="insights" onclick="switchView('insights')"><span data-icon="chart"></span>Insights</button>
+    <button class="navbtn" data-view="settings" onclick="switchView('settings')"><span data-icon="people"></span>People &amp; Resources</button>
+  </div>
+  <div class="drawer-section"><span class="drawer-label">Tools</span>
+    <button class="navbtn" onclick="toggleNavigation(false);openIntake()"><span data-icon="text"></span>Describe a Job (Draft)</button>
+    <button class="navbtn" onclick="toggleNavigation(false);toggleInspector(true)"><span data-icon="outliner"></span>Outliner &amp; Properties</button>
+    <button class="navbtn" onclick="toggleNavigation(false);openPrefs()"><span data-icon="settings"></span>Preferences</button>
+    <button class="navbtn" onclick="switchView('settings');setTimeout(()=>document.getElementById('backupSection').scrollIntoView({block:'start'}),60)"><span data-icon="archive"></span>Data &amp; Backups</button>
+  </div>
+  <p class="prop-hint pad"><span id="navStorageNote">saved in this browser and synced with DVI Cloud</span> · <span data-tz="zone">Kampala · EAT · UTC+03:00</span>.</p>
+</aside>
+
+<!-- JOB EDITOR (operator dialog) -->
+<div class="modal" id="jobModal" role="dialog" aria-modal="true" aria-labelledby="jmTitle">
+  <div class="modal-box editor-box">
+    <div class="mb-head"><span data-icon="sheet"></span><h2 id="jmTitle">New Job Card</h2><span class="editor-dirty" id="editorDirty" hidden>Unsaved</span><span class="spacer"></span><button class="x" onclick="requestCloseJob()" aria-label="Close job editor"><span data-icon="x"></span></button></div>
+    <div class="editor-layout">
+      <nav class="editor-steps" aria-label="Job card sections"><a href="#eventSection"><span data-icon="sheet"></span>Event</a><a href="#timingSection"><span data-icon="clock"></span>Timing</a><a href="#equipmentSection"><span data-icon="box"></span>Equipment</a><a href="#teamSection"><span data-icon="people"></span>Crew</a><a href="#notesSection"><span data-icon="text"></span>Notes</a></nav>
+      <div class="editor-scroll mb-body">
+        <section class="bl-panel open f-section" id="eventSection"><div class="bl-panel-head static"><span class="bl-tri open"></span>Event</div><div class="bl-panel-body">
+          <div class="prop-row"><label class="prop-label" for="f_no">Job Card No.</label><div class="prop-value"><input id="f_no" readonly class="mono"></div></div>
+          <div class="prop-row"><label class="prop-label" for="f_status">Status</label><div class="prop-value field"><select id="f_status"><option>Draft</option><option>Scheduled</option><option>Setup</option><option>In Progress</option><option>Completed</option><option>Cancelled</option></select></div></div>
+          <div class="prop-row"><label class="prop-label" for="f_event">Event Name</label><div class="prop-value field"><input id="f_event" placeholder="Required" autocomplete="off"></div></div>
+          <div class="prop-row"><label class="prop-label" for="f_type">Event Type</label><div class="prop-value field"><select id="f_type" data-kind="eventTypes" data-ph="— Event type —" onchange="maybeQuickAdd(this)"></select></div></div>
+          <div class="prop-row"><label class="prop-label" for="f_priority">Priority</label><div class="prop-value field"><select id="f_priority"><option>Normal</option><option>High</option><option>Urgent</option></select></div></div>
+          <div class="prop-row"><label class="prop-label" for="f_client">Client</label><div class="prop-value field"><select id="f_client" data-kind="clients" data-ph="— Client / Company —" onchange="maybeQuickAdd(this)"></select></div></div>
+          <div class="prop-row"><label class="prop-label" for="f_venue">Venue</label><div class="prop-value field"><select id="f_venue" data-kind="venues" data-ph="— Venue —" onchange="maybeQuickAdd(this)"></select></div></div>
+        </div></section>
+        <section class="bl-panel open f-section" id="timingSection"><div class="bl-panel-head static"><span class="bl-tri open"></span>Dates &amp; Timing<span class="spacer"></span><span class="count" data-tz="zone">Kampala · EAT · UTC+03:00</span></div><div class="bl-panel-body">
+          <div class="prop-row"><label class="prop-label" for="f_setup_from">Setup Dates</label><div class="prop-value field"><div class="aligned-col dates"><input type="date" id="f_setup_from" aria-label="Setup start date" oninput="updateDatePreview()" onchange="updateDatePreview()"><input type="date" id="f_setup_to" aria-label="Setup end date" oninput="updateDatePreview()" onchange="updateDatePreview()"></div><div id="f_setup_fmt" class="date-preview"></div></div></div>
+          <div class="prop-row"><label class="prop-label" for="f_from">Event Dates</label><div class="prop-value field"><div class="aligned-col dates"><input type="date" id="f_from" aria-label="Event start date" oninput="updateDatePreview()" onchange="updateDatePreview()"><input type="date" id="f_to" aria-label="Event end date" oninput="updateDatePreview()" onchange="updateDatePreview()"></div><div id="f_event_fmt" class="date-preview"></div></div></div>
+          <div class="prop-row"><label class="prop-label" for="f_setupStartAt"><i class="tagc setup"></i>Setup Start</label><div class="prop-value field"><input type="datetime-local" id="f_setupStartAt"></div></div>
+          <div class="prop-row"><label class="prop-label" for="f_eventStartAt"><i class="tagc event"></i>Event Start</label><div class="prop-value field"><input type="datetime-local" id="f_eventStartAt"></div></div>
+          <div class="prop-row"><label class="prop-label" for="f_finishAt" title="Crew released">Finish</label><div class="prop-value field"><input type="datetime-local" id="f_finishAt" title="Crew and site manager are booked from setup start until this time"></div></div>
+          <div id="editorScheduleWarnings" class="schedule-warnings editor-checks" aria-live="polite"></div>
+        </div></section>
+        <section class="bl-panel open f-section" id="equipmentSection"><div class="bl-panel-head static"><span class="bl-tri open"></span>Equipment<span class="spacer"></span><button type="button" class="btn sm" onclick="addEquipRow()"><span data-icon="plus"></span>Add</button></div><div class="bl-panel-body">
+          <div class="dyn-head equip-head"><span>Qty / Size</span><span>Item</span><span title="Units hired in from a partner; they are not taken from your store">Hire</span><span></span></div>
+          <div id="equipRows"></div>
+        </div></section>
+        <section class="bl-panel open f-section" id="teamSection"><div class="bl-panel-head static"><span class="bl-tri open"></span>People &amp; Crew<span class="spacer"></span><button type="button" class="btn sm" onclick="addCrewRow()"><span data-icon="plus"></span>Add</button></div><div class="bl-panel-body">
+          <div class="prop-row"><label class="prop-label" for="f_site_manager">Site Manager</label><div class="prop-value field"><select id="f_site_manager" data-kind="technicians" data-admin-first="1" data-ph="— The site manager —" onchange="maybeQuickAdd(this)"></select></div></div>
+          <div class="prop-row"><label class="prop-label" for="f_creator">Created By</label><div class="prop-value field"><select id="f_creator" data-kind="technicians" data-admin-first="1" data-ph="— Job card created by —" onchange="maybeQuickAdd(this)"></select></div></div>
+          <div class="dyn-head crew-head"><span>Role</span><span>Crew Member</span><span></span></div>
+          <div id="crewRows"></div>
+        </div></section>
+        <section class="bl-panel open f-section notes-cell" id="notesSection"><div class="bl-panel-head static"><span class="bl-tri open"></span>Notes</div><div class="bl-panel-body">
+          <label for="f_notes" class="sr-only">Notes / special instructions</label><textarea id="f_notes" rows="4" placeholder="Power, access times, contacts on site…"></textarea>
+        </div></section>
+      </div>
+    </div>
+    <div class="mb-foot">
+      <button class="btn" onclick="requestCloseJob()">Cancel</button>
+      <button class="btn primary" onclick="saveJobForm()">Save Job Card</button>
+    </div>
+  </div>
+</div>
+
+<!-- JOB DETAIL -->
+<div class="modal" id="viewModal" role="dialog" aria-modal="true" aria-labelledby="vmTitle" onclick="if(event.target===this)closeView()">
+  <div class="modal-box wide detail-box"><div id="vmBody"></div></div>
+</div>
+
+<!-- QUICK ADD -->
+<div class="modal" id="quickModal" role="dialog" aria-modal="true" aria-labelledby="qmTitle" onclick="if(event.target===this)closeQuick()">
+  <div class="modal-box small">
+    <div class="mb-head"><h2 id="qmTitle"></h2><span class="spacer"></span><button class="x" onclick="closeQuick()" aria-label="Close"><span data-icon="x"></span></button></div>
+    <div id="qmFields" class="qfields"></div>
+    <div class="mb-foot"><button class="btn" onclick="closeQuick()">Cancel</button><button class="btn primary" onclick="saveQuick()">OK</button></div>
+  </div>
+</div>
+
+<!-- CONFIRM -->
+<div class="modal" id="confirmModal" role="alertdialog" aria-modal="true" aria-labelledby="cmMsg" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box small">
+    <p id="cmMsg"></p>
+    <div class="mb-foot"><button class="btn" onclick="document.getElementById('confirmModal').classList.remove('open')">Cancel</button><button class="btn" id="cmAlt" type="button" hidden onclick="confirmAlt(event)"></button><button class="btn primary" id="cmOk" onclick="confirmClick(event)">OK</button></div>
+  </div>
+</div>
+
+<!-- SEARCH (menu search) -->
+<div class="modal" id="commandModal" role="dialog" aria-modal="true" aria-labelledby="commandTitle"><div class="modal-box command-box"><h2 id="commandTitle" class="sr-only">Search workspace</h2><label class="command-input"><span data-icon="search"></span><input id="commandQuery" placeholder="Search job cards, clients, venues and commands" aria-label="Search workspace" oninput="renderCommand()" autocomplete="off"></label><div id="commandResults"></div></div></div>
+
+<!-- DAY RUNNING ORDER -->
+<div class="modal" id="dayModal" role="dialog" aria-modal="true" aria-labelledby="dayTitle"><div class="modal-box"><div class="mb-head"><span data-icon="list"></span><h2 id="dayTitle"></h2><span class="mb-sub">Running order · <span data-tz="city">Kampala</span></span><span class="spacer"></span><button class="x" aria-label="Close running order" onclick="closeDay()"><span data-icon="x"></span></button></div><div id="dayContents" class="mb-body"></div></div></div>
+
+<!-- DESCRIBE A JOB (local parser, review before saving) -->
+<div class="modal" id="intakeModal" role="dialog" aria-modal="true" aria-labelledby="intakeTitle"><div class="modal-box wide intake-box">
+  <div class="mb-head"><span data-icon="text"></span><h2 id="intakeTitle">Describe a Job</h2><span class="mb-sub">Local text parser · no AI connected</span><span class="spacer"></span><button class="x" aria-label="Close" onclick="closeIntake()"><span data-icon="x"></span></button></div>
+  <div class="mb-body intake-body">
+    <div class="intake-input">
+      <label for="intakeText" class="prop-label left">Description</label>
+      <textarea id="intakeText" rows="8" placeholder="Conference for [client] at [venue] on 14 Nov, setup 13 Nov from 2pm, event 9am to 5pm. LED screen 6x3m, PA system, 2 wireless mics. Site manager [name]."></textarea>
+      <p class="prop-hint">Runs in this browser only. Extracts only what is written and matches names already in your registers. Nothing is created, guessed, saved or sent.</p>
+      <div class="intake-actions"><button class="btn" onclick="runIntake()"><span data-icon="text"></span>Extract Draft</button><button class="btn flat" onclick="document.getElementById('intakeText').value='';runIntake()">Clear</button></div>
+    </div>
+    <div id="intakeReview" class="intake-review" aria-live="polite"></div>
+  </div>
+  <div class="mb-foot"><span class="prop-hint">Nothing is saved until you press Save in the job editor.</span><span class="spacer"></span><button class="btn" onclick="closeIntake()">Cancel</button><button class="btn primary" id="intakeOpen" onclick="openIntakeDraft()" disabled>Review in Job Editor</button></div>
+</div></div>
+
+<!-- PREFERENCES (Blender Preferences layout, Opera GX accent swatches) -->
+<div class="modal" id="prefsModal" role="dialog" aria-modal="true" aria-labelledby="prefsTitle" onclick="if(event.target===this)closePrefs()"><div class="modal-box wide prefs-box">
+  <div class="mb-head"><span data-icon="settings"></span><h2 id="prefsTitle">Preferences</h2><span class="spacer"></span><button class="x" aria-label="Close preferences" onclick="closePrefs()"><span data-icon="x"></span></button></div>
+  <div class="prefs-layout">
+    <nav id="prefsNav" class="prefs-nav" aria-label="Preference sections"><button type="button" data-section="interface" onclick="prefsGo('interface')">Interface</button><button type="button" data-section="accent" onclick="prefsGo('accent')">Themes</button><button type="button" data-section="company" onclick="prefsGo('company')">Company</button><button type="button" data-section="data" onclick="prefsGo('data')">Save &amp; Load</button></nav>
+    <div id="prefsBody" class="prefs-body"></div>
+  </div>
+  <div class="mb-foot"><span class="prop-hint">Saved in this browser, separately from job data.</span><span class="spacer"></span><button class="btn" onclick="closePrefs()">Close</button></div>
+</div></div>
+
+<!-- INFO -->
+<div class="modal" id="infoModal" role="dialog" aria-modal="true" aria-labelledby="infoTitle" onclick="if(event.target===this)this.classList.remove('open')"><div class="modal-box"><div class="mb-head"><span data-icon="info"></span><h2 id="infoTitle"></h2><span class="spacer"></span><button class="x" aria-label="Close" onclick="document.getElementById('infoModal').classList.remove('open')"><span data-icon="x"></span></button></div><div id="infoBody" class="mb-body info-body"></div></div></div>
+
+<div id="printArea" hidden></div>
+<input type="file" id="importFile" accept=".json" hidden onchange="importJSON(this)">
+
+<script src="scheduling.js"></script>
+<script src="stock.js"></script>
+<script src="app.js"></script>
+<script src="operations.js"></script>
+<script src="analytics.js"></script>
+<script src="charts.js"></script>
+<script src="calendar.js"></script>
+<script>initCalendarStudio();</script>
+<script src="workspace.js"></script>
+<script src="interface.js"></script>
+<script src="dispatch.js"></script>
+<script src="precision.js"></script>
+<script src="intake.js"></script>
+<script src="viewport3d.js"></script>
+<script src="charts3d.js"></script>
+<script src="stockview.js"></script>
+<script src="shell.js"></script>
+<script src="menus.js"></script>
+<script src="websync.js"></script>
+</body>
+</html>
