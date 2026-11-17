@@ -7,7 +7,8 @@
  const NAMES={pro:'Pro',classic:'Classic'};
  const ID=/^[A-Za-z0-9_-]{1,64}$/;
  const inPro=()=>/\/pro\/(?:index\.html)?$/i.test(root.location.pathname);
- const phone=()=>{try{return root.matchMedia('(max-width: 760px)').matches;}catch(_){return false;}};
+ // A phone, judged by the screen itself: Pro lays out 1280 px wide there, so the page width says nothing.
+ const smallScreen=()=>{try{return Math.min(root.screen.width,root.screen.height)<=760;}catch(_){return false;}};
  function get(){try{const v=root.localStorage.getItem(KEY);return v==='pro'||v==='classic'?v:null;}catch(_){return null;}}
  function set(look){try{root.localStorage.setItem(KEY,look);}catch(_){}}
  function jobFromHash(hash){const m=/^#(?:job|edit)\/([^/?#]+)$/.exec(String(hash||''));let id='';try{id=m?decodeURIComponent(m[1]):'';}catch(_){id='';}return ID.test(id)?id:'';}
@@ -39,10 +40,33 @@
   return true;
  }
  // Classic is the default. On the Classic page only: a device where Pro was chosen with the button goes on to
- // Pro, except on a phone (Pro has no phone layout yet). Opening pro/ directly always shows Pro.
+ // Pro. Phones too (owner, 17 November 2026): Pro shows its PC layout scaled down there. Opening pro/ directly
+ // always shows Pro.
  function openRemembered(){
   if(inPro())return;
-  if(get()==='pro'&&!phone())root.location.replace(target('pro',jobFromHash(root.location.hash)));
+  if(get()==='pro')root.location.replace(target('pro',jobFromHash(root.location.hash)));
  }
- root.DviLook={KEY,NAMES,get,set,jobFromHash,target,currentJob,go,openRemembered,inPro,phone};
+ // On a phone Pro is its PC layout shrunk to fit, and its own Classic button is tiny. So Pro shows a large bar
+ // there with the way back. Sized for the 1280 px layout; "×" hides it until the browser tab is closed.
+ function phoneBar(){
+  const d=root.document;
+  if(!inPro()||!smallScreen()||!d||!d.body||d.getElementById('lookPhoneBar'))return false;
+  try{if(root.sessionStorage.getItem('dvi_look_bar_hidden'))return false;}catch(_){}
+  const make=(tag,css,text)=>{const el=d.createElement(tag);el.style.cssText=css;if(text)el.textContent=text;return el;};
+  const bar=make('div','position:fixed;left:0;right:0;bottom:0;z-index:99998;display:flex;align-items:center;gap:36px;padding:34px 40px;background:#111;color:#fff;font:48px/1.25 system-ui,sans-serif;box-shadow:0 -8px 30px rgba(0,0,0,.55)');
+  bar.id='lookPhoneBar';
+  const note=make('span','flex:1','Pro shows the PC layout on a phone. Pinch to zoom in.');
+  const back=make('button','flex:none;padding:48px 52px;border:0;border-radius:20px;background:#f7a81b;color:#111;font:700 54px/1 system-ui,sans-serif','Back to Classic');
+  const hide=make('button','flex:none;width:150px;height:150px;border:0;border-radius:20px;background:#333;color:#fff;font:72px/1 system-ui,sans-serif','×');
+  back.type=hide.type='button';hide.setAttribute('aria-label','Hide this bar');
+  back.onclick=()=>go('classic');
+  hide.onclick=()=>{try{root.sessionStorage.setItem('dvi_look_bar_hidden','1');}catch(_){}bar.remove();};
+  bar.appendChild(note);bar.appendChild(back);bar.appendChild(hide);
+  d.body.appendChild(bar);
+  return true;
+ }
+ root.DviLook={KEY,NAMES,get,set,jobFromHash,target,currentJob,go,openRemembered,inPro,smallScreen,phoneBar};
+ if(root.document&&inPro()){
+  if(root.document.readyState==='loading')root.document.addEventListener('DOMContentLoaded',phoneBar);else phoneBar();
+ }
 })(typeof window!=='undefined'?window:globalThis);
